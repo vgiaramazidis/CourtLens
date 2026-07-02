@@ -1,40 +1,22 @@
-# Java
-*.class
-*.jar
-*.war
-*.ear
-target/
-build/
-out/
-
-# IntelliJ IDEA
-.idea/
-*.iml
-
-# VS Code
-.vscode/
-
-# Eclipse
-.project
-.classpath
-.settings/
-
-# Maven
-.mvn/wrapper/maven-wrapper.jar
-
-# Gradle
-.gradle/
-
-# Python
-__pycache__/
-*.py[cod]
+# Virtual environment
 .venv/
 venv/
 env/
 
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
 # Jupyter
 .ipynb_checkpoints/
 
-# OS files
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS / Windows
 .DS_Store
 Thumbs.db

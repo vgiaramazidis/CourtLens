@@ -22,6 +22,14 @@ def clock_to_seconds(clock_str):
     m, s = map(int, clock_str.split(":"))
     return m * 60 + s
 
+def generate_lineup_uri(team_code, players_set):
+    if not players_set:
+        return ""
+    # Βγάζουμε το 'P' και τα κενά, και τα κάνουμε sort
+    clean_ids = sorted([pid.replace('P', '').strip() for pid in players_set])
+    # Ενώνουμε με underscore
+    lineup_str = "_".join(clean_ids)
+    return f"https://www.euroleaguebasketball.net/euroleague/teams/-/{team_code}#Lineup_{lineup_str}"
 
 def period_length(period_name):
     if "ExtraTime" in period_name:
@@ -100,41 +108,58 @@ class GameProcessor:
 
     # --------------------------------------------------
 
-    def extract_action_data(self,event,period_name):
-         # Αν δεν υπάρχει χρόνος στο event, αγνόησέ το (δεν είναι κανονική φάση)
-         if not event.get("MARKERTIME"):
+    # --------------------------------------------------
+    def extract_action_data(self, event, period_name):
+        # Αν δεν υπάρχει χρόνος στο event, αγνόησέ το
+        if not event.get("MARKERTIME"):
             return
-         # Φτιάχνουμε ένα λεξικό με τα κοινά χαρακτηριστικά της φάσης
-         action_data = {
-            "hasPlayByPLaySequence": event["NUMBEROFPLAY"],
+
+        play_type = event.get("PLAYTYPE", "")
+
+        # 1. Λογική για Substitution (Ένα ενιαίο Action)
+        if play_type in ("IN", "OUT"):
+            found_match = False
+            # Ψάχνουμε αν υπάρχει ΗΔΗ το μισό substitution από την ίδια στιγμή
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == event["MARKERTIME"] and prev_action["associatedTeam"] == event["CODETEAM"].strip():
+                    if play_type == "IN":
+                        prev_action["playerIn"] = event["PLAYER_ID"].strip()
+                    else:
+                        prev_action["playerOut"] = event["PLAYER_ID"].strip()
+                    found_match = True
+                    break
+            
+            # Αν δεν βρήκαμε ταίρι, φτιάχνουμε το νέο Action "Substitution"
+            if not found_match:
+                action_data = {
+                    "hasPlayByPlaySequence": event["NUMBEROFPLAY"],
+                    "quarter": period_name,
+                    "associatedTeam": event["CODETEAM"].strip(),
+                    "clock": event["MARKERTIME"],
+                    "play_type": "Substitution",
+                    "playerIn": event["PLAYER_ID"].strip() if play_type == "IN" else None,
+                    "playerOut": event["PLAYER_ID"].strip() if play_type == "OUT" else None
+                }
+                self.all_actions.append(action_data)
+            return # Τελειώσαμε με την αλλαγή, σταματάμε εδώ για αυτό το event
+        
+        # 2. Για όλα τα υπόλοιπα events (Σουτ, Ασίστ, Λάθη κλπ.)
+        action_data = {
+            "hasPlayByPlaySequence": event["NUMBEROFPLAY"],
             "quarter": period_name,
-            "associatedTeam": event["CODETEAM"].strip(),    # .strip() για να φύγουν τα κενά
+            "associatedTeam": event["CODETEAM"].strip(),
             "associatedPlayer": event["PLAYER_ID"].strip(),
             "clock": event["MARKERTIME"],
             "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
-            "runningHomeTeamScore": event["POINTS_A"],
-            "runningRoadTeamScore": event["POINTS_B"],
-            "hasHomeTeamLineup": deepcopy(self.current_lineups[self.team_a]), #deepcopy για να μην αλλάζει η λίστα όταν αλλάζει το current_lineups
-            "hasRoadTeamLineup": deepcopy(self.current_lineups[self.team_b]),
-            "play_type": event["PLAYTYPE"],
-
-         }
-         action_data["related_to"] = None
-
-         if action_data["play_type"] == "IN":
-             for prev_event in reversed(self.all_actions):
-                 if prev_event["play_type"] == "OUT" and prev_event["clock"] == action_data["clock"] and prev_event["associatedTeam"] == action_data["associatedTeam"]:
-                    # Στο block του "IN"
-                    action_data["related_to"] = prev_event["hasPlayByPLaySequence"]
-                    prev_event["related_to"] = action_data["hasPlayByPLaySequence"]                     break
-         elif action_data["play_type"] == "OUT":
-             for prev_event in reversed(self.all_actions):
-                 if prev_event["play_type"] == "IN" and prev_event["clock"] == action_data["clock"] and prev_event["associatedTeam"] == action_data["associatedTeam"]:
-                    action_data["related_to"] = prev_event["hasPlayByPLaySequence"]
-                    prev_event["related_to"] = action_data["hasPlayByPLaySequence"]
-                    break
-         # Προσθέτουμε αυτό το λεξικό στη λίστα που φτιάξαμε στο Βήμα 1
-         self.all_actions.append(action_data)
+            "runningHomeTeamScore": event.get("POINTS_A"),
+            "runningRoadTeamScore": event.get("POINTS_B"),
+            "hasHomeTeamLineup": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
+            "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
+            "play_type": play_type,
+        }
+        
+        # Το προσθέτουμε στη λίστα
+        self.all_actions.append(action_data)
 
     # --------------------------------------------------
     def lineup_is_valid(self, st):

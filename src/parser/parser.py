@@ -350,63 +350,108 @@ class GameProcessor:
             self.process_period(q)
 
     # --------------------------------------------------
-    # GENERATE RDF TRIPLETS
+    # GENERATE RDF TRIPLETS (MERGED SCHEMA)
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []
         NS = "http://www.ics.forth.gr/isl/Basketball#"
         RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        RDFS = "http://www.w3.org/2000/01/rdf-schema#label"
         XSD = "http://www.w3.org/2001/XMLSchema#"
-        subj = f"<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200" #Prepei na allaxtei apo hard coded to 2023-24,E kai to 200
+        
+        # The top level game URI (from develop)
+        subj_game = f"<{GAME_URL_BASE}>"
+        
+        # Generate the master game links to all actions (from develop)
         for plays in self.all_actions:
-            triplets.append(f"{subj}> <{NS}hasPlayByPlayAction> {subj}#PlayByPlay_{plays['hasPlayByPlaySequence']}> .")
+            triplets.append(f"{subj_game} <{NS}hasPlayByPlayAction> <{GAME_URL_BASE}#PlayByPlay_{plays['hasPlayByPlaySequence']}> .")
 
         triplets.append("\n")
+        
         for action in self.all_actions:
-            begin=f"{subj}#PlayByPlay_{action['hasPlayByPlaySequence']}>"
-            triplets.append(f"{begin} <{NS}hasPlayByPlaySequence> \"{action['hasPlayByPlaySequence']}\" .")
-            triplets.append(f"{begin} <{RDF}> <{NS}{action['hasActionInfo']}> .")
-            # Game info
+            begin = f"<{GAME_URL_BASE}#PlayByPlay_{action['hasPlayByPlaySequence']}>"
+            action_type = action.get('hasActionInfo', '')
+            
+            # Action Sequence Number
+            triplets.append(f"{begin} <{NS}hasPlayByPlaySequence> \"{action['hasPlayByPlaySequence']}\"^^<{XSD}integer> .")
+            
+            # Subclasses Types
+            if action_type == "2FGM":
+                triplets.append(f"{begin} <{RDF}> <{NS}TwoPointsShotMade> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMade> .")
+            elif action_type == "3FGM":
+                triplets.append(f"{begin} <{RDF}> <{NS}ThreePointsShotMade> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMade> .")
+            elif action_type == "FTM":
+                triplets.append(f"{begin} <{RDF}> <{NS}FreeThrowMade> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMade> .")
+            elif action_type == "2FGA":
+                triplets.append(f"{begin} <{RDF}> <{NS}TwoPointsShotMissed> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMissed> .")
+            elif action_type == "3FGA":
+                triplets.append(f"{begin} <{RDF}> <{NS}ThreePointsShotMissed> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMissed> .")
+            elif action_type == "FTA":
+                triplets.append(f"{begin} <{RDF}> <{NS}FreeThrowMissed> .")
+                triplets.append(f"{begin} <{RDF}> <{NS}ShotMissed> .")
+            elif action_type == "FV":
+                triplets.append(f"{begin} <{RDF}> <{NS}Block> .")
+            elif action_type in ("O", "D"):
+                triplets.append(f"{begin} <{RDF}> <{NS}Rebound> .")
+            elif action_type == "AS":
+                triplets.append(f"{begin} <{RDF}> <{NS}Assist> .")
+            else:
+                triplets.append(f"{begin} <{RDF}> <{NS}{action_type}> .")
+
+            # Game Info Properties (from develop)
             triplets.append(f"{begin} <{NS}quarter> \"{action['quarter']}\"^^<{XSD}string> .")
             triplets.append(f"{begin} <{NS}clock> \"{action['clock']}\"^^<{XSD}string> .")
             triplets.append(f"{begin} <{NS}quarterSecondsRemaining> \"{action['quarterSecondsRemaining']}\"^^<{XSD}integer> .")
             
-            # Scores
+            # Scores (from develop)
             triplets.append(f"{begin} <{NS}runningHomeTeamScore> \"{action['runningHomeTeamScore']}\"^^<{XSD}integer> .")
             triplets.append(f"{begin} <{NS}runningRoadTeamScore> \"{action['runningRoadTeamScore']}\"^^<{XSD}integer> .")
             
-            # Lineups
-            triplets.append(f"{begin} <{NS}hasHomeTeamLineup> \"{action['hasHomeTeamLineupSnapshot']}\" .")
-            triplets.append(f"{begin} <{NS}hasRoadTeamLineup> \"{action['hasRoadTeamLineupSnapshot']}\" .")
+            # Lineups (from develop)
+            if action.get("hasHomeTeamLineupSnapshot"):
+                triplets.append(f"{begin} <{NS}hasHomeTeamLineup> <{action['hasHomeTeamLineupSnapshot']}> .")
+            if action.get("hasRoadTeamLineupSnapshot"):
+                triplets.append(f"{begin} <{NS}hasRoadTeamLineup> <{action['hasRoadTeamLineupSnapshot']}> .")
+
             # Entities
-            if action['hasActionInfo'] in ("2FGM", "3FGM","FTM"):
+            if action.get("actionTeam"):
                 triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+            if action.get("actionPlayer"):
                 triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}pointsAwarded> \"{action['pointsAwarded']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasAssist> <{action['hasAssist']}> .")
-                #triplets.append(f"{begin} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasShotZone> \"{action['zone']}\"^^<{XSD}string> .")
-                #triplets.append(f"{begin} <{NS}isFastBreak> \"{action['isFastBreak']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isSecondChance> \"{action['isSecondChance']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
-            elif action['hasActionInfo'] in ("2FGA", "3FGA","FTA"):
-                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasShotZone> \"{action['zone']}\"^^<{XSD}string> .")
-                #triplets.append(f"{begin} <{NS}isFastBreak> \"{action['isFastBreak']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isSecondChance> \"{action['isSecondChance']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}leadsToRebound> <{action['leadsToRebound']}> .")
-                #triplets.append(f"{begin} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
-            elif action['hasActionInfo'] in ("Block", "AS", "FV", "AG"):
-                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}associatedAction> <{action['associatedAction']}> .")
-            triplets.append("\n")
+                
+            # Substitutions
+            if action.get("playerIn"):
+                triplets.append(f"{begin} <{NS}playerIn> <{action['playerIn']}> .")
+            if action.get("playerOut"):
+                triplets.append(f"{begin} <{NS}playerOut> <{action['playerOut']}> .")
+
+            # Shot Attributes (uncommented and formatted from develop/feature)
+            if "pointsAwarded" in action:
+                triplets.append(f"{begin} <{NS}pointsAwarded> \"{action['pointsAwarded']}\"^^<{XSD}integer> .")
+            if action.get("hasShotCoords"):
+                triplets.append(f"{begin} <{NS}hasShotCoords> \"{action['hasShotCoords']}\"^^<{XSD}string> .")
+            if action.get("hasShotZone"):
+                triplets.append(f"{begin} <{NS}hasShotZone> \"{action['hasShotZone']}\"^^<{XSD}string> .")
+                
+            if "isFastBreak" in action:
+                triplets.append(f"{begin} <{NS}isFastBreak> \"{str(action['isFastBreak']).lower()}\"^^<{XSD}boolean> .")
+            if "isSecondChance" in action:
+                triplets.append(f"{begin} <{NS}isSecondChance> \"{str(action['isSecondChance']).lower()}\"^^<{XSD}boolean> .")
+            if "isFromTurnover" in action:
+                triplets.append(f"{begin} <{NS}isFromTurnover> \"{str(action['isFromTurnover']).lower()}\"^^<{XSD}boolean> .")
+
+            # Relational Linkages
+            if action.get("hasAssist"):
+                triplets.append(f"{begin} <{NS}hasAssist> <{action['hasAssist']}> .")
+            if action.get("wasBlockedBy"):
+                triplets.append(f"{begin} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
+            if action.get("leadsToRebound"):
+                triplets.append(f"{begin} <{NS}leadsToRebound> <{action['leadsToRebound']}> .")
+
         return triplets
 
 # ==================================================

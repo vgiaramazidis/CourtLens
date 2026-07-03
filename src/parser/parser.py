@@ -98,6 +98,63 @@ class GameProcessor:
 
     # --------------------------------------------------
 
+    # --------------------------------------------------
+    def extract_action_data(self, event, period_name):
+        if not event.get("MARKERTIME"):
+            return
+
+        play_type = event.get("PLAYTYPE", "")
+
+        # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
+        action_data = {
+            "hasPlayByPlaySequence": event["NUMBEROFPLAY"],
+            "quarter": period_name,
+            "associatedTeam": event["CODETEAM"].strip(),
+            "clock": event["MARKERTIME"],
+            "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
+            "runningHomeTeamScore": event.get("POINTS_A"),
+            "runningRoadTeamScore": event.get("POINTS_B"),
+            "hasHomeTeamLineup": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
+            "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
+            "play_type": play_type,
+        }
+
+        # 2. Λογική αν η φάση είναι Substitution
+        if play_type in ("IN", "OUT"):
+            player_id = event["PLAYER_ID"].strip()
+            
+            # Ψάχνουμε στα προηγούμενα αν υπάρχει το "μισό" αυτής της αλλαγής που να έχει ΑΔΕΙΟ το αντίστοιχο slot
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
+                    
+                    if play_type == "IN" and prev_action.get("playerIn") is None:
+                        prev_action["playerIn"] = player_id
+                        return # Ταιριάξαμε, φεύγουμε!
+                        
+                    elif play_type == "OUT" and prev_action.get("playerOut") is None:
+                        prev_action["playerOut"] = player_id
+                        return # Ταιριάξαμε, φεύγουμε!
+
+            # Αν δεν βρήκαμε ταίρι (ή αν η προηγούμενη αλλαγή ήταν ήδη "γεμάτη"), φτιάχνουμε νέα
+            action_data["play_type"] = "Substitution"
+            if play_type == "IN":
+                action_data["playerIn"] = player_id
+                action_data["playerOut"] = None
+            else:
+                action_data["playerIn"] = None
+                action_data["playerOut"] = player_id
+                
+            self.all_actions.append(action_data)
+            return
+                
+        else:
+            # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
+            action_data["associatedPlayer"] = event["PLAYER_ID"].strip()
+
+        # Τέλος, το προσθέτουμε στη λίστα μας
+        self.all_actions.append(action_data)
+
+    # --------------------------------------------------
     def lineup_is_valid(self, st):
         return (
             st["seconds"] > 0 or
@@ -398,10 +455,11 @@ with open("data/raw/PlaybyPlay.json", "r", encoding="utf8") as f:
     data = json.load(f)
 
 starting_lineups = {
-    "ZAL": {"P013403","P007975","P012715","P002676","P007029"},
-    "PAN": {"P011204","P012774","P005161","P007866","P011442"},
+    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
+    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
 }
 
 processor = GameProcessor(data, starting_lineups)
 processor.run()
-processor.print_results()
+#processor.print_results()
+#print(processor.all_actions)

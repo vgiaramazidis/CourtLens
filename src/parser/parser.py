@@ -96,8 +96,47 @@ class GameProcessor:
 
         self.player_names = {}
 
+        self.all_actions = []
+
     # --------------------------------------------------
 
+    def extract_action_data(self,event,period_name):
+         # Αν δεν υπάρχει χρόνος στο event, αγνόησέ το (δεν είναι κανονική φάση)
+         if not event.get("MARKERTIME"):
+            return
+         # Φτιάχνουμε ένα λεξικό με τα κοινά χαρακτηριστικά της φάσης
+         action_data = {
+            "hasPlayByPLaySequence": event["NUMBEROFPLAY"],
+            "quarter": period_name,
+            "associatedTeam": event["CODETEAM"].strip(),    # .strip() για να φύγουν τα κενά
+            "associatedPlayer": event["PLAYER_ID"].strip(),
+            "clock": event["MARKERTIME"],
+            "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
+            "runningHomeTeamScore": event["POINTS_A"],
+            "runningRoadTeamScore": event["POINTS_B"],
+            "hasHomeTeamLineup": deepcopy(self.current_lineups[self.team_a]), #deepcopy για να μην αλλάζει η λίστα όταν αλλάζει το current_lineups
+            "hasRoadTeamLineup": deepcopy(self.current_lineups[self.team_b]),
+            "play_type": event["PLAYTYPE"],
+
+         }
+         action_data["related_to"] = None
+
+         if action_data["play_type"] == "IN":
+             for prev_event in reversed(self.all_actions):
+                 if prev_event["play_type"] == "OUT" and prev_event["clock"] == action_data["clock"] and prev_event["associatedTeam"] == action_data["associatedTeam"]:
+                    # Στο block του "IN"
+                    action_data["related_to"] = prev_event["hasPlayByPLaySequence"]
+                    prev_event["related_to"] = action_data["hasPlayByPLaySequence"]                     break
+         elif action_data["play_type"] == "OUT":
+             for prev_event in reversed(self.all_actions):
+                 if prev_event["play_type"] == "IN" and prev_event["clock"] == action_data["clock"] and prev_event["associatedTeam"] == action_data["associatedTeam"]:
+                    action_data["related_to"] = prev_event["hasPlayByPLaySequence"]
+                    prev_event["related_to"] = action_data["hasPlayByPLaySequence"]
+                    break
+         # Προσθέτουμε αυτό το λεξικό στη λίστα που φτιάξαμε στο Βήμα 1
+         self.all_actions.append(action_data)
+
+    # --------------------------------------------------
     def lineup_is_valid(self, st):
         return (
             st["seconds"] > 0 or
@@ -314,9 +353,11 @@ class GameProcessor:
             if event["PLAYTYPE"] in ("IN", "OUT"):
                 self.process_substitution(event)
 
+            self.extract_action_data(event, period_name)
+
         if previous_clock > 0:
             self.add_both_lineups_time(previous_clock)
-
+        
     # --------------------------------------------------
 
     def run(self):

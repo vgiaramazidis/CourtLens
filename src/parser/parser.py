@@ -57,6 +57,8 @@ class GameProcessor:
         # Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
 
+        self.all_actions = []
+
     # --------------------------------------------------
     def _map_points_data(self, points_data):
         shot_map = {}
@@ -101,12 +103,13 @@ class GameProcessor:
         if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
 
         play_type = event.get("PLAYTYPE", "")
+        player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
 
         # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
-            "associatedTeam": event["CODETEAM"].strip(),
+            "associatedTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
             "clock": event["MARKERTIME"],
             "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
             "runningHomeTeamScore": event.get("POINTS_A"),
@@ -124,11 +127,29 @@ class GameProcessor:
             "hasActionInfo": play_type,
         }
 
+        # ---------------------------------------------------------
+        # ΕΙΔΙΚΗ ΛΟΓΙΚΗ: ΕΝΣΩΜΑΤΩΣΗ ASSIST ΣΤΟ ΠΡΟΗΓΟΥΜΕΝΟ ΣΟΥΤ
+        # ---------------------------------------------------------
+        if play_type == "AS":
+            # Ψάχνουμε στα προηγούμενα actions (ανάποδα) για να βρούμε το τελευταίο 
+            # εύστοχο σουτ της ΙΔΙΑΣ ομάδας και να κολλήσουμε την Ασίστ.
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("play_type") in ("2FGM", "3FGM") and prev_action["associatedTeam"] == action_data["associatedTeam"]:
+                    prev_action["assistedBy"] = generate_player_uri(player_id)
+                    break # Το βρήκαμε, σταματάμε το ψάξιμο
+                    
+        # ---------------------------------------------------------
+        # ΕΙΔΙΚΗ ΛΟΓΙΚΗ: ΕΝΣΩΜΑΤΩΣΗ BLOCK ΣΤΟ ΠΡΟΗΓΟΥΜΕΝΟ ΑΣΤΟΧΟ ΣΟΥΤ
+        # ---------------------------------------------------------
+        elif play_type == "FV": # FV = Block / Τάπα
+            for prev_action in reversed(self.all_actions):
+                # Αν βρούμε άστοχο σουτ της αντίπαλης ομάδας περίπου στον ίδιο χρόνο
+                if prev_action.get("play_type") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                    prev_action["blockedBy"] = generate_player_uri(player_id)
+                    break
+
         # 2. Λογική αν η φάση είναι Substitution
         if play_type in ("IN", "OUT"):
-            player_id = event["PLAYER_ID"].strip()
-            
-            # Ψάχνουμε στα προηγούμενα αν υπάρχει το "μισό" αυτής της αλλαγής που να έχει ΑΔΕΙΟ το αντίστοιχο slot
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
                     
@@ -154,7 +175,24 @@ class GameProcessor:
                 
         else:
             # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
-            action_data["associatedPlayer"] = event["PLAYER_ID"].strip()
+            action_data["associatedPlayer"] = player_id
+
+            # ---------------------------------------------------------
+            # ΕΞΤΡΑ ΔΕΔΟΜΕΝΑ ΣΤΑ ΣΟΥΤ (Συντεταγμένες κτλ)
+            # ---------------------------------------------------------
+            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA"):
+                # Πολλά PBP JSONs έχουν πληροφορίες για τη θέση του σουτ
+                if "COORD_X" in event:
+                    action_data["coord_x"] = event.get("COORD_X")
+                if "COORD_Y" in event:
+                    action_data["coord_y"] = event.get("COORD_Y")
+                if "ZONE" in event:
+                    action_data["zone"] = event.get("ZONE")
+                
+                # Το assistedBy και το blockedBy θα προστεθούν αυτόματα (από τα AS και FV events που θα ακολουθήσουν) 
+                # και θα αρχικοποιηθούν ως None για να υπάρχουν πάντα ως κλειδιά στο λεξικό, αν το επιθυμείς:
+                action_data["assistedBy"] = None 
+                action_data["blockedBy"] = None
 
         # Τέλος, το προσθέτουμε στη λίστα μας
         self.all_actions.append(action_data)
@@ -402,8 +440,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
 starting_lineups = {
-    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
-    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
+    "ZAL": {"P007975", "P003210", "P011983", "P007513", "P005504"},
+    "PAN": {"P011442", "P012774", "P005161", "P007866", "P003842"},
 }
 
 output_dir = os.path.join(project_root, "data", "processed")

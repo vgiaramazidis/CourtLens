@@ -394,12 +394,12 @@ class GameProcessor:
 # USAGE
 # ==================================================
 
-with open("game.json", "r", encoding="utf8") as f:
+with open("data/raw/PlaybyPlay.json", "r", encoding="utf8") as f:
     data = json.load(f)
 
 starting_lineups = {
-    "MAD": {"P005928","P006540","P003108","P009213","P005791"},
-    "PAN": {"P011204","P012774","P005161","P007866","P003842"},
+    "ZAL": {"P013403","P007975","P012715","P002676","P007029"},
+    "PAN": {"P011204","P012774","P005161","P007866","P011442"},
 }
 
 processor = GameProcessor(data, starting_lineups)

@@ -60,53 +60,64 @@ class GameProcessor:
         self.shots_extra_data = self._map_points_data(points_data)
 
         self.all_actions = []
-    def _extract_starters(self, boxscore_data):
-        starters = {self.team_a: set(), self.team_b: set()}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
-            
-            for player in team_stat["PlayersStats"]:
-                if player.get("IsStarter") == 1:
-                    starters[matched_code].add(player["Player_ID"].strip())
-        return starters
 
-    def _map_points_data(self, points_data):
-        shot_map = {}
-        for row in points_data.get("Rows", []):
-            key = (row["ID_PLAYER"].strip(), row["MINUTE"], row["CONSOLE"])
-            shot_map[key] = {
-                "coord_x": row.get("COORD_X"),
-                "coord_y": row.get("COORD_Y"),
-                "zone": row.get("ZONE"),
-                "pointsAwarded": int(row.get("POINTS", 0)),
-                "isFastBreak": bool(int(row.get("FASTBREAK", "0"))),
-                "isSecondChance": bool(int(row.get("SECOND_CHANCE", "0"))),
-                "isFromTurnover": bool(int(row.get("POINTS_OFF_TURNOVER", "0")))
-            }
-        return shot_map
+    # --------------------------------------------------
 
+    # --------------------------------------------------
     def extract_action_data(self, event, period_name):
-        play_type = event.get("PLAYTYPE", "")
-        player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
-        markertime = event.get("MARKERTIME") or ("10:00" if play_type == "BP"  else "00:00" if play_type in ("EP", "EG") else "")
-        if event.get("POINTS_A") is not None:
-            self.current_score_a = event["POINTS_A"]
-        if event.get("POINTS_B") is not None:
-            self.current_score_b = event["POINTS_B"]
+        if not event.get("MARKERTIME"):
+            return
 
+        play_type = event.get("PLAYTYPE", "")
+
+        # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
-            "actionTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
-            "clock": markertime,
-            "quarterSecondsRemaining": clock_to_seconds(markertime),
-            "runningHomeTeamScore": self.current_score_a,
-            "runningRoadTeamScore": self.current_score_b,
-            "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
-            "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
-            "hasActionInfo": play_type,
+            "associatedTeam": event["CODETEAM"].strip(),
+            "clock": event["MARKERTIME"],
+            "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
+            "runningHomeTeamScore": event.get("POINTS_A"),
+            "runningRoadTeamScore": event.get("POINTS_B"),
+            "hasHomeTeamLineup": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
+            "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
+            "play_type": play_type,
         }
+
+        # 2. Λογική αν η φάση είναι Substitution
+        if play_type in ("IN", "OUT"):
+            player_id = event["PLAYER_ID"].strip()
+            
+            # Ψάχνουμε στα προηγούμενα αν υπάρχει το "μισό" αυτής της αλλαγής που να έχει ΑΔΕΙΟ το αντίστοιχο slot
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
+                    
+                    if play_type == "IN" and prev_action.get("playerIn") is None:
+                        prev_action["playerIn"] = player_id
+                        return # Ταιριάξαμε, φεύγουμε!
+                        
+                    elif play_type == "OUT" and prev_action.get("playerOut") is None:
+                        prev_action["playerOut"] = player_id
+                        return # Ταιριάξαμε, φεύγουμε!
+
+            # Αν δεν βρήκαμε ταίρι (ή αν η προηγούμενη αλλαγή ήταν ήδη "γεμάτη"), φτιάχνουμε νέα
+            action_data["play_type"] = "Substitution"
+            if play_type == "IN":
+                action_data["playerIn"] = player_id
+                action_data["playerOut"] = None
+            else:
+                action_data["playerIn"] = None
+                action_data["playerOut"] = player_id
+                
+            self.all_actions.append(action_data)
+            return
+                
+        else:
+            # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
+            action_data["associatedPlayer"] = event["PLAYER_ID"].strip()
+
+        # Τέλος, το προσθέτουμε στη λίστα μας
+        self.all_actions.append(action_data)
 
         # Merging Assists
         if play_type == "AS":
@@ -283,9 +294,10 @@ class GameProcessor:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
-playbyplay_path = os.path.join(project_root, "data", "raw", "PlaybyPlay.json")
-boxscore_path = os.path.join(project_root, "data", "raw", "Boxscore.json")
-points_path = os.path.join(project_root, "data", "raw", "Points.json")
+starting_lineups = {
+    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
+    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
+}
 
 output_dir = os.path.join(project_root, "data", "processed")
 output_json_path = os.path.join(output_dir, "AllActions.json")
@@ -297,20 +309,5 @@ with open(points_path, "r", encoding="utf8") as f: points_data = json.load(f)
 
 processor = GameProcessor(pbp_data, boxscore_data, points_data)
 processor.run()
-
-# Ensure output directory exists
-os.makedirs(output_dir, exist_ok=True)
-
-# Save standard JSON with all the merged data
-print(f"Saving merged JSON to: {output_json_path}")
-with open(output_json_path, "w", encoding="utf8") as out_file:
-    json.dump(processor.all_actions, out_file, ensure_ascii=False, indent=4)
-
-# Save Triplets (N-Triples format)
-print(f"Saving Triplets to: {output_triplets_path}")
-triplets = processor.generate_triplets()
-with open(output_triplets_path, "w", encoding="utf8") as out_file:
-    for triple in triplets:
-        out_file.write(triple + "\n")
-
-print("Processing complete!")
+#processor.print_results()
+#print(processor.all_actions)

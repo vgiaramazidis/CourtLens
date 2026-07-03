@@ -57,8 +57,6 @@ class GameProcessor:
         # Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
 
-        self.all_actions = []
-
     # --------------------------------------------------
     def _map_points_data(self, points_data):
         shot_map = {}
@@ -404,8 +402,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
 starting_lineups = {
-    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
-    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
+    "ZAL": {"P013403","P007975","P012715","P002676","P007029"},
+    "PAN": {"P011204","P012774","P005161","P007866","P011442"},
 }
 
 output_dir = os.path.join(project_root, "data", "processed")

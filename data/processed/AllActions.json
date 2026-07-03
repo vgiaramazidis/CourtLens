@@ -32,7 +32,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/5"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_5"
     },
     {
         "hasPlayByPlaySequence": 5,
@@ -67,7 +67,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/7"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_7"
     },
     {
         "hasPlayByPlaySequence": 7,
@@ -123,7 +123,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/11"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_11"
     },
     {
         "hasPlayByPlaySequence": 11,
@@ -158,7 +158,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/13"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_13"
     },
     {
         "hasPlayByPlaySequence": 13,
@@ -219,7 +219,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/27"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_27"
     },
     {
         "hasPlayByPlaySequence": 17,
@@ -384,7 +384,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/30"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_30"
     },
     {
         "hasPlayByPlaySequence": 30,
@@ -419,7 +419,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/32"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_32"
     },
     {
         "hasPlayByPlaySequence": 32,
@@ -480,7 +480,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/37"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_37"
     },
     {
         "hasPlayByPlaySequence": 37,
@@ -541,7 +541,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/41"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_41"
     },
     {
         "hasPlayByPlaySequence": 41,
@@ -576,7 +576,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/43"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_43"
     },
     {
         "hasPlayByPlaySequence": 43,
@@ -611,7 +611,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/46"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_46"
     },
     {
         "hasPlayByPlaySequence": 46,
@@ -902,7 +902,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/69"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_69"
     },
     {
         "hasPlayByPlaySequence": 69,
@@ -963,7 +963,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/74"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_74"
     },
     {
         "hasPlayByPlaySequence": 74,
@@ -998,7 +998,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/76"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_76"
     },
     {
         "hasPlayByPlaySequence": 76,
@@ -1033,7 +1033,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/78"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_78"
     },
     {
         "hasPlayByPlaySequence": 78,
@@ -1219,7 +1219,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "leadsToRebound": "http://euroleague.net/action/95"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_95"
     },
     {
         "hasPlayByPlaySequence": 95,
@@ -1254,7 +1254,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/117"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_117"
     },
     {
         "hasPlayByPlaySequence": 98,
@@ -1276,7 +1276,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/99"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_99"
     },
     {
         "hasPlayByPlaySequence": 99,
@@ -1358,8 +1358,8 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "wasBlockedBy": "http://euroleague.net/action/107",
-        "leadsToRebound": "http://euroleague.net/action/108"
+        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_107",
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_108"
     },
     {
         "hasPlayByPlaySequence": 106,
@@ -1529,7 +1529,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/119"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_119"
     },
     {
         "hasPlayByPlaySequence": 119,
@@ -1564,7 +1564,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/121"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_121"
     },
     {
         "hasPlayByPlaySequence": 121,
@@ -1599,7 +1599,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/124"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_124"
     },
     {
         "hasPlayByPlaySequence": 124,
@@ -1975,7 +1975,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/158"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_158"
     },
     {
         "hasPlayByPlaySequence": 158,
@@ -2036,8 +2036,8 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "wasBlockedBy": "http://euroleague.net/action/163",
-        "leadsToRebound": "http://euroleague.net/action/164"
+        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_163",
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_164"
     },
     {
         "hasPlayByPlaySequence": 162,
@@ -2145,7 +2145,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/169"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_169"
     },
     {
         "hasPlayByPlaySequence": 169,
@@ -2180,7 +2180,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/172"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_172"
     },
     {
         "hasPlayByPlaySequence": 172,
@@ -2215,7 +2215,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/187"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_187"
     },
     {
         "hasPlayByPlaySequence": 174,
@@ -2502,7 +2502,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/196"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_196"
     },
     {
         "hasPlayByPlaySequence": 196,
@@ -2537,7 +2537,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/199"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_199"
     },
     {
         "hasPlayByPlaySequence": 199,
@@ -2572,7 +2572,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/201"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_201"
     },
     {
         "hasPlayByPlaySequence": 201,
@@ -2607,7 +2607,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/203"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_203"
     },
     {
         "hasPlayByPlaySequence": 203,
@@ -2738,7 +2738,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/213"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_213"
     },
     {
         "hasPlayByPlaySequence": 213,
@@ -2799,7 +2799,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/218"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_218"
     },
     {
         "hasPlayByPlaySequence": 218,
@@ -2855,7 +2855,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/221"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_221"
     },
     {
         "hasPlayByPlaySequence": 221,
@@ -2890,7 +2890,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/224"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_224"
     },
     {
         "hasPlayByPlaySequence": 224,
@@ -2946,7 +2946,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/227"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_227"
     },
     {
         "hasPlayByPlaySequence": 227,
@@ -3029,7 +3029,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/234"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_234"
     },
     {
         "hasPlayByPlaySequence": 234,
@@ -3064,7 +3064,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/236"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_236"
     },
     {
         "hasPlayByPlaySequence": 236,
@@ -3099,7 +3099,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/238"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_238"
     },
     {
         "hasPlayByPlaySequence": 238,
@@ -3134,7 +3134,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/240"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_240"
     },
     {
         "hasPlayByPlaySequence": 240,
@@ -3230,7 +3230,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/251"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_251"
     },
     {
         "hasPlayByPlaySequence": 249,
@@ -3291,7 +3291,7 @@
         "isFastBreak": true,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/253"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_253"
     },
     {
         "hasPlayByPlaySequence": 253,
@@ -3366,7 +3366,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/259"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_259"
     },
     {
         "hasPlayByPlaySequence": 259,
@@ -3401,7 +3401,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/262"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_262"
     },
     {
         "hasPlayByPlaySequence": 262,
@@ -3463,7 +3463,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/267"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_267"
     },
     {
         "hasPlayByPlaySequence": 267,
@@ -3498,7 +3498,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/269"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_269"
     },
     {
         "hasPlayByPlaySequence": 269,
@@ -3715,7 +3715,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/287"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_287"
     },
     {
         "hasPlayByPlaySequence": 287,
@@ -3750,7 +3750,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/289"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_289"
     },
     {
         "hasPlayByPlaySequence": 289,
@@ -3887,7 +3887,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/301"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_301"
     },
     {
         "hasPlayByPlaySequence": 301,
@@ -3991,7 +3991,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/315"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_315"
     },
     {
         "hasPlayByPlaySequence": 315,
@@ -4060,7 +4060,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/320"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_320"
     },
     {
         "hasPlayByPlaySequence": 320,
@@ -4160,7 +4160,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/327"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_327"
     },
     {
         "hasPlayByPlaySequence": 327,
@@ -4208,7 +4208,7 @@
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403",
         "hasActionInfo": "3FGM",
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
-        "hasAssist": "http://euroleague.net/action/331"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_331"
     },
     {
         "hasPlayByPlaySequence": 331,
@@ -4243,7 +4243,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/333"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_333"
     },
     {
         "hasPlayByPlaySequence": 333,
@@ -4278,7 +4278,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/335"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_335"
     },
     {
         "hasPlayByPlaySequence": 335,
@@ -4313,7 +4313,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/337"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_337"
     },
     {
         "hasPlayByPlaySequence": 337,
@@ -4348,7 +4348,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/340"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_340"
     },
     {
         "hasPlayByPlaySequence": 340,
@@ -4383,7 +4383,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/342"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_342"
     },
     {
         "hasPlayByPlaySequence": 342,
@@ -4418,7 +4418,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/344"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_344"
     },
     {
         "hasPlayByPlaySequence": 344,
@@ -4453,7 +4453,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/347"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_347"
     },
     {
         "hasPlayByPlaySequence": 347,
@@ -4628,7 +4628,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/361"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_361"
     },
     {
         "hasPlayByPlaySequence": 361,
@@ -4689,7 +4689,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/365"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_365"
     },
     {
         "hasPlayByPlaySequence": 365,
@@ -4724,7 +4724,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/367"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_367"
     },
     {
         "hasPlayByPlaySequence": 367,
@@ -4785,8 +4785,8 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "wasBlockedBy": "http://euroleague.net/action/373",
-        "leadsToRebound": "http://euroleague.net/action/374"
+        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_373",
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_374"
     },
     {
         "hasPlayByPlaySequence": 372,
@@ -4847,7 +4847,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/376"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_376"
     },
     {
         "hasPlayByPlaySequence": 376,
@@ -5088,7 +5088,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/394"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_394"
     },
     {
         "hasPlayByPlaySequence": 394,
@@ -5171,7 +5171,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/401"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_401"
     },
     {
         "hasPlayByPlaySequence": 401,
@@ -5206,7 +5206,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/403"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_403"
     },
     {
         "hasPlayByPlaySequence": 403,
@@ -5241,7 +5241,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/405"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_405"
     },
     {
         "hasPlayByPlaySequence": 405,
@@ -5276,7 +5276,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/407"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_407"
     },
     {
         "hasPlayByPlaySequence": 407,
@@ -5311,7 +5311,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/410"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_410"
     },
     {
         "hasPlayByPlaySequence": 410,
@@ -5468,7 +5468,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/422"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_422"
     },
     {
         "hasPlayByPlaySequence": 422,
@@ -5545,7 +5545,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/431"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_431"
     },
     {
         "hasPlayByPlaySequence": 431,
@@ -5660,7 +5660,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/443"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_443"
     },
     {
         "hasPlayByPlaySequence": 441,
@@ -5748,7 +5748,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/452"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_452"
     },
     {
         "hasPlayByPlaySequence": 452,
@@ -5809,7 +5809,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/456"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_456"
     },
     {
         "hasPlayByPlaySequence": 456,
@@ -5844,7 +5844,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/458"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_458"
     },
     {
         "hasPlayByPlaySequence": 458,
@@ -5879,7 +5879,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/461"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_461"
     },
     {
         "hasPlayByPlaySequence": 461,
@@ -5989,7 +5989,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/470"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_470"
     },
     {
         "hasPlayByPlaySequence": 470,
@@ -6071,8 +6071,8 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "wasBlockedBy": "http://euroleague.net/action/476",
-        "leadsToRebound": "http://euroleague.net/action/477"
+        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_476",
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_477"
     },
     {
         "hasPlayByPlaySequence": 475,
@@ -6172,7 +6172,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/483"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_483"
     },
     {
         "hasPlayByPlaySequence": 483,
@@ -6247,7 +6247,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/489"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_489"
     },
     {
         "hasPlayByPlaySequence": 489,
@@ -6282,7 +6282,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "hasAssist": "http://euroleague.net/action/491"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_491"
     },
     {
         "hasPlayByPlaySequence": 491,
@@ -6357,7 +6357,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/497"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_497"
     },
     {
         "hasPlayByPlaySequence": 497,
@@ -6392,7 +6392,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/518"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_518"
     },
     {
         "hasPlayByPlaySequence": 498,
@@ -6574,7 +6574,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/511"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_511"
     },
     {
         "hasPlayByPlaySequence": 511,
@@ -6622,7 +6622,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/515"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_515"
     },
     {
         "hasPlayByPlaySequence": 515,
@@ -6765,7 +6765,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/527"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_527"
     },
     {
         "hasPlayByPlaySequence": 527,
@@ -6854,7 +6854,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/536"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_536"
     },
     {
         "hasPlayByPlaySequence": 536,
@@ -6910,7 +6910,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/539"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_539"
     },
     {
         "hasPlayByPlaySequence": 539,
@@ -6945,7 +6945,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/544"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_544"
     },
     {
         "hasPlayByPlaySequence": 541,
@@ -7053,7 +7053,7 @@
         "isFastBreak": false,
         "isSecondChance": true,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/549"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_549"
     },
     {
         "hasPlayByPlaySequence": 549,
@@ -7128,7 +7128,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "hasAssist": "http://euroleague.net/action/555"
+        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_555"
     },
     {
         "hasPlayByPlaySequence": 555,
@@ -7203,7 +7203,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": true,
-        "leadsToRebound": "http://euroleague.net/action/561"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_561"
     },
     {
         "hasPlayByPlaySequence": 561,
@@ -7375,7 +7375,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/577"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_577"
     },
     {
         "hasPlayByPlaySequence": 577,
@@ -7410,7 +7410,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/579"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_579"
     },
     {
         "hasPlayByPlaySequence": 579,
@@ -7513,7 +7513,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/588"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_588"
     },
     {
         "hasPlayByPlaySequence": 586,
@@ -7574,7 +7574,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/590"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_590"
     },
     {
         "hasPlayByPlaySequence": 590,
@@ -7609,7 +7609,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/592"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_592"
     },
     {
         "hasPlayByPlaySequence": 592,
@@ -7644,7 +7644,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/594"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_594"
     },
     {
         "hasPlayByPlaySequence": 594,
@@ -7679,7 +7679,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/597"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_597"
     },
     {
         "hasPlayByPlaySequence": 597,
@@ -7796,7 +7796,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/605"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_605"
     },
     {
         "hasPlayByPlaySequence": 605,
@@ -7831,7 +7831,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/607"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_607"
     },
     {
         "hasPlayByPlaySequence": 607,
@@ -7866,7 +7866,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/609"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_609"
     },
     {
         "hasPlayByPlaySequence": 609,
@@ -7969,7 +7969,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/615"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_615"
     },
     {
         "hasPlayByPlaySequence": 615,
@@ -8004,7 +8004,7 @@
         "isFastBreak": false,
         "isSecondChance": false,
         "isFromTurnover": false,
-        "leadsToRebound": "http://euroleague.net/action/617"
+        "leadsToRebound": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_617"
     },
     {
         "hasPlayByPlaySequence": 617,

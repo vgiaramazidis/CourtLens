@@ -1,21 +1,9 @@
-from itertools import count
 import json
 from collections import defaultdict
 import os
 
-QUARTERS = [
-    "FirstQuarter",
-    "SecondQuarter",
-    "ThirdQuarter",
-    "ForthQuarter",
-    "ExtraTime1",
-    "ExtraTime2",
-    "ExtraTime3",
-]
-
-# --------------------------------------------------
-# HELPERS
-# --------------------------------------------------
+QUARTERS = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", "ExtraTime1", "ExtraTime2", "ExtraTime3"]
+GAME_URL_BASE = "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200"
 
 def clock_to_seconds(clock_str):
     m, s = map(int, clock_str.split(":"))
@@ -37,87 +25,70 @@ def generate_player_uri(player_id):
 def lineup_key(players):
     return tuple(sorted(players))
 
-
-# --------------------------------------------------
-# MAIN CLASS
-# --------------------------------------------------
-
 class GameProcessor:
-
     def __init__(self, pbp_data, boxscore_data, points_data):
         self.data = pbp_data
-        
         self.team_a = pbp_data["CodeTeamA"].strip()
         self.team_b = pbp_data["CodeTeamB"].strip()
         self.current_score_a = 0
         self.current_score_b = 0
 
-        
+        # Dynamically extract starting lineups from Boxscore.json
         self.current_lineups = self._extract_starters(boxscore_data)
-
         
         # Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
 
         self.all_actions = []
 
-    # --------------------------------------------------
+    def _extract_starters(self, boxscore_data):
+        starters = {self.team_a: set(), self.team_b: set()}
+        for team_stat in boxscore_data["Stats"]:
+            team_code = team_stat["Team"].strip()
+            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+            
+            for player in team_stat["PlayersStats"]:
+                if player.get("IsStarter") == 1:
+                    starters[matched_code].add(player["Player_ID"].strip())
+        return starters
 
-    # --------------------------------------------------
+    def _map_points_data(self, points_data):
+        shot_map = {}
+        for row in points_data.get("Rows", []):
+            key = (row["ID_PLAYER"].strip(), row["MINUTE"], row["CONSOLE"])
+            shot_map[key] = {
+                "coord_x": row.get("COORD_X"),
+                "coord_y": row.get("COORD_Y"),
+                "zone": row.get("ZONE"),
+                "pointsAwarded": int(row.get("POINTS", 0)),
+                "isFastBreak": bool(int(row.get("FASTBREAK", "0"))),
+                "isSecondChance": bool(int(row.get("SECOND_CHANCE", "0"))),
+                "isFromTurnover": bool(int(row.get("POINTS_OFF_TURNOVER", "0")))
+            }
+        return shot_map
+
     def extract_action_data(self, event, period_name):
         if not event.get("MARKERTIME"):
             return
 
         play_type = event.get("PLAYTYPE", "")
+        player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
+        
+        if event.get("POINTS_A") is not None: self.current_score_a = event["POINTS_A"]
+        if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
 
-        # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
-            "associatedTeam": event["CODETEAM"].strip(),
+            "actionTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
             "clock": event["MARKERTIME"],
             "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
-            "runningHomeTeamScore": event.get("POINTS_A"),
-            "runningRoadTeamScore": event.get("POINTS_B"),
-            "hasHomeTeamLineup": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
-            "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
-            "play_type": play_type,
+            "runningHomeTeamScore": self.current_score_a,
+            "runningRoadTeamScore": self.current_score_b,
+            "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
+            "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
+            "hasActionInfo": play_type,
         }
-
-        # 2. Λογική αν η φάση είναι Substitution
-        if play_type in ("IN", "OUT"):
-            player_id = event["PLAYER_ID"].strip()
-            
-            # Ψάχνουμε στα προηγούμενα αν υπάρχει το "μισό" αυτής της αλλαγής που να έχει ΑΔΕΙΟ το αντίστοιχο slot
-            for prev_action in reversed(self.all_actions):
-                if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
-                    
-                    if play_type == "IN" and prev_action.get("playerIn") is None:
-                        prev_action["playerIn"] = player_id
-                        return # Ταιριάξαμε, φεύγουμε!
-                        
-                    elif play_type == "OUT" and prev_action.get("playerOut") is None:
-                        prev_action["playerOut"] = player_id
-                        return # Ταιριάξαμε, φεύγουμε!
-
-            # Αν δεν βρήκαμε ταίρι (ή αν η προηγούμενη αλλαγή ήταν ήδη "γεμάτη"), φτιάχνουμε νέα
-            action_data["play_type"] = "Substitution"
-            if play_type == "IN":
-                action_data["playerIn"] = player_id
-                action_data["playerOut"] = None
-            else:
-                action_data["playerIn"] = None
-                action_data["playerOut"] = player_id
-                
-            self.all_actions.append(action_data)
-            return
-                
-        else:
-            # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
-            action_data["associatedPlayer"] = event["PLAYER_ID"].strip()
-
-        # Τέλος, το προσθέτουμε στη λίστα μας
-        self.all_actions.append(action_data)
 
         # Merging Assists
         if play_type == "AS":
@@ -125,22 +96,24 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
                     # Ensure we don't map across different quarters, but allow for slight clock delays
                     if prev_action["quarter"] == action_data["quarter"]:
-                        prev_action["hasAssist"] = f"http://euroleague.net/action/{event.get('NUMBEROFPLAY')}"
+                        prev_action["hasAssist"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
                     break
-                    
+
         # Merging Blocks
         elif play_type == "FV":
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
                     # Point to the specific Block Action URI
-                    prev_action["wasBlockedBy"] = f"http://euroleague.net/action/{event.get('NUMBEROFPLAY')}"
+                    prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
                     break
+                    
+        # Merging Rebounds
         elif play_type in ("O", "D"):
             for prev_action in reversed(self.all_actions):
                 # Find the immediate preceding missed shot
                 if prev_action.get("hasActionInfo") in ("2FGA", "3FGA", "FTA"):
                     # Point to the specific Rebound Action URI
-                    prev_action["leadsToRebound"] = f"http://euroleague.net/action/{event.get('NUMBEROFPLAY')}"
+                    prev_action["leadsToRebound"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
                     break
 
         # Merging Substitutions
@@ -149,13 +122,9 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["actionTeam"] == action_data["actionTeam"]:
                     if play_type == "IN" and prev_action.get("playerIn") is None:
                         prev_action["playerIn"] = generate_player_uri(player_id)
-                        prev_action["hasHomeTeamLineupSnapshot"] = action_data["hasHomeTeamLineupSnapshot"]
-                        prev_action["hasRoadTeamLineupSnapshot"] = action_data["hasRoadTeamLineupSnapshot"]
                         return
                     elif play_type == "OUT" and prev_action.get("playerOut") is None:
                         prev_action["playerOut"] = generate_player_uri(player_id)
-                        prev_action["hasHomeTeamLineupSnapshot"] = action_data["hasHomeTeamLineupSnapshot"]
-                        prev_action["hasRoadTeamLineupSnapshot"] = action_data["hasRoadTeamLineupSnapshot"]
                         return
 
             action_data["hasActionInfo"] = "Substitution"
@@ -167,7 +136,6 @@ class GameProcessor:
         else:
             action_data["actionPlayer"] = generate_player_uri(player_id)
 
-            
             # Look up extra coordinates and states for both made and missed shots
             if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
                 shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
@@ -197,12 +165,9 @@ class GameProcessor:
 
     def process_substitution(self, event):
         team = event["CODETEAM"].strip()
-        if team not in (self.team_a, self.team_b):
-            return
-
+        if team not in (self.team_a, self.team_b): return
         player_id = event["PLAYER_ID"].strip()
-        if not player_id:
-            return
+        if not player_id: return
 
         if event["PLAYTYPE"] == "IN":
             self.current_lineups[team].add(player_id)
@@ -210,94 +175,110 @@ class GameProcessor:
             self.current_lineups[team].discard(player_id)
 
     def process_period(self, period_name):
-        if period_name not in self.data:
-            return
+        if period_name not in self.data: return
         plays = self.data[period_name]
-        if not plays:
-            return
+        if not plays: return
 
         for event in plays:
             if event["PLAYTYPE"] in ("IN", "OUT"):
                 self.process_substitution(event)
-
             self.extract_action_data(event, period_name)
 
     def run(self):
         for q in QUARTERS:
             self.process_period(q)
 
-    # --------------------------------------------------
-    # GENERATE RDF TRIPLETS
-    # --------------------------------------------------
+    # Generate Triplets with Made and Missed Subclasses
     def generate_triplets(self):
         triplets = []
-        NS = "http://www.ics.forth.gr/isl/Basketball#"
-        RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        RDFS = "http://www.w3.org/2000/01/rdf-schema#label"
-        XSD = "http://www.w3.org/2001/XMLSchema#"
-        subj = f"<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200" #Prepei na allaxtei apo hard coded to 2023-24,E kai to 200
-        for plays in self.all_actions:
-            triplets.append(f"{subj}> <{NS}hasPlayByPlayAction> {subj}#PlayByPlay_{plays['hasPlayByPlaySequence']}> .")
-
-        triplets.append("\n")
+        bball_prefix = "http://www.ics.forth.gr/isl/Basketball#"
+        
         for action in self.all_actions:
-            begin=f"{subj}#PlayByPlay_{action['hasPlayByPlaySequence']}>"
-            triplets.append(f"{begin} <{NS}hasPlayByPlaySequence> \"{action['hasPlayByPlaySequence']}\" .")
-            triplets.append(f"{begin} <{RDF}> <{NS}{action['hasActionInfo']}> .")
-            # Game info
-            triplets.append(f"{begin} <{NS}quarter> \"{action['quarter']}\"^^<{XSD}string> .")
-            triplets.append(f"{begin} <{NS}clock> \"{action['clock']}\"^^<{XSD}string> .")
-            triplets.append(f"{begin} <{NS}quarterSecondsRemaining> \"{action['quarterSecondsRemaining']}\"^^<{XSD}integer> .")
+            subj = f"<http://euroleague.net/action/{action['hasPlayByPlaySequence']}>"
+            action_type = action.get('hasActionInfo', '')
             
-            # Scores
-            triplets.append(f"{begin} <{NS}runningHomeTeamScore> \"{action['runningHomeTeamScore']}\"^^<{XSD}integer> .")
-            triplets.append(f"{begin} <{NS}runningRoadTeamScore> \"{action['runningRoadTeamScore']}\"^^<{XSD}integer> .")
+            # Map action types to specific classes for both Made and Missed variations
+            if action_type == "2FGM":
+                triplets.append(f"{subj} a <{bball_prefix}TwoPointsShotMade> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMade> .")
+            elif action_type == "3FGM":
+                triplets.append(f"{subj} a <{bball_prefix}ThreePointsShotMade> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMade> .")
+            elif action_type == "FTM":
+                triplets.append(f"{subj} a <{bball_prefix}FreeThrowMade> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMade> .")
+            elif action_type == "2FGA":
+                triplets.append(f"{subj} a <{bball_prefix}TwoPointsShotMissed> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMissed> .")
+            elif action_type == "3FGA":
+                triplets.append(f"{subj} a <{bball_prefix}ThreePointsShotMissed> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMissed> .")
+            elif action_type == "FTA":
+                triplets.append(f"{subj} a <{bball_prefix}FreeThrowMissed> .")
+                triplets.append(f"{subj} a <{bball_prefix}ShotMissed> .")
+            elif action_type == "FV":
+                triplets.append(f"{subj} a <{bball_prefix}Block> .")
+            elif action_type in ("O", "D"):
+                triplets.append(f"{subj} a <{bball_prefix}Rebound> .")
+            elif action_type == "AS":
+                triplets.append(f"{subj} a <{bball_prefix}Assist> .")
             
-            # Lineups
-            triplets.append(f"{begin} <{NS}hasHomeTeamLineup> \"{action['hasHomeTeamLineupSnapshot']}\" .")
-            triplets.append(f"{begin} <{NS}hasRoadTeamLineup> \"{action['hasRoadTeamLineupSnapshot']}\" .")
-            # Entities
-            if action['hasActionInfo'] in ("2FGM", "3FGM","FTM"):
-                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}pointsAwarded> \"{action['pointsAwarded']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasAssist> <{action['hasAssist']}> .")
-                #triplets.append(f"{begin} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasShotZone> \"{action['zone']}\"^^<{XSD}string> .")
-                #triplets.append(f"{begin} <{NS}isFastBreak> \"{action['isFastBreak']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isSecondChance> \"{action['isSecondChance']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
-            elif action['hasActionInfo'] in ("2FGA", "3FGA","FTA"):
-                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                #triplets.append(f"{begin} <{NS}hasShotZone> \"{action['zone']}\"^^<{XSD}string> .")
-                #triplets.append(f"{begin} <{NS}isFastBreak> \"{action['isFastBreak']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isSecondChance> \"{action['isSecondChance']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
-                #triplets.append(f"{begin} <{NS}leadsToRebound> <{action['leadsToRebound']}> .")
-                #triplets.append(f"{begin} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
-            elif action['hasActionInfo'] in ("Block", "AS", "FV", "AG"):
-                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
-                #triplets.append(f"{begin} <{NS}associatedAction> <{action['associatedAction']}> .")
-            triplets.append("\n")
+            # Standard Attributes
+            triplets.append(f"{subj} <{bball_prefix}hasActionType> \"{action_type}\" .")
+            triplets.append(f"{subj} <{bball_prefix}inQuarter> \"{action['quarter']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}gameClock> \"{action['clock']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}homeScore> \"{action['runningHomeTeamScore']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}roadScore> \"{action['runningRoadTeamScore']}\" .")
+            
+            # Object/Relational properties mapped strictly to actions or players
+            if action.get("actionPlayer"):
+                triplets.append(f"{subj} <{bball_prefix}performedBy> <{action['actionPlayer']}> .")
+            if action.get("hasAssist"):
+                triplets.append(f"{subj} <{bball_prefix}hasAssist> <{action['hasAssist']}> .")
+            if action.get("wasBlockedBy"):
+                triplets.append(f"{subj} <{bball_prefix}wasBlockedBy> <{action['wasBlockedBy']}> .")
+            if action.get("leadsToRebound"):
+                triplets.append(f"{subj} <{bball_prefix}leadsToRebound> <{action['leadsToRebound']}> .")
+            if action.get("playerIn"):
+                triplets.append(f"{subj} <{bball_prefix}playerIn> <{action['playerIn']}> .")
+            if action.get("playerOut"):
+                triplets.append(f"{subj} <{bball_prefix}playerOut> <{action['playerOut']}> .")
+                
+            # Extra Shot Data (Shared for both made and missed shots)
+            if "pointsAwarded" in action:
+                triplets.append(f"{subj} <{bball_prefix}pointsAwarded> \"{action['pointsAwarded']}\"^^<http://www.w3.org/2001/XMLSchema#integer> .")
+            if action.get("hasShotCoords"):
+                triplets.append(f"{subj} <{bball_prefix}hasShotCoords> \"{action['hasShotCoords']}\" .")
+            if action.get("hasShotZone"):
+                triplets.append(f"{subj} <{bball_prefix}hasShotZone> \"{action['hasShotZone']}\" .")
+            # Object/Relational properties mapped strictly to actions or players
+            if action.get("actionPlayer"):
+                triplets.append(f"{subj} <{bball_prefix}performedBy> <{action['actionPlayer']}> .")
+            if action.get("hasAssist"):
+                triplets.append(f"{subj} <{bball_prefix}hasAssist> <{action['hasAssist']}> .")
+            if action.get("wasBlockedBy"):
+                triplets.append(f"{subj} <{bball_prefix}wasBlockedBy> <{action['wasBlockedBy']}> .")
+            if action.get("leadsToRebound"):
+                triplets.append(f"{subj} <{bball_prefix}leadsToRebound> <{action['leadsToRebound']}> .")    
+            # Extra Shot States (Shared for both made and missed shots)
+            if "isFastBreak" in action:
+                triplets.append(f"{subj} <{bball_prefix}isFastBreak> \"{str(action['isFastBreak']).lower()}\"^^<http://www.w3.org/2001/XMLSchema#boolean> .")
+            if "isSecondChance" in action:
+                triplets.append(f"{subj} <{bball_prefix}isSecondChance> \"{str(action['isSecondChance']).lower()}\"^^<http://www.w3.org/2001/XMLSchema#boolean> .")
+            if "isFromTurnover" in action:
+                triplets.append(f"{subj} <{bball_prefix}isFromTurnover> \"{str(action['isFromTurnover']).lower()}\"^^<http://www.w3.org/2001/XMLSchema#boolean> .")
+
         return triplets
 
 # ==================================================
 # USAGE
 # ==================================================
-
-# Paths mapping (Adjust these according to your local setup)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
-starting_lineups = {
-    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
-    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
-}
+playbyplay_path = os.path.join(project_root, "data", "raw", "PlaybyPlay.json")
+boxscore_path = os.path.join(project_root, "data", "raw", "Boxscore.json")
+points_path = os.path.join(project_root, "data", "raw", "Points.json")
 
 output_dir = os.path.join(project_root, "data", "processed")
 output_json_path = os.path.join(output_dir, "AllActions.json")
@@ -309,5 +290,15 @@ with open(points_path, "r", encoding="utf8") as f: points_data = json.load(f)
 
 processor = GameProcessor(pbp_data, boxscore_data, points_data)
 processor.run()
-#processor.print_results()
-#print(processor.all_actions)
+
+os.makedirs(output_dir, exist_ok=True)
+
+with open(output_json_path, "w", encoding="utf8") as out_file:
+    json.dump(processor.all_actions, out_file, ensure_ascii=False, indent=4)
+
+triplets = processor.generate_triplets()
+with open(output_triplets_path, "w", encoding="utf8") as out_file:
+    for triple in triplets:
+        out_file.write(triple + "\n")
+
+print("Processing complete! Both JSON and Triplets have been generated.")

@@ -402,8 +402,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
 starting_lineups = {
-    "ZAL": {"P013403","P007975","P012715","P002676","P007029"},
-    "PAN": {"P011204","P012774","P005161","P007866","P011442"},
+    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
+    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
 }
 
 output_dir = os.path.join(project_root, "data", "processed")

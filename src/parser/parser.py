@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 from copy import deepcopy
-
+import os
 
 QUARTERS = [
     "FirstQuarter",
@@ -22,12 +22,25 @@ def clock_to_seconds(clock_str):
     m, s = map(int, clock_str.split(":"))
     return m * 60 + s
 
+def generate_lineup_uri(team_code, players_set):
+    if not players_set:
+        return ""
+    # Βγάζουμε το 'P' και τα κενά, και τα κάνουμε sort
+    clean_ids = sorted([pid.replace('P', '').strip() for pid in players_set])
+    # Ενώνουμε με underscore
+    lineup_str = "_".join(clean_ids)
+    return f"https://www.euroleaguebasketball.net/euroleague/teams/-/{team_code}#Lineup_{lineup_str}"
 
 def period_length(period_name):
     if "ExtraTime" in period_name:
         return 300
     return 600
 
+def generate_player_uri(player_id):
+    if not player_id:
+        return None
+    clean_id = player_id.strip()
+    return f"https://www.euroleaguebasketball.net/euroleague/players/-/{clean_id}"
 
 def lineup_key(players):
     return tuple(sorted(players))
@@ -96,6 +109,8 @@ class GameProcessor:
 
         self.player_names = {}
 
+        self.all_actions = []
+
     # --------------------------------------------------
 
     # --------------------------------------------------
@@ -104,12 +119,13 @@ class GameProcessor:
             return
 
         play_type = event.get("PLAYTYPE", "")
+        player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
 
         # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
         action_data = {
-            "hasPlayByPlaySequence": event["NUMBEROFPLAY"],
+            "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
-            "associatedTeam": event["CODETEAM"].strip(),
+            "associatedTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
             "clock": event["MARKERTIME"],
             "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
             "runningHomeTeamScore": event.get("POINTS_A"),
@@ -119,11 +135,29 @@ class GameProcessor:
             "play_type": play_type,
         }
 
+        # ---------------------------------------------------------
+        # ΕΙΔΙΚΗ ΛΟΓΙΚΗ: ΕΝΣΩΜΑΤΩΣΗ ASSIST ΣΤΟ ΠΡΟΗΓΟΥΜΕΝΟ ΣΟΥΤ
+        # ---------------------------------------------------------
+        if play_type == "AS":
+            # Ψάχνουμε στα προηγούμενα actions (ανάποδα) για να βρούμε το τελευταίο 
+            # εύστοχο σουτ της ΙΔΙΑΣ ομάδας και να κολλήσουμε την Ασίστ.
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("play_type") in ("2FGM", "3FGM") and prev_action["associatedTeam"] == action_data["associatedTeam"]:
+                    prev_action["assistedBy"] = generate_player_uri(player_id)
+                    break # Το βρήκαμε, σταματάμε το ψάξιμο
+                    
+        # ---------------------------------------------------------
+        # ΕΙΔΙΚΗ ΛΟΓΙΚΗ: ΕΝΣΩΜΑΤΩΣΗ BLOCK ΣΤΟ ΠΡΟΗΓΟΥΜΕΝΟ ΑΣΤΟΧΟ ΣΟΥΤ
+        # ---------------------------------------------------------
+        elif play_type == "FV": # FV = Block / Τάπα
+            for prev_action in reversed(self.all_actions):
+                # Αν βρούμε άστοχο σουτ της αντίπαλης ομάδας περίπου στον ίδιο χρόνο
+                if prev_action.get("play_type") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                    prev_action["blockedBy"] = generate_player_uri(player_id)
+                    break
+
         # 2. Λογική αν η φάση είναι Substitution
         if play_type in ("IN", "OUT"):
-            player_id = event["PLAYER_ID"].strip()
-            
-            # Ψάχνουμε στα προηγούμενα αν υπάρχει το "μισό" αυτής της αλλαγής που να έχει ΑΔΕΙΟ το αντίστοιχο slot
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
                     
@@ -149,7 +183,24 @@ class GameProcessor:
                 
         else:
             # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
-            action_data["associatedPlayer"] = event["PLAYER_ID"].strip()
+            action_data["associatedPlayer"] = player_id
+
+            # ---------------------------------------------------------
+            # ΕΞΤΡΑ ΔΕΔΟΜΕΝΑ ΣΤΑ ΣΟΥΤ (Συντεταγμένες κτλ)
+            # ---------------------------------------------------------
+            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA"):
+                # Πολλά PBP JSONs έχουν πληροφορίες για τη θέση του σουτ
+                if "COORD_X" in event:
+                    action_data["coord_x"] = event.get("COORD_X")
+                if "COORD_Y" in event:
+                    action_data["coord_y"] = event.get("COORD_Y")
+                if "ZONE" in event:
+                    action_data["zone"] = event.get("ZONE")
+                
+                # Το assistedBy και το blockedBy θα προστεθούν αυτόματα (από τα AS και FV events που θα ακολουθήσουν) 
+                # και θα αρχικοποιηθούν ως None για να υπάρχουν πάντα ως κλειδιά στο λεξικό, αν το επιθυμείς:
+                action_data["assistedBy"] = None 
+                action_data["blockedBy"] = None
 
         # Τέλος, το προσθέτουμε στη λίστα μας
         self.all_actions.append(action_data)
@@ -371,9 +422,11 @@ class GameProcessor:
             if event["PLAYTYPE"] in ("IN", "OUT"):
                 self.process_substitution(event)
 
+            self.extract_action_data(event, period_name)
+
         if previous_clock > 0:
             self.add_both_lineups_time(previous_clock)
-
+        
     # --------------------------------------------------
 
     def run(self):
@@ -451,15 +504,39 @@ class GameProcessor:
 # USAGE
 # ==================================================
 
-with open("data/raw/PlaybyPlay.json", "r", encoding="utf8") as f:
+# 1. Βρίσκουμε δυναμικά τον φάκελο του script (src/parser)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 2. Ανεβαίνουμε δύο επίπεδα πάνω για να πάμε στην ρίζα του project (EuroleagueProject)
+project_root = os.path.dirname(os.path.dirname(script_dir))
+
+# 3. Ορίζουμε τις σωστές απόλυτες διαδρομές για τα αρχεία JSON
+playbyplay_path = os.path.join(project_root, "data", "raw", "PlaybyPlay.json")
+output_dir = os.path.join(project_root, "data", "processed")
+output_path = os.path.join(output_dir, "AllActions.json")
+
+# 4. Ανοίγουμε το PlaybyPlay.json χρησιμοποιώντας το σωστό μονοπάτι
+print(f"Ανάγνωση αρχείου από: {playbyplay_path}")
+with open(playbyplay_path, "r", encoding="utf8") as f:
     data = json.load(f)
 
 starting_lineups = {
-    "ZAL": {"P007975","P003210","P011983","P007513","P005504"},
-    "PAN": {"P011442","P012774","P005161","P007866","P003842"},
+    "ZAL": {"P007975", "P003210", "P011983", "P007513", "P005504"},
+    "PAN": {"P011442", "P012774", "P005161", "P007866", "P003842"},
 }
 
 processor = GameProcessor(data, starting_lineups)
 processor.run()
-#processor.print_results()
-#print(processor.all_actions)
+
+# (Προαιρετικό) Εκτύπωση των στατιστικών στην κονσόλα
+# processor.print_results()
+
+# 5. Δημιουργούμε τον φάκελο processed αν δεν υπάρχει ήδη
+os.makedirs(output_dir, exist_ok=True)
+
+# 6. Αποθηκεύουμε τα νέα δεδομένα (με τις ασίστ ενσωματωμένες στα σουτ)
+print(f"Αποθήκευση αποτελεσμάτων στο: {output_path}")
+with open(output_path, "w", encoding="utf8") as out_file:
+    json.dump(processor.all_actions, out_file, ensure_ascii=False, indent=4)
+
+print("Η επεξεργασία ολοκληρώθηκε με επιτυχία!")

@@ -96,6 +96,8 @@ class GameProcessor:
 
         self.team_a = data["CodeTeamA"].strip()
         self.team_b = data["CodeTeamB"].strip()
+        self.current_score_a = 0
+        self.current_score_b = 0
 
         self.current_lineups = {
             self.team_a: set(starting_lineups[self.team_a]),
@@ -120,19 +122,24 @@ class GameProcessor:
 
         play_type = event.get("PLAYTYPE", "")
         player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
-
+        # --- ΕΝΗΜΕΡΩΣΗ RUNNING SCORE ---
+        if event.get("POINTS_A") is not None:
+            self.current_score_a = event["POINTS_A"]
+        if event.get("POINTS_B") is not None:
+            self.current_score_b = event["POINTS_B"]
         # 1. Φτιάχνουμε ΟΛΑ τα κοινά χαρακτηριστικά από την αρχή
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
-            "associatedTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
+            "actionTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
             "clock": event["MARKERTIME"],
             "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
-            "runningHomeTeamScore": event.get("POINTS_A"),
-            "runningRoadTeamScore": event.get("POINTS_B"),
-            "hasHomeTeamLineup": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
-            "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
-            "play_type": play_type,
+            "runningHomeTeamScore": self.current_score_a,
+            "runningRoadTeamScore": self.current_score_b,
+            "videoTimestampURL": event.get("VIDEOTIMESTAMP"),
+            "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
+            "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
+            "hasActionInfo": play_type,
         }
 
         # ---------------------------------------------------------
@@ -142,8 +149,8 @@ class GameProcessor:
             # Ψάχνουμε στα προηγούμενα actions (ανάποδα) για να βρούμε το τελευταίο 
             # εύστοχο σουτ της ΙΔΙΑΣ ομάδας και να κολλήσουμε την Ασίστ.
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("play_type") in ("2FGM", "3FGM") and prev_action["associatedTeam"] == action_data["associatedTeam"]:
-                    prev_action["assistedBy"] = generate_player_uri(player_id)
+                if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
+                    prev_action["hasAssist"] = generate_player_uri(player_id)
                     break # Το βρήκαμε, σταματάμε το ψάξιμο
                     
         # ---------------------------------------------------------
@@ -152,14 +159,14 @@ class GameProcessor:
         elif play_type == "FV": # FV = Block / Τάπα
             for prev_action in reversed(self.all_actions):
                 # Αν βρούμε άστοχο σουτ της αντίπαλης ομάδας περίπου στον ίδιο χρόνο
-                if prev_action.get("play_type") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
-                    prev_action["blockedBy"] = generate_player_uri(player_id)
+                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                    prev_action["wasBlockedBy"] = generate_player_uri(player_id)
                     break
 
         # 2. Λογική αν η φάση είναι Substitution
         if play_type in ("IN", "OUT"):
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("play_type") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["associatedTeam"] == action_data["associatedTeam"]:
+                if prev_action.get("hasActionInfo") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["actionTeam"] == action_data["actionTeam"]:
                     
                     if play_type == "IN" and prev_action.get("playerIn") is None:
                         prev_action["playerIn"] = player_id
@@ -170,7 +177,7 @@ class GameProcessor:
                         return # Ταιριάξαμε, φεύγουμε!
 
             # Αν δεν βρήκαμε ταίρι (ή αν η προηγούμενη αλλαγή ήταν ήδη "γεμάτη"), φτιάχνουμε νέα
-            action_data["play_type"] = "Substitution"
+            action_data["hasActionInfo"] = "Substitution"
             if play_type == "IN":
                 action_data["playerIn"] = player_id
                 action_data["playerOut"] = None
@@ -183,7 +190,7 @@ class GameProcessor:
                 
         else:
             # 3. Αν είναι οποιαδήποτε άλλη φάση (Σουτ, Ασίστ κτλ), απλά προσθέτουμε τον παίκτη
-            action_data["associatedPlayer"] = player_id
+            action_data["actionPlayer"] = player_id
 
             # ---------------------------------------------------------
             # ΕΞΤΡΑ ΔΕΔΟΜΕΝΑ ΣΤΑ ΣΟΥΤ (Συντεταγμένες κτλ)
@@ -197,11 +204,12 @@ class GameProcessor:
                 if "ZONE" in event:
                     action_data["zone"] = event.get("ZONE")
                 
-                # Το assistedBy και το blockedBy θα προστεθούν αυτόματα (από τα AS και FV events που θα ακολουθήσουν) 
+                # Το hasAssist και το wasBlockedBy θα προστεθούν αυτόματα (από τα AS και FV events που θα ακολουθήσουν) 
                 # και θα αρχικοποιηθούν ως None για να υπάρχουν πάντα ως κλειδιά στο λεξικό, αν το επιθυμείς:
-                action_data["assistedBy"] = None 
-                action_data["blockedBy"] = None
-
+                if play_type in ("2FGM", "3FGM"):
+                    action_data["hasAssist"] = None
+                elif play_type in ("2FGA", "3FGA"):
+                    action_data["wasBlockedBy"] = None
         # Τέλος, το προσθέτουμε στη λίστα μας
         self.all_actions.append(action_data)
 

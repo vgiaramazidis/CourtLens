@@ -35,6 +35,7 @@ def generate_player_uri(player_id):
 def lineup_key(players):
     return tuple(sorted(players))
 
+
 # --------------------------------------------------
 # MAIN CLASS
 # --------------------------------------------------
@@ -48,6 +49,19 @@ class GameProcessor:
         self.current_score_a = 0
         self.current_score_b = 0
 
+    def __init__(self, pbp_data, starting_lineups, points_data):
+        self.data = pbp_data
+        
+        self.team_a = pbp_data["CodeTeamA"].strip()
+        self.team_b = pbp_data["CodeTeamB"].strip()
+        self.current_score_a = 0
+        self.current_score_b = 0
+
+        # Hardcoded Starters integration
+        self.current_lineups = {
+            self.team_a: set(starting_lineups[self.team_a]),
+            self.team_b: set(starting_lineups[self.team_b]),
+        }
         # Dynamic Starters integration (from feature_teo)
         self.current_lineups = self._extract_starters(boxscore_data)
         
@@ -56,6 +70,10 @@ class GameProcessor:
 
         self.all_actions = []
 
+    def _map_points_data(self, points_data):
+        shot_map = {}
+        for row in points_data.get("Rows", []):
+            # Key based on Player ID, Minute, and Clock time to match with PBP
     def _extract_starters(self, boxscore_data):
         starters = {self.team_a: set(), self.team_b: set()}
         for team_stat in boxscore_data["Stats"]:
@@ -74,6 +92,7 @@ class GameProcessor:
             shot_map[key] = {
                 "coord_x": row.get("COORD_X"),
                 "coord_y": row.get("COORD_Y"),
+                "zone": row.get("ZONE")
                 "zone": row.get("ZONE"),
                 "pointsAwarded": int(row.get("POINTS", 0)),
                 "isFastBreak": bool(int(row.get("FASTBREAK", "0"))),
@@ -86,6 +105,10 @@ class GameProcessor:
         play_type = event.get("PLAYTYPE", "")
         player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
         
+        if event.get("POINTS_A") is not None:
+            self.current_score_a = event["POINTS_A"]
+        if event.get("POINTS_B") is not None:
+            self.current_score_b = event["POINTS_B"]
         # Proper empty time handling (from develop)
         markertime = event.get("MARKERTIME") or ("10:00" if play_type == "BP" else "00:00" if play_type in ("EP", "EG") else "")
         
@@ -96,6 +119,8 @@ class GameProcessor:
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
             "actionTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
+            "clock": event["MARKERTIME"],
+            "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
             "clock": markertime,
             "quarterSecondsRemaining": clock_to_seconds(markertime),
             "runningHomeTeamScore": self.current_score_a,
@@ -109,6 +134,16 @@ class GameProcessor:
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
+                    prev_action["hasAssist"] = generate_player_uri(player_id)
+                    break
+                    
+        # Merging Blocks
+        elif play_type == "FV":
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                    prev_action["wasBlockedBy"] = generate_player_uri(player_id)
+                    break
+
                     if prev_action["quarter"] == action_data["quarter"]:
                         prev_action["hasAssist"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
                     break
@@ -133,6 +168,9 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["actionTeam"] == action_data["actionTeam"]:
                     if play_type == "IN" and prev_action.get("playerIn") is None:
                         prev_action["playerIn"] = generate_player_uri(player_id)
+                        return
+                    elif play_type == "OUT" and prev_action.get("playerOut") is None:
+                        prev_action["playerOut"] = generate_player_uri(player_id)
                         # Append lineup snapshots (from develop)
                         prev_action["hasHomeTeamLineupSnapshot"] = action_data["hasHomeTeamLineupSnapshot"]
                         prev_action["hasRoadTeamLineupSnapshot"] = action_data["hasRoadTeamLineupSnapshot"]
@@ -153,6 +191,14 @@ class GameProcessor:
         else:
             action_data["actionPlayer"] = generate_player_uri(player_id)
 
+            # Look up extra coordinates from Points.json
+            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA") and player_id:
+                shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
+                if shot_key in self.shots_extra_data:
+                    extra = self.shots_extra_data[shot_key]
+                    action_data["coord_x"] = extra["coord_x"]
+                    action_data["coord_y"] = extra["coord_y"]
+                    action_data["zone"] = extra["zone"]
             # Look up extra coordinates and states for shots
             if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
                 shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
@@ -181,6 +227,12 @@ class GameProcessor:
 
     def process_substitution(self, event):
         team = event["CODETEAM"].strip()
+        if team not in (self.team_a, self.team_b):
+            return
+
+        player_id = event["PLAYER_ID"].strip()
+        if not player_id:
+            return
         if team not in (self.team_a, self.team_b): return
         player_id = event["PLAYER_ID"].strip()
         if not player_id: return
@@ -191,6 +243,11 @@ class GameProcessor:
             self.current_lineups[team].discard(player_id)
 
     def process_period(self, period_name):
+        if period_name not in self.data:
+            return
+        plays = self.data[period_name]
+        if not plays:
+            return
         if period_name not in self.data: return
         plays = self.data[period_name]
         if not plays: return
@@ -205,11 +262,42 @@ class GameProcessor:
             self.process_period(q)
 
     # --------------------------------------------------
+    # GENERATE RDF TRIPLETS
     # GENERATE RDF TRIPLETS (MERGED SCHEMA)
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []
         NS = "http://www.ics.forth.gr/isl/Basketball#"
+        XSD = "http://www.w3.org/2001/XMLSchema#"
+        
+        for action in self.all_actions:
+            subj = f"<https://www.euroleaguebasketball.net/euroleague/game-center/action/{action['hasPlayByPlaySequence']}>"
+            
+            # Action Type
+            triplets.append(f"{subj} <{NS}hasActionType> \"{action['hasActionInfo']}\" .")
+            
+            # Game info
+            triplets.append(f"{subj} <{NS}inQuarter> \"{action['quarter']}\" .")
+            triplets.append(f"{subj} <{NS}gameClock> \"{action['clock']}\" .")
+            
+            # Scores
+            triplets.append(f"{subj} <{NS}homeScore> \"{action['runningHomeTeamScore']}\"^^<{XSD}integer> .")
+            triplets.append(f"{subj} <{NS}roadScore> \"{action['runningRoadTeamScore']}\"^^<{XSD}integer> .")
+            
+            # Entities
+            if action.get("actionPlayer"):
+                triplets.append(f"{subj} <{NS}performedBy> <{action['actionPlayer']}> .")
+            if action.get("hasAssist"):
+                triplets.append(f"{subj} <{NS}hasAssist> <{action['hasAssist']}> .")
+            if action.get("wasBlockedBy"):
+                triplets.append(f"{subj} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
+                
+            # Extra Shot Data
+            if action.get("coord_x") is not None:
+                triplets.append(f"{subj} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
+                triplets.append(f"{subj} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
+                triplets.append(f"{subj} <{NS}shotZone> \"{action['zone']}\" .")
+
         RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         XSD = "http://www.w3.org/2001/XMLSchema#"
         
@@ -313,6 +401,7 @@ class GameProcessor:
 # USAGE
 # ==================================================
 
+# Paths mapping (Adjust these according to your local setup)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
@@ -329,6 +418,16 @@ print(f"Reading files...")
 with open(playbyplay_path, "r", encoding="utf8") as f:
     pbp_data = json.load(f)
 
+with open(points_path, "r", encoding="utf8") as f:
+    points_data = json.load(f)
+
+# HARDCODED STARTERS
+starting_lineups = {
+    "ZAL": {"P007975", "P003210", "P011983", "P007513", "P005504"},
+    "PAN": {"P011442", "P012774", "P005161", "P007866", "P003842"},
+}
+
+processor = GameProcessor(pbp_data, starting_lineups, points_data)
 # Note: Using boxscore dynamically so you don't have to hardcode starters anymore
 with open(boxscore_path, "r", encoding="utf8") as f:
     boxscore_data = json.load(f)
@@ -360,4 +459,5 @@ with open(output_triplets_path, "w", encoding="utf8") as out_file:
     for triple in triplets:
         out_file.write(triple + "\n")
 
+print("Processing complete!")
 print("Processing complete!")

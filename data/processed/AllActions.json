@@ -26,8 +26,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002676",
         "coord_x": 257,
         "coord_y": 715,
-        "zone": "I",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "257,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/5"
     },
     {
         "hasPlayByPlaySequence": 5,
@@ -56,7 +61,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": 646,
         "coord_y": 244,
-        "zone": "I"
+        "hasShotCoords": "646,244",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/7"
     },
     {
         "hasPlayByPlaySequence": 7,
@@ -85,7 +96,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": -106,
         "coord_y": 62,
-        "zone": "B"
+        "hasShotCoords": "-106,62",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 10,
@@ -101,8 +117,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012715",
         "coord_x": 56,
         "coord_y": 106,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "56,106",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/11"
     },
     {
         "hasPlayByPlaySequence": 11,
@@ -131,7 +152,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -94,
         "coord_y": 87,
-        "zone": "B"
+        "hasShotCoords": "-94,87",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/13"
     },
     {
         "hasPlayByPlaySequence": 13,
@@ -186,8 +213,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": -81,
         "coord_y": 56,
-        "zone": "B",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "hasShotCoords": "-81,56",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/27"
     },
     {
         "hasPlayByPlaySequence": 17,
@@ -203,7 +235,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -75,
         "coord_y": 56,
-        "zone": "B"
+        "hasShotCoords": "-75,56",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 19,
@@ -283,7 +320,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 27,
@@ -309,7 +354,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 29,
@@ -325,8 +378,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
         "coord_x": 6,
         "coord_y": 18,
-        "zone": "A",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "6,18",
+        "hasShotZone": "A",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/30"
     },
     {
         "hasPlayByPlaySequence": 30,
@@ -355,7 +413,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 690,
         "coord_y": 31,
-        "zone": "I"
+        "hasShotCoords": "690,31",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/32"
     },
     {
         "hasPlayByPlaySequence": 32,
@@ -410,7 +474,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -533,
         "coord_y": 545,
-        "zone": "H"
+        "hasShotCoords": "-533,545",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/37"
     },
     {
         "hasPlayByPlaySequence": 37,
@@ -465,8 +535,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
         "coord_x": 6,
         "coord_y": 37,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "6,37",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/41"
     },
     {
         "hasPlayByPlaySequence": 41,
@@ -495,7 +570,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": -533,
         "coord_y": 558,
-        "zone": "H"
+        "hasShotCoords": "-533,558",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/43"
     },
     {
         "hasPlayByPlaySequence": 43,
@@ -524,7 +605,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": 106,
         "coord_y": 715,
-        "zone": "I"
+        "hasShotCoords": "106,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/46"
     },
     {
         "hasPlayByPlaySequence": 46,
@@ -553,7 +640,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -175,
         "coord_y": 332,
-        "zone": "D"
+        "hasShotCoords": "-175,332",
+        "hasShotZone": "D",
+        "pointsAwarded": 2,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 48,
@@ -689,7 +781,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -1,
         "coord_y": -1,
-        "zone": " "
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 62,
@@ -728,7 +825,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 65,
@@ -744,7 +849,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161",
         "coord_x": -106,
         "coord_y": 112,
-        "zone": "B"
+        "hasShotCoords": "-106,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 66,
@@ -783,7 +893,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161",
+        "coord_x": -106,
+        "coord_y": 112,
+        "hasShotCoords": "-106,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/69"
     },
     {
         "hasPlayByPlaySequence": 69,
@@ -838,7 +957,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 37,
         "coord_y": 119,
-        "zone": "C"
+        "hasShotCoords": "37,119",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/74"
     },
     {
         "hasPlayByPlaySequence": 74,
@@ -867,7 +992,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209",
         "coord_x": -558,
         "coord_y": 520,
-        "zone": "H"
+        "hasShotCoords": "-558,520",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/76"
     },
     {
         "hasPlayByPlaySequence": 76,
@@ -896,7 +1027,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513",
         "coord_x": -81,
         "coord_y": 37,
-        "zone": "B"
+        "hasShotCoords": "-81,37",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/78"
     },
     {
         "hasPlayByPlaySequence": 78,
@@ -925,7 +1062,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": -75,
         "coord_y": 75,
-        "zone": "B"
+        "hasShotCoords": "-75,75",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 80,
@@ -1047,7 +1189,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007866"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007866",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 94,
@@ -1060,7 +1210,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007866"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007866",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "leadsToRebound": "http://euroleague.net/action/95"
     },
     {
         "hasPlayByPlaySequence": 95,
@@ -1089,8 +1248,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161",
         "coord_x": 62,
         "coord_y": 263,
-        "zone": "E",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "hasShotCoords": "62,263",
+        "hasShotZone": "E",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/117"
     },
     {
         "hasPlayByPlaySequence": 98,
@@ -1106,8 +1270,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513",
         "coord_x": 112,
         "coord_y": 75,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "hasShotCoords": "112,75",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/99"
     },
     {
         "hasPlayByPlaySequence": 99,
@@ -1162,7 +1331,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 188,
         "coord_y": 112,
-        "zone": "C"
+        "hasShotCoords": "188,112",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 105,
@@ -1178,8 +1352,14 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": -75,
         "coord_y": 734,
-        "zone": "H",
-        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "hasShotCoords": "-75,734",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "wasBlockedBy": "http://euroleague.net/action/107",
+        "leadsToRebound": "http://euroleague.net/action/108"
     },
     {
         "hasPlayByPlaySequence": 106,
@@ -1285,7 +1465,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 116,
@@ -1298,7 +1486,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005161",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 117,
@@ -1327,8 +1523,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": -188,
         "coord_y": 489,
-        "zone": "F",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "hasShotCoords": "-188,489",
+        "hasShotZone": "F",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/119"
     },
     {
         "hasPlayByPlaySequence": 119,
@@ -1357,7 +1558,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 131,
         "coord_y": 715,
-        "zone": "I"
+        "hasShotCoords": "131,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/121"
     },
     {
         "hasPlayByPlaySequence": 121,
@@ -1386,7 +1593,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": -683,
         "coord_y": 250,
-        "zone": "H"
+        "hasShotCoords": "-683,250",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/124"
     },
     {
         "hasPlayByPlaySequence": 124,
@@ -1455,7 +1668,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
         "coord_x": -1,
         "coord_y": -1,
-        "zone": " "
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 130,
@@ -1494,7 +1712,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 133,
@@ -1547,7 +1773,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 0,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 138,
@@ -1560,7 +1794,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 139,
@@ -1613,7 +1855,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 144,
@@ -1626,7 +1876,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 145,
@@ -1711,7 +1969,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 69,
         "coord_y": 150,
-        "zone": "C"
+        "hasShotCoords": "69,150",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/158"
     },
     {
         "hasPlayByPlaySequence": 158,
@@ -1766,8 +2030,14 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P009622",
         "coord_x": -81,
         "coord_y": 62,
-        "zone": "B",
-        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "-81,62",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "wasBlockedBy": "http://euroleague.net/action/163",
+        "leadsToRebound": "http://euroleague.net/action/164"
     },
     {
         "hasPlayByPlaySequence": 162,
@@ -1845,7 +2115,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 168,
@@ -1861,8 +2139,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 106,
         "coord_y": 87,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P009622"
+        "hasShotCoords": "106,87",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/169"
     },
     {
         "hasPlayByPlaySequence": 169,
@@ -1891,7 +2174,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -81,
         "coord_y": 106,
-        "zone": "B"
+        "hasShotCoords": "-81,106",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/172"
     },
     {
         "hasPlayByPlaySequence": 172,
@@ -1920,8 +2209,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
         "coord_x": 12,
         "coord_y": 25,
-        "zone": "A",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "12,25",
+        "hasShotZone": "A",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/187"
     },
     {
         "hasPlayByPlaySequence": 174,
@@ -1974,7 +2268,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 179,
@@ -2000,7 +2302,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 181,
@@ -2013,7 +2323,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 182,
@@ -2066,7 +2384,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 187,
@@ -2092,7 +2418,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 189,
@@ -2162,7 +2496,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 464,
         "coord_y": 25,
-        "zone": "G"
+        "hasShotCoords": "464,25",
+        "hasShotZone": "G",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/196"
     },
     {
         "hasPlayByPlaySequence": 196,
@@ -2191,7 +2531,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -489,
         "coord_y": 508,
-        "zone": "H"
+        "hasShotCoords": "-489,508",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/199"
     },
     {
         "hasPlayByPlaySequence": 199,
@@ -2220,7 +2566,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -175,
         "coord_y": 112,
-        "zone": "B"
+        "hasShotCoords": "-175,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/201"
     },
     {
         "hasPlayByPlaySequence": 201,
@@ -2249,7 +2601,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P009622",
         "coord_x": 696,
         "coord_y": 18,
-        "zone": "I"
+        "hasShotCoords": "696,18",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/203"
     },
     {
         "hasPlayByPlaySequence": 203,
@@ -2329,7 +2687,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 211,
@@ -2342,7 +2708,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 212,
@@ -2358,8 +2732,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 81,
         "coord_y": 62,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "hasShotCoords": "81,62",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/213"
     },
     {
         "hasPlayByPlaySequence": 213,
@@ -2414,7 +2793,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
         "coord_x": -414,
         "coord_y": 376,
-        "zone": "F"
+        "hasShotCoords": "-414,376",
+        "hasShotZone": "F",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/218"
     },
     {
         "hasPlayByPlaySequence": 218,
@@ -2443,7 +2828,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -87,
         "coord_y": 407,
-        "zone": "D"
+        "hasShotCoords": "-87,407",
+        "hasShotZone": "D",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 220,
@@ -2459,8 +2849,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
         "coord_x": 81,
         "coord_y": 69,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513"
+        "hasShotCoords": "81,69",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/221"
     },
     {
         "hasPlayByPlaySequence": 221,
@@ -2489,7 +2884,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": -570,
         "coord_y": 577,
-        "zone": "H"
+        "hasShotCoords": "-570,577",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/224"
     },
     {
         "hasPlayByPlaySequence": 224,
@@ -2518,7 +2919,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513",
         "coord_x": 94,
         "coord_y": 100,
-        "zone": "C"
+        "hasShotCoords": "94,100",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 226,
@@ -2534,7 +2940,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 683,
         "coord_y": 25,
-        "zone": "I"
+        "hasShotCoords": "683,25",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/227"
     },
     {
         "hasPlayByPlaySequence": 227,
@@ -2563,7 +2975,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 100,
         "coord_y": 69,
-        "zone": "C"
+        "hasShotCoords": "100,69",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 229,
@@ -2606,7 +3023,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -75,
         "coord_y": 112,
-        "zone": "B"
+        "hasShotCoords": "-75,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/234"
     },
     {
         "hasPlayByPlaySequence": 234,
@@ -2635,8 +3058,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -558,
         "coord_y": 457,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "hasShotCoords": "-558,457",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/236"
     },
     {
         "hasPlayByPlaySequence": 236,
@@ -2665,7 +3093,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
         "coord_x": -150,
         "coord_y": 43,
-        "zone": "B"
+        "hasShotCoords": "-150,43",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/238"
     },
     {
         "hasPlayByPlaySequence": 238,
@@ -2694,7 +3128,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -81,
         "coord_y": 276,
-        "zone": "D"
+        "hasShotCoords": "-81,276",
+        "hasShotZone": "D",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/240"
     },
     {
         "hasPlayByPlaySequence": 240,
@@ -2763,7 +3203,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -106,
         "coord_y": 94,
-        "zone": "B"
+        "hasShotCoords": "-106,94",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 248,
@@ -2779,7 +3224,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": -6,
         "coord_y": 759,
-        "zone": "H"
+        "hasShotCoords": "-6,759",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/251"
     },
     {
         "hasPlayByPlaySequence": 249,
@@ -2834,8 +3285,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
         "coord_x": 0,
         "coord_y": 18,
-        "zone": "A",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "hasShotCoords": "0,18",
+        "hasShotZone": "A",
+        "pointsAwarded": 2,
+        "isFastBreak": true,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/253"
     },
     {
         "hasPlayByPlaySequence": 253,
@@ -2904,7 +3360,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007866",
         "coord_x": 332,
         "coord_y": 639,
-        "zone": "I"
+        "hasShotCoords": "332,639",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/259"
     },
     {
         "hasPlayByPlaySequence": 259,
@@ -2933,8 +3395,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 119,
         "coord_y": 125,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "hasShotCoords": "119,125",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/262"
     },
     {
         "hasPlayByPlaySequence": 262,
@@ -2990,8 +3457,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 639,
         "coord_y": 326,
-        "zone": "I",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513"
+        "hasShotCoords": "639,326",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/267"
     },
     {
         "hasPlayByPlaySequence": 267,
@@ -3020,7 +3492,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 608,
         "coord_y": 439,
-        "zone": "I"
+        "hasShotCoords": "608,439",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/269"
     },
     {
         "hasPlayByPlaySequence": 269,
@@ -3049,7 +3527,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 175,
         "coord_y": 125,
-        "zone": "C"
+        "hasShotCoords": "175,125",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 272,
@@ -3155,7 +3638,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 282,
@@ -3168,7 +3659,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 283,
@@ -3210,7 +3709,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 119,
         "coord_y": 715,
-        "zone": "I"
+        "hasShotCoords": "119,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/287"
     },
     {
         "hasPlayByPlaySequence": 287,
@@ -3239,8 +3744,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
         "coord_x": -56,
         "coord_y": 75,
-        "zone": "B",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513"
+        "hasShotCoords": "-56,75",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/289"
     },
     {
         "hasPlayByPlaySequence": 289,
@@ -3269,7 +3779,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": 188,
         "coord_y": 696,
-        "zone": "I"
+        "hasShotCoords": "188,696",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 291,
@@ -3366,7 +3881,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 138,
         "coord_y": 702,
-        "zone": "I"
+        "hasShotCoords": "138,702",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/301"
     },
     {
         "hasPlayByPlaySequence": 301,
@@ -3464,7 +3985,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 156,
         "coord_y": 276,
-        "zone": "E"
+        "hasShotCoords": "156,276",
+        "hasShotZone": "E",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/315"
     },
     {
         "hasPlayByPlaySequence": 315,
@@ -3493,7 +4020,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": -37,
         "coord_y": 75,
-        "zone": "B"
+        "hasShotCoords": "-37,75",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 317,
@@ -3522,7 +4054,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 43,
         "coord_y": 225,
-        "zone": "E"
+        "hasShotCoords": "43,225",
+        "hasShotZone": "E",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/320"
     },
     {
         "hasPlayByPlaySequence": 320,
@@ -3616,7 +4154,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 100,
         "coord_y": 188,
-        "zone": "C"
+        "hasShotCoords": "100,188",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/327"
     },
     {
         "hasPlayByPlaySequence": 327,
@@ -3645,7 +4189,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": 75,
         "coord_y": 244,
-        "zone": "E"
+        "hasShotCoords": "75,244",
+        "hasShotZone": "E",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 329,
@@ -3659,7 +4208,7 @@
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403",
         "hasActionInfo": "3FGM",
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622"
+        "hasAssist": "http://euroleague.net/action/331"
     },
     {
         "hasPlayByPlaySequence": 331,
@@ -3688,7 +4237,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": 376,
         "coord_y": 690,
-        "zone": "I"
+        "hasShotCoords": "376,690",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/333"
     },
     {
         "hasPlayByPlaySequence": 333,
@@ -3717,7 +4272,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -119,
         "coord_y": 727,
-        "zone": "H"
+        "hasShotCoords": "-119,727",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/335"
     },
     {
         "hasPlayByPlaySequence": 335,
@@ -3746,8 +4307,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": -608,
         "coord_y": 414,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "hasShotCoords": "-608,414",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/337"
     },
     {
         "hasPlayByPlaySequence": 337,
@@ -3776,8 +4342,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002676",
         "coord_x": -595,
         "coord_y": 570,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "-595,570",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/340"
     },
     {
         "hasPlayByPlaySequence": 340,
@@ -3806,8 +4377,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -457,
         "coord_y": 621,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "hasShotCoords": "-457,621",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/342"
     },
     {
         "hasPlayByPlaySequence": 342,
@@ -3836,7 +4412,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002676",
         "coord_x": 696,
         "coord_y": -56,
-        "zone": "I"
+        "hasShotCoords": "696,-56",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/344"
     },
     {
         "hasPlayByPlaySequence": 344,
@@ -3865,8 +4447,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 25,
         "coord_y": 163,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "hasShotCoords": "25,163",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/347"
     },
     {
         "hasPlayByPlaySequence": 347,
@@ -4011,7 +4598,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 360,
@@ -4027,7 +4622,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": 238,
         "coord_y": 715,
-        "zone": "I"
+        "hasShotCoords": "238,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/361"
     },
     {
         "hasPlayByPlaySequence": 361,
@@ -4082,7 +4683,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -407,
         "coord_y": 639,
-        "zone": "H"
+        "hasShotCoords": "-407,639",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/365"
     },
     {
         "hasPlayByPlaySequence": 365,
@@ -4111,8 +4718,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": -100,
         "coord_y": 100,
-        "zone": "B",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "hasShotCoords": "-100,100",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/367"
     },
     {
         "hasPlayByPlaySequence": 367,
@@ -4167,8 +4779,14 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 100,
         "coord_y": 112,
-        "zone": "C",
-        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504"
+        "hasShotCoords": "100,112",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "wasBlockedBy": "http://euroleague.net/action/373",
+        "leadsToRebound": "http://euroleague.net/action/374"
     },
     {
         "hasPlayByPlaySequence": 372,
@@ -4223,8 +4841,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": 388,
         "coord_y": 18,
-        "zone": "E",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "hasShotCoords": "388,18",
+        "hasShotZone": "E",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/376"
     },
     {
         "hasPlayByPlaySequence": 376,
@@ -4253,7 +4876,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 62,
         "coord_y": 708,
-        "zone": "I"
+        "hasShotCoords": "62,708",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 379,
@@ -4306,7 +4934,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 385,
@@ -4319,7 +4955,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 386,
@@ -4332,7 +4976,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 387,
@@ -4385,7 +5037,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 392,
@@ -4398,7 +5058,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 393,
@@ -4414,8 +5082,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 0,
         "coord_y": 131,
-        "zone": "B",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "hasShotCoords": "0,131",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/394"
     },
     {
         "hasPlayByPlaySequence": 394,
@@ -4468,7 +5141,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 400,
@@ -4484,8 +5165,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -526,
         "coord_y": 520,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "hasShotCoords": "-526,520",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/401"
     },
     {
         "hasPlayByPlaySequence": 401,
@@ -4514,7 +5200,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": 683,
         "coord_y": -18,
-        "zone": "I"
+        "hasShotCoords": "683,-18",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/403"
     },
     {
         "hasPlayByPlaySequence": 403,
@@ -4543,7 +5235,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209",
         "coord_x": -75,
         "coord_y": 100,
-        "zone": "B"
+        "hasShotCoords": "-75,100",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/405"
     },
     {
         "hasPlayByPlaySequence": 405,
@@ -4572,8 +5270,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 37,
         "coord_y": 100,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "hasShotCoords": "37,100",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/407"
     },
     {
         "hasPlayByPlaySequence": 407,
@@ -4602,8 +5305,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": 106,
         "coord_y": 75,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "hasShotCoords": "106,75",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/410"
     },
     {
         "hasPlayByPlaySequence": 410,
@@ -4683,7 +5391,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 418,
@@ -4696,7 +5412,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P003048",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 419,
@@ -4738,7 +5462,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -401,
         "coord_y": 633,
-        "zone": "H"
+        "hasShotCoords": "-401,633",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/422"
     },
     {
         "hasPlayByPlaySequence": 422,
@@ -4809,7 +5539,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": 169,
         "coord_y": 715,
-        "zone": "I"
+        "hasShotCoords": "169,715",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/431"
     },
     {
         "hasPlayByPlaySequence": 431,
@@ -4918,7 +5654,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513",
         "coord_x": -56,
         "coord_y": 207,
-        "zone": "B"
+        "hasShotCoords": "-56,207",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/443"
     },
     {
         "hasPlayByPlaySequence": 441,
@@ -5000,7 +5742,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": -552,
         "coord_y": 570,
-        "zone": "H"
+        "hasShotCoords": "-552,570",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/452"
     },
     {
         "hasPlayByPlaySequence": 452,
@@ -5055,7 +5803,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": 50,
         "coord_y": 56,
-        "zone": "C"
+        "hasShotCoords": "50,56",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/456"
     },
     {
         "hasPlayByPlaySequence": 456,
@@ -5084,8 +5838,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 621,
         "coord_y": 407,
-        "zone": "I",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "hasShotCoords": "621,407",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/458"
     },
     {
         "hasPlayByPlaySequence": 458,
@@ -5114,7 +5873,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -131,
         "coord_y": 119,
-        "zone": "B"
+        "hasShotCoords": "-131,119",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/461"
     },
     {
         "hasPlayByPlaySequence": 461,
@@ -5143,7 +5908,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -62,
         "coord_y": 119,
-        "zone": "B"
+        "hasShotCoords": "-62,119",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 463,
@@ -5210,7 +5980,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007975_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
+        "coord_x": -62,
+        "coord_y": 119,
+        "hasShotCoords": "-62,119",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/470"
     },
     {
         "hasPlayByPlaySequence": 470,
@@ -5239,7 +6018,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -43,
         "coord_y": 94,
-        "zone": "B"
+        "hasShotCoords": "-43,94",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 472,
@@ -5281,8 +6065,14 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -106,
         "coord_y": 150,
-        "zone": "B",
-        "wasBlockedBy": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "hasShotCoords": "-106,150",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "wasBlockedBy": "http://euroleague.net/action/476",
+        "leadsToRebound": "http://euroleague.net/action/477"
     },
     {
         "hasPlayByPlaySequence": 475,
@@ -5376,8 +6166,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": 69,
         "coord_y": 169,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "hasShotCoords": "69,169",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/483"
     },
     {
         "hasPlayByPlaySequence": 483,
@@ -5446,7 +6241,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
         "coord_x": 595,
         "coord_y": 451,
-        "zone": "I"
+        "hasShotCoords": "595,451",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/489"
     },
     {
         "hasPlayByPlaySequence": 489,
@@ -5475,8 +6276,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 56,
         "coord_y": 125,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "hasShotCoords": "56,125",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "hasAssist": "http://euroleague.net/action/491"
     },
     {
         "hasPlayByPlaySequence": 491,
@@ -5542,7 +6348,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
+        "coord_x": 56,
+        "coord_y": 125,
+        "hasShotCoords": "56,125",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/497"
     },
     {
         "hasPlayByPlaySequence": 497,
@@ -5571,7 +6386,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": -181,
         "coord_y": 715,
-        "zone": "H"
+        "hasShotCoords": "-181,715",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/518"
     },
     {
         "hasPlayByPlaySequence": 498,
@@ -5610,7 +6431,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 501,
@@ -5623,7 +6452,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 518,
@@ -5731,8 +6568,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012712",
         "coord_x": -313,
         "coord_y": 652,
-        "zone": "H",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088"
+        "hasShotCoords": "-313,652",
+        "hasShotZone": "H",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/511"
     },
     {
         "hasPlayByPlaySequence": 511,
@@ -5774,8 +6616,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 69,
         "coord_y": 87,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "hasShotCoords": "69,87",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/515"
     },
     {
         "hasPlayByPlaySequence": 515,
@@ -5854,7 +6701,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 524,
@@ -5880,7 +6735,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002329",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 526,
@@ -5896,7 +6759,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": -43,
         "coord_y": 156,
-        "zone": "B"
+        "hasShotCoords": "-43,156",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/527"
     },
     {
         "hasPlayByPlaySequence": 527,
@@ -5979,7 +6848,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
         "coord_x": -683,
         "coord_y": 43,
-        "zone": "H"
+        "hasShotCoords": "-683,43",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/536"
     },
     {
         "hasPlayByPlaySequence": 536,
@@ -6008,7 +6883,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": 106,
         "coord_y": 721,
-        "zone": "I"
+        "hasShotCoords": "106,721",
+        "hasShotZone": "I",
+        "pointsAwarded": 3,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 538,
@@ -6024,7 +6904,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 18,
         "coord_y": 138,
-        "zone": "C"
+        "hasShotCoords": "18,138",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/539"
     },
     {
         "hasPlayByPlaySequence": 539,
@@ -6053,7 +6939,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209",
         "coord_x": -125,
         "coord_y": 81,
-        "zone": "B"
+        "hasShotCoords": "-125,81",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/544"
     },
     {
         "hasPlayByPlaySequence": 541,
@@ -6108,7 +7000,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
         "coord_x": -106,
         "coord_y": 112,
-        "zone": "B"
+        "hasShotCoords": "-106,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 546,
@@ -6147,7 +7044,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_007029_007975_012622_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P001926",
+        "coord_x": -106,
+        "coord_y": 112,
+        "hasShotCoords": "-106,112",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/549"
     },
     {
         "hasPlayByPlaySequence": 549,
@@ -6216,8 +7122,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
         "coord_x": 25,
         "coord_y": 144,
-        "zone": "C",
-        "hasAssist": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088"
+        "hasShotCoords": "25,144",
+        "hasShotZone": "C",
+        "pointsAwarded": 2,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "hasAssist": "http://euroleague.net/action/555"
     },
     {
         "hasPlayByPlaySequence": 555,
@@ -6283,7 +7194,16 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_007029_007513_012622_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
+        "coord_x": 25,
+        "coord_y": 144,
+        "hasShotCoords": "25,144",
+        "hasShotZone": "C",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true,
+        "leadsToRebound": "http://euroleague.net/action/561"
     },
     {
         "hasPlayByPlaySequence": 561,
@@ -6353,7 +7273,12 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
         "coord_x": -1,
         "coord_y": -1,
-        "zone": " "
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 569,
@@ -6406,7 +7331,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": true
     },
     {
         "hasPlayByPlaySequence": 574,
@@ -6436,7 +7369,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
         "coord_x": -652,
         "coord_y": 420,
-        "zone": "H"
+        "hasShotCoords": "-652,420",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/577"
     },
     {
         "hasPlayByPlaySequence": 577,
@@ -6465,7 +7404,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
         "coord_x": 219,
         "coord_y": 702,
-        "zone": "I"
+        "hasShotCoords": "219,702",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/579"
     },
     {
         "hasPlayByPlaySequence": 579,
@@ -6517,7 +7462,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTA",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 583,
@@ -6530,7 +7483,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013383",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 585,
@@ -6546,7 +7507,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002676",
         "coord_x": -69,
         "coord_y": 175,
-        "zone": "B"
+        "hasShotCoords": "-69,175",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/588"
     },
     {
         "hasPlayByPlaySequence": 586,
@@ -6601,7 +7568,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 175,
         "coord_y": 188,
-        "zone": "E"
+        "hasShotCoords": "175,188",
+        "hasShotZone": "E",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/590"
     },
     {
         "hasPlayByPlaySequence": 590,
@@ -6630,7 +7603,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
         "coord_x": 671,
         "coord_y": 6,
-        "zone": "I"
+        "hasShotCoords": "671,6",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/592"
     },
     {
         "hasPlayByPlaySequence": 592,
@@ -6659,7 +7638,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P002676",
         "coord_x": 345,
         "coord_y": 633,
-        "zone": "I"
+        "hasShotCoords": "345,633",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/594"
     },
     {
         "hasPlayByPlaySequence": 594,
@@ -6688,7 +7673,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
         "coord_x": -106,
         "coord_y": 131,
-        "zone": "B"
+        "hasShotCoords": "-106,131",
+        "hasShotZone": "B",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/597"
     },
     {
         "hasPlayByPlaySequence": 597,
@@ -6740,7 +7731,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 601,
@@ -6753,7 +7752,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 602,
@@ -6783,7 +7790,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209",
         "coord_x": -238,
         "coord_y": 570,
-        "zone": "F"
+        "hasShotCoords": "-238,570",
+        "hasShotZone": "F",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/605"
     },
     {
         "hasPlayByPlaySequence": 605,
@@ -6812,7 +7825,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 363,
         "coord_y": 627,
-        "zone": "I"
+        "hasShotCoords": "363,627",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/607"
     },
     {
         "hasPlayByPlaySequence": 607,
@@ -6841,7 +7860,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007513",
         "coord_x": -652,
         "coord_y": 257,
-        "zone": "H"
+        "hasShotCoords": "-652,257",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/609"
     },
     {
         "hasPlayByPlaySequence": 609,
@@ -6893,7 +7918,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_011442_012712",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 613,
@@ -6906,7 +7939,15 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_011442_012712",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403",
         "hasActionInfo": "FTM",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
+        "coord_x": -1,
+        "coord_y": -1,
+        "hasShotCoords": "-1,-1",
+        "hasShotZone": " ",
+        "pointsAwarded": 1,
+        "isFastBreak": false,
+        "isSecondChance": true,
+        "isFromTurnover": false
     },
     {
         "hasPlayByPlaySequence": 614,
@@ -6922,7 +7963,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011442",
         "coord_x": -31,
         "coord_y": 765,
-        "zone": "H"
+        "hasShotCoords": "-31,765",
+        "hasShotZone": "H",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/615"
     },
     {
         "hasPlayByPlaySequence": 615,
@@ -6951,7 +7998,13 @@
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
         "coord_x": 18,
         "coord_y": 765,
-        "zone": "I"
+        "hasShotCoords": "18,765",
+        "hasShotZone": "I",
+        "pointsAwarded": 0,
+        "isFastBreak": false,
+        "isSecondChance": false,
+        "isFromTurnover": false,
+        "leadsToRebound": "http://euroleague.net/action/617"
     },
     {
         "hasPlayByPlaySequence": 617,

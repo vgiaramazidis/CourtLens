@@ -274,34 +274,37 @@ class GameProcessor:
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []
+        # Ορισμός του υποχρεωτικού prefix για τα schema elements
+        bball_prefix = "http://www.ics.forth.gr/isl/Basketball#"
+        
         for action in self.all_actions:
             # Create a unique subject URI for this specific event
             subj = f"<http://euroleague.net/action/{action['hasPlayByPlaySequence']}>"
             
-            # Map standard properties
-            triplets.append(f"{subj} <hasActionType> \"{action['hasActionInfo']}\" .")
-            triplets.append(f"{subj} <inQuarter> \"{action['quarter']}\" .")
-            triplets.append(f"{subj} <gameClock> \"{action['clock']}\" .")
-            triplets.append(f"{subj} <homeScore> \"{action['runningHomeTeamScore']}\" .")
-            triplets.append(f"{subj} <roadScore> \"{action['runningRoadTeamScore']}\" .")
+            # Map standard properties (Προσθήκη του bball_prefix σε όλα τα predicates)
+            triplets.append(f"{subj} <{bball_prefix}hasActionType> \"{action['hasActionInfo']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}inQuarter> \"{action['quarter']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}gameClock> \"{action['clock']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}homeScore> \"{action['runningHomeTeamScore']}\" .")
+            triplets.append(f"{subj} <{bball_prefix}roadScore> \"{action['runningRoadTeamScore']}\" .")
             
             # Map Object/Relational properties
             if action.get("actionPlayer"):
-                triplets.append(f"{subj} <performedBy> <{action['actionPlayer']}> .")
+                triplets.append(f"{subj} <{bball_prefix}performedBy> <{action['actionPlayer']}> .")
             if action.get("hasAssist"):
-                triplets.append(f"{subj} <hasAssist> <{action['hasAssist']}> .")
+                triplets.append(f"{subj} <{bball_prefix}hasAssist> <{action['hasAssist']}> .")
             if action.get("wasBlockedBy"):
-                triplets.append(f"{subj} <wasBlockedBy> <{action['wasBlockedBy']}> .")
+                triplets.append(f"{subj} <{bball_prefix}wasBlockedBy> <{action['wasBlockedBy']}> .")
             if action.get("playerIn"):
-                triplets.append(f"{subj} <playerIn> <{action['playerIn']}> .")
+                triplets.append(f"{subj} <{bball_prefix}playerIn> <{action['playerIn']}> .")
             if action.get("playerOut"):
-                triplets.append(f"{subj} <playerOut> <{action['playerOut']}> .")
+                triplets.append(f"{subj} <{bball_prefix}playerOut> <{action['playerOut']}> .")
                 
             # Map Extra Shot Information
             if action.get("coord_x") is not None:
-                triplets.append(f"{subj} <coordX> \"{action['coord_x']}\" .")
-                triplets.append(f"{subj} <coordY> \"{action['coord_y']}\" .")
-                triplets.append(f"{subj} <shotZone> \"{action['zone']}\" .")
+                triplets.append(f"{subj} <{bball_prefix}coordX> \"{action['coord_x']}\" .")
+                triplets.append(f"{subj} <{bball_prefix}coordY> \"{action['coord_y']}\" .")
+                triplets.append(f"{subj} <{bball_prefix}shotZone> \"{action['zone']}\" .")
 
         RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         XSD = "http://www.w3.org/2001/XMLSchema#"

@@ -104,3 +104,118 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#boxscore_PAN_012774_Stats> <http://www.ics.forth.gr/isl/Basketball#foulsReceived> "2"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#boxscore_PAN_012774_Stats> <http://www.ics.forth.gr/isl/Basketball#plusMinus> "9"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#boxscore_PAN_012774_Stats> <http://www.ics.forth.gr/isl/Basketball#startingFive> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+
+
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlayAction> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2> .
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlayAction> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlayAction> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlayAction> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5> .
+
+
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence>  "1" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#BeginPeriod> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#quarter>  "1".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#clock>  "10:00".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "600". 
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#runningHomeTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#videoTimestampURL>  XXX.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  X.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup>  Y.
+
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence>  "2" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#JumpBall> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#quarter>  "1".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#associatedTeam>  <https://www.euroleaguebasketball.net/euroleague/teams/-/MAD> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_2>  <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "599". 
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#clock>  "09:59".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#runningHomeTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#videoTimestampURL>  XXX.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  X.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_3>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  Y.
+
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence>  "3" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#ThreePointShotMade> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#quarter>  "1".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#pointsAwarded>  "3"^^xsd:integer.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#associatedTeam>  <https://www.euroleaguebasketball.net/euroleague/teams/-/MAD> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#associatedPlayer>  <https://www.euroleaguebasketball.net/euroleague/players/-/009213> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#associatedAssistAction>   <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#clock>  "09:34".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "574". 
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#runningHomeTeamScore>  "3".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#videoTimestampURL>  XXX.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  X.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  Y.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#hasShotCoords>  "664,337".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#hasShotZone>  "I".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#isFastBreak>  "false".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#isSecondChance>  "false".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  <http://www.ics.forth.gr/isl/Basketball#isFromTurnover>  "false".
+
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#PlayByPlayOrder>  "4" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Assist> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#quarter>  "1".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#associatedTeam>  <https://www.euroleaguebasketball.net/euroleague/teams/-/MAD> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#associatedPlayer>  <https://www.euroleaguebasketball.net/euroleague/players/-/005928> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#associatedAction>   <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_4>  .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#clock>  "09:31".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "571". 
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#runningHomeTeamScore>  "3".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore>  "0".
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#videoTimestampURL>  XXX.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  X.
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_5>  <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup>  Y.
+
+
+
+Sorting των 5 παικτών και μετά πάντα το ίδιο URL
+
+
+https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_{P1}_{P2}_{P3}_{P4}_{P5}
+
+
+Στο τέλος θα φτιάξουμε και το instance (μια φορά)
+https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_{P1}_{P2}_{P3}_{P4}_{P5} rdf:type Lineup
+		includesPlayer  P1,P2,P3,P4,P5
+		overTeam	PAN
+
+
+
+
+1. Analytics για τη Σχέση Σουτ & Ριμπάουντ (Missed Shot ↔ Rebound)
+Καθώς φτιάξαμε ξεχωριστές κλάσεις (OffensiveRebound, DefensiveRebound) που συνδέονται με το άστοχο σουτ μέσω της ιδιότητας afterMissedShot, μπορούμε να ρωτήσουμε:
+
+Ποιοι παίκτες εξασφαλίζουν τα περισσότερα αμυντικά ριμπάουντ μετά από άστοχα τρίποντα του αντιπάλου; (Αυτό δείχνει ποιος ελέγχει τη "μεγάλη" μπάλα).
+
+Ποιο είναι το ποσοστό των άστοχων σουτ (ανά τύπο: δίποντο/τρίποντο) που οδηγούν σε ομαδικό ριμπάουντ (Team Rebound) έναντι ατομικού;
+
+Ποιος παίκτης παίρνει τα περισσότερα επιθετικά ριμπάουντ μετά από δικά του άστοχα σουτ; (Δείχνει την ικανότητα του παίκτη να ακολουθεί τη φάση, όπως είδαμε στο event του Μούσα).
+
+2. Analytics για Δημιουργία & Συνεργασίες (Shot Made + Assist)
+Επειδή το Assist ενσωματώθηκε απευθείας ως ιδιότητα (assistedBy) στο εύστοχο σουτ, οι ερωτήσεις γίνονται πολύ απλές:
+
+Ποιο είναι το πιο παραγωγικό "δίδυμο" (Duo Analytics) της ομάδας; (Ποιος παίκτης Α κάνει τις περισσότερες ασίστ για εύστοχα σουτ του παίκτη Β).
+
+Τι ποσοστό των εύστοχων τριπόντων μιας ομάδας προέρχεται από ασίστ σε σχέση με τα δίποντα; (Δείχνει αν η ομάδα παίζει pick-and-roll ή αν βασίζεται σε isolation/προσωπικές φάσεις).
+
+Ποιοι παίκτες σκοράρουν περισσότερο χωρίς ασίστ (unassisted field goals);
+
+3. Analytics Ροής & Αποτελεσματικότητας (Transition & Sequencing)
+Πόσους πόντους σκοράρει μια ομάδα αμέσως μετά από ένα κλέψιμο (Turnover ↔ Steal event); (Μετράει την αποτελεσματικότητα στον αιφνιδιασμό / points off turnovers).
+
+Πόσες επιθέσεις που ανανεώθηκαν από επιθετικό ριμπάουντ (κλάση OffensiveRebound) κατέληξαν τελικά σε εύστοχο καλάθι στην ίδια περίοδο; (Points from second chances).
+
+Ποιος παίκτης προκαλεί τα περισσότερα "And-1" (Foul Event που συνδέεται χρονικά με εύστοχο σουτ και εύστοχη βολή);
+
+4. Analytics Πακτών & Σύνθετης Συμπεριφοράς
+Ποιοι παίκτες υποπίπτουν στα περισσότερα επιθετικά φάουλ; (Επειδή το μοντέλο ορίζει το OffensiveFoulEvent ταυτόχρονα ως FoulEvent και TurnoverEvent, μπορείτε να δείτε πόσα λάθη της ομάδας προήλθαν αποκλειστικά από επιθετικά φάουλ).
+
+Ποιος παίκτης έχει το καλύτερο "Ast/TO Ratio" (Αναλογία Ασίστ προς Λάθη); (Το SPARQL query θα μετράει πόσες φορές ο παίκτης εμφανίζεται ως assistedBy έναντι των φορών που εμφανίζεται ως turnoverBy).

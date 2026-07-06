@@ -2,19 +2,7 @@ import json
 from collections import defaultdict
 import os
 
-QUARTERS = [
-    "FirstQuarter",
-    "SecondQuarter",
-    "ThirdQuarter",
-    "ForthQuarter",
-    "ExtraTime1",
-    "ExtraTime2",
-    "ExtraTime3",
-]
-
-# --------------------------------------------------
-# HELPERS
-# --------------------------------------------------
+QUARTERS = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", "ExtraTime1", "ExtraTime2", "ExtraTime3"]
 
 def clock_to_seconds(clock_str):
     m, s = map(int, clock_str.split(":"))
@@ -36,31 +24,34 @@ def generate_player_uri(player_id):
 def lineup_key(players):
     return tuple(sorted(players))
 
-
-# --------------------------------------------------
-# MAIN CLASS
-# --------------------------------------------------
-
 class GameProcessor:
-
-    def __init__(self, pbp_data, starting_lineups, points_data):
+    def __init__(self, pbp_data, boxscore_data, points_data):
         self.data = pbp_data
-        
         self.team_a = pbp_data["CodeTeamA"].strip()
         self.team_b = pbp_data["CodeTeamB"].strip()
         self.current_score_a = 0
         self.current_score_b = 0
 
-        # Hardcoded Starters integration
-        self.current_lineups = {
-            self.team_a: set(starting_lineups[self.team_a]),
-            self.team_b: set(starting_lineups[self.team_b]),
-        }
+        # 1. FIX: Dynamically extract starting lineups from Boxscore.json
+        self.current_lineups = self._extract_starters(boxscore_data)
         
-        # Map shot data from Points.json for easy lookup
+        # 2. FIX: Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
 
         self.all_actions = []
+
+    def _extract_starters(self, boxscore_data):
+        starters = {self.team_a: set(), self.team_b: set()}
+        for team_stat in boxscore_data["Stats"]:
+            team_code = team_stat["Team"].strip()
+            # Map full team names to codes if necessary, assuming Boxscore uses TeamA/B codes or similar logic
+            # For safety, we will just match by the first 3 letters matching the code
+            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+            
+            for player in team_stat["PlayersStats"]:
+                if player.get("IsStarter") == 1:
+                    starters[matched_code].add(player["Player_ID"].strip())
+        return starters
 
     def _map_points_data(self, points_data):
         shot_map = {}
@@ -81,10 +72,8 @@ class GameProcessor:
         play_type = event.get("PLAYTYPE", "")
         player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
         
-        if event.get("POINTS_A") is not None:
-            self.current_score_a = event["POINTS_A"]
-        if event.get("POINTS_B") is not None:
-            self.current_score_b = event["POINTS_B"]
+        if event.get("POINTS_A") is not None: self.current_score_a = event["POINTS_A"]
+        if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
 
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
@@ -146,12 +135,9 @@ class GameProcessor:
 
     def process_substitution(self, event):
         team = event["CODETEAM"].strip()
-        if team not in (self.team_a, self.team_b):
-            return
-
+        if team not in (self.team_a, self.team_b): return
         player_id = event["PLAYER_ID"].strip()
-        if not player_id:
-            return
+        if not player_id: return
 
         if event["PLAYTYPE"] == "IN":
             self.current_lineups[team].add(player_id)
@@ -159,105 +145,92 @@ class GameProcessor:
             self.current_lineups[team].discard(player_id)
 
     def process_period(self, period_name):
-        if period_name not in self.data:
-            return
+        if period_name not in self.data: return
         plays = self.data[period_name]
-        if not plays:
-            return
+        if not plays: return
 
         for event in plays:
             if event["PLAYTYPE"] in ("IN", "OUT"):
                 self.process_substitution(event)
-
             self.extract_action_data(event, period_name)
 
     def run(self):
         for q in QUARTERS:
             self.process_period(q)
 
-    # --------------------------------------------------
-    # GENERATE RDF TRIPLETS
-    # --------------------------------------------------
+    # 3. NEW FEATURE: Generate Triplets
     def generate_triplets(self):
         triplets = []
-        NS = "http://www.ics.forth.gr/isl/Basketball#"
-        XSD = "http://www.w3.org/2001/XMLSchema#"
-        
         for action in self.all_actions:
-            subj = f"<https://www.euroleaguebasketball.net/euroleague/game-center/action/{action['hasPlayByPlaySequence']}>"
+            # Create a unique subject URI for this specific event
+            subj = f"<http://euroleague.net/action/{action['hasPlayByPlaySequence']}>"
             
-            # Action Type
-            triplets.append(f"{subj} <{NS}hasActionType> \"{action['hasActionInfo']}\" .")
+            # Map standard properties
+            triplets.append(f"{subj} <hasActionType> \"{action['hasActionInfo']}\" .")
+            triplets.append(f"{subj} <inQuarter> \"{action['quarter']}\" .")
+            triplets.append(f"{subj} <gameClock> \"{action['clock']}\" .")
+            triplets.append(f"{subj} <homeScore> \"{action['runningHomeTeamScore']}\" .")
+            triplets.append(f"{subj} <roadScore> \"{action['runningRoadTeamScore']}\" .")
             
-            # Game info
-            triplets.append(f"{subj} <{NS}inQuarter> \"{action['quarter']}\" .")
-            triplets.append(f"{subj} <{NS}gameClock> \"{action['clock']}\" .")
-            
-            # Scores
-            triplets.append(f"{subj} <{NS}homeScore> \"{action['runningHomeTeamScore']}\"^^<{XSD}integer> .")
-            triplets.append(f"{subj} <{NS}roadScore> \"{action['runningRoadTeamScore']}\"^^<{XSD}integer> .")
-            
-            # Entities
+            # Map Object/Relational properties
             if action.get("actionPlayer"):
-                triplets.append(f"{subj} <{NS}performedBy> <{action['actionPlayer']}> .")
+                triplets.append(f"{subj} <performedBy> <{action['actionPlayer']}> .")
             if action.get("hasAssist"):
-                triplets.append(f"{subj} <{NS}hasAssist> <{action['hasAssist']}> .")
+                triplets.append(f"{subj} <hasAssist> <{action['hasAssist']}> .")
             if action.get("wasBlockedBy"):
-                triplets.append(f"{subj} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
+                triplets.append(f"{subj} <wasBlockedBy> <{action['wasBlockedBy']}> .")
+            if action.get("playerIn"):
+                triplets.append(f"{subj} <playerIn> <{action['playerIn']}> .")
+            if action.get("playerOut"):
+                triplets.append(f"{subj} <playerOut> <{action['playerOut']}> .")
                 
-            # Extra Shot Data
+            # Map Extra Shot Information
             if action.get("coord_x") is not None:
-                triplets.append(f"{subj} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                triplets.append(f"{subj} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                triplets.append(f"{subj} <{NS}shotZone> \"{action['zone']}\" .")
+                triplets.append(f"{subj} <coordX> \"{action['coord_x']}\" .")
+                triplets.append(f"{subj} <coordY> \"{action['coord_y']}\" .")
+                triplets.append(f"{subj} <shotZone> \"{action['zone']}\" .")
 
         return triplets
 
 # ==================================================
 # USAGE
 # ==================================================
-
-# Paths mapping (Adjust these according to your local setup)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 
+# File Paths
 playbyplay_path = os.path.join(project_root, "data", "raw", "PlaybyPlay.json")
+boxscore_path = os.path.join(project_root, "data", "raw", "Boxscore.json")
 points_path = os.path.join(project_root, "data", "raw", "Points.json")
 
 output_dir = os.path.join(project_root, "data", "processed")
 output_json_path = os.path.join(output_dir, "AllActions.json")
 output_triplets_path = os.path.join(output_dir, "Triplets.nt")
 
-# Load JSON files
-print(f"Reading files...")
-with open(playbyplay_path, "r", encoding="utf8") as f:
-    pbp_data = json.load(f)
+# Load all 3 JSON files
+with open(playbyplay_path, "r", encoding="utf8") as f: pbp_data = json.load(f)
+with open(boxscore_path, "r", encoding="utf8") as f: boxscore_data = json.load(f)
+with open(points_path, "r", encoding="utf8") as f: points_data = json.load(f)
 
-with open(points_path, "r", encoding="utf8") as f:
-    points_data = json.load(f)
-
-# HARDCODED STARTERS
-starting_lineups = {
-    "ZAL": {"P007975", "P003210", "P011983", "P007513", "P005504"},
-    "PAN": {"P011442", "P012774", "P005161", "P007866", "P003842"},
-}
-
-processor = GameProcessor(pbp_data, starting_lineups, points_data)
+processor = GameProcessor(pbp_data, boxscore_data, points_data)
 processor.run()
 
-# Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
 
-# Save standard JSON with all the merged data
-print(f"Saving merged JSON to: {output_json_path}")
+# Print the extracted starters to verify
+print("=== STARTERS EXTRACTED ===")
+for team, players in processor.current_lineups.items():
+    print(f"{team}: {players}")
+print("==========================")
+
+# Save standard JSON
 with open(output_json_path, "w", encoding="utf8") as out_file:
     json.dump(processor.all_actions, out_file, ensure_ascii=False, indent=4)
 
 # Save Triplets (N-Triples format)
-print(f"Saving Triplets to: {output_triplets_path}")
 triplets = processor.generate_triplets()
 with open(output_triplets_path, "w", encoding="utf8") as out_file:
     for triple in triplets:
         out_file.write(triple + "\n")
 
-print("Processing complete!")
+print("Processing complete! Both JSON and Triplets have been generated.")

@@ -400,7 +400,6 @@ class GameProcessor:
 # USAGE
 # ==================================================
 
-# Paths mapping (Adjust these according to your local setup)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 

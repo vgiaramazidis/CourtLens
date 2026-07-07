@@ -1,3 +1,4 @@
+from itertools import count
 import json
 from collections import defaultdict
 import os
@@ -203,6 +204,12 @@ class GameProcessor:
 
     def process_substitution(self, event):
         team = event["CODETEAM"].strip()
+        if team not in (self.team_a, self.team_b):
+            return
+
+        player_id = event["PLAYER_ID"].strip()
+        if not player_id:
+            return
         if team not in (self.team_a, self.team_b): return
         player_id = event["PLAYER_ID"].strip()
         if not player_id: return
@@ -213,6 +220,11 @@ class GameProcessor:
             self.current_lineups[team].discard(player_id)
 
     def process_period(self, period_name):
+        if period_name not in self.data:
+            return
+        plays = self.data[period_name]
+        if not plays:
+            return
         if period_name not in self.data: return
         plays = self.data[period_name]
         if not plays: return
@@ -227,7 +239,7 @@ class GameProcessor:
             self.process_period(q)
 
     # --------------------------------------------------
-    # GENERATE RDF TRIPLETS
+    # GENERATE RDF TRIPLETS (MERGED SCHEMA)
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []

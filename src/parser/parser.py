@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 import os
 
-QUARTERS = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", "ExtraTime1", "ExtraTime2", "ExtraTime3"]
 QUARTERS = [
     "FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", 
     "ExtraTime1", "ExtraTime2", "ExtraTime3"
@@ -37,7 +36,6 @@ def generate_player_uri(player_id):
 def lineup_key(players):
     return tuple(sorted(players))
 
-
 # --------------------------------------------------
 # MAIN CLASS
 # --------------------------------------------------
@@ -52,20 +50,6 @@ class GameProcessor:
         self.current_score_a = 0
         self.current_score_b = 0
 
-    def __init__(self, pbp_data, starting_lineups, points_data):
-        self.data = pbp_data
-        self.team_a = pbp_data["CodeTeamA"].strip()
-        self.team_b = pbp_data["CodeTeamB"].strip()
-        self.current_score_a = 0
-        self.current_score_b = 0
-
-        # Dynamically extract starting lineups from Boxscore.json
-        # 1. FIX: Dynamically extract starting lineups from Boxscore.json
-        # Hardcoded Starters integration
-        self.current_lineups = {
-            self.team_a: set(starting_lineups[self.team_a]),
-            self.team_b: set(starting_lineups[self.team_b]),
-        }
         # Dynamic Starters integration (from feature_teo)
         self.current_lineups = self._extract_starters(boxscore_data)
 
@@ -109,15 +93,9 @@ class GameProcessor:
 
     # --------------------------------------------------
     def extract_action_data(self, event, period_name):
-        if not event.get("MARKERTIME"):
-            return
         play_type = event.get("PLAYTYPE", "")
         player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
         
-        if event.get("POINTS_A") is not None:
-            self.current_score_a = event["POINTS_A"]
-        if event.get("POINTS_B") is not None:
-            self.current_score_b = event["POINTS_B"]
         # Proper empty time handling (from develop)
         markertime = event.get("MARKERTIME") or ("10:00" if play_type == "BP" else "00:00" if play_type in ("EP", "EG") else "")
         
@@ -139,8 +117,6 @@ class GameProcessor:
             "hasRoadTeamLineup": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
             "play_type": play_type,
             "actionTeam": event.get("CODETEAM", "").strip() if event.get("CODETEAM") else "",
-            "clock": event["MARKERTIME"],
-            "quarterSecondsRemaining": clock_to_seconds(event["MARKERTIME"]),
             "clock": markertime,
             "quarterSecondsRemaining": clock_to_seconds(markertime),
             "runningHomeTeamScore": self.current_score_a,
@@ -189,7 +165,6 @@ class GameProcessor:
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
-                    # Ensure we don't map across different quarters, but allow for slight clock delays
                     if prev_action["quarter"] == action_data["quarter"]:
                         prev_action["hasAssist"] = f"http://euroleague.net/action/{event.get('NUMBEROFPLAY')}"
                     break
@@ -233,11 +208,6 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") == "Substitution" and prev_action["clock"] == action_data["clock"] and prev_action["actionTeam"] == action_data["actionTeam"]:
                     if play_type == "IN" and prev_action.get("playerIn") is None:
                         prev_action["playerIn"] = generate_player_uri(player_id)
-                        prev_action["hasHomeTeamLineupSnapshot"] = action_data["hasHomeTeamLineupSnapshot"]
-                        prev_action["hasRoadTeamLineupSnapshot"] = action_data["hasRoadTeamLineupSnapshot"]
-                        return
-                    elif play_type == "OUT" and prev_action.get("playerOut") is None:
-                        prev_action["playerOut"] = generate_player_uri(player_id)
                         # Append lineup snapshots (from develop)
                         prev_action["hasHomeTeamLineupSnapshot"] = action_data["hasHomeTeamLineupSnapshot"]
                         prev_action["hasRoadTeamLineupSnapshot"] = action_data["hasRoadTeamLineupSnapshot"]
@@ -258,18 +228,6 @@ class GameProcessor:
         else:
             action_data["actionPlayer"] = generate_player_uri(player_id)
 
-            
-            # Look up extra coordinates and states for both made and missed shots
-            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
-                shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
-                if shot_key in self.shots_extra_data:
-                    extra = self.shots_extra_data[shot_key]
-                    
-                    action_data["coord_x"] = extra["coord_x"]
-                    action_data["coord_y"] = extra["coord_y"]
-                    
-                    # Convert to string coordinates as specified
-                    action_data["zone"] = extra["zone"]
             # Look up extra coordinates and states for shots
             if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
                 shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
@@ -333,22 +291,12 @@ class GameProcessor:
         for q in QUARTERS:
             self.process_period(q)
 
-    # Generate Triplets with Made and Missed Subclasses
-    # 3. NEW FEATURE: Generate Triplets
     # --------------------------------------------------
-    # GENERATE RDF TRIPLETS
     # GENERATE RDF TRIPLETS (MERGED SCHEMA)
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []
         NS = "http://www.ics.forth.gr/isl/Basketball#"
-        RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-        RDFS = "http://www.w3.org/2000/01/rdf-schema#label"
-        XSD = "http://www.w3.org/2001/XMLSchema#"
-        subj = f"<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200" #Prepei na allaxtei apo hard coded to 2023-24,E kai to 200
-        for plays in self.all_actions:
-            triplets.append(f"{subj}> <{NS}hasPlayByPlayAction> {subj}#PlayByPlay_{plays['hasPlayByPlaySequence']}> .")
-
         RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
         XSD = "http://www.w3.org/2001/XMLSchema#"
         
@@ -465,9 +413,17 @@ output_dir = os.path.join(project_root, "data", "processed")
 output_json_path = os.path.join(output_dir, "AllActions.json")
 output_triplets_path = os.path.join(output_dir, "Triplets.nt")
 
-with open(playbyplay_path, "r", encoding="utf8") as f: pbp_data = json.load(f)
-with open(boxscore_path, "r", encoding="utf8") as f: boxscore_data = json.load(f)
-with open(points_path, "r", encoding="utf8") as f: points_data = json.load(f)
+# Load JSON files
+print(f"Reading files...")
+with open(playbyplay_path, "r", encoding="utf8") as f:
+    pbp_data = json.load(f)
+
+# Note: Using boxscore dynamically so you don't have to hardcode starters anymore
+with open(boxscore_path, "r", encoding="utf8") as f:
+    boxscore_data = json.load(f)
+
+with open(points_path, "r", encoding="utf8") as f:
+    points_data = json.load(f)
 
 with open(points_path, "r", encoding="utf8") as f:
     points_data = json.load(f)
@@ -494,14 +450,12 @@ processor.run()
 # Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
 
-# Print the extracted starters to verify
 # Print the dynamically extracted starters to verify
 print("=== STARTERS EXTRACTED ===")
 for team, players in processor.current_lineups.items():
     print(f"{team}: {players}")
 print("==========================")
 
-# Save standard JSON
 # Save standard JSON with all the merged data
 print(f"Saving merged JSON to: {output_json_path}")
 with open(output_json_path, "w", encoding="utf8") as out_file:
@@ -514,6 +468,4 @@ with open(output_triplets_path, "w", encoding="utf8") as out_file:
     for triple in triplets:
         out_file.write(triple + "\n")
 
-print("Processing complete! Both JSON and Triplets have been generated.")
-print("Processing complete!")
 print("Processing complete!")

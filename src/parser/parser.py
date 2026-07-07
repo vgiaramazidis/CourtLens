@@ -119,7 +119,29 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
                     prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
                     break
-                    
+        # Merging Steals (ST) back to the Turnover 
+        elif play_type == "ST":
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("hasActionInfo") == "TO" and prev_action["quarter"] == action_data["quarter"]:
+                    # Make sure the Steal is from the opposing team
+                    if prev_action["actionTeam"] != action_data["actionTeam"]:
+                        prev_action["causedBySteal"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                        break
+                        
+        # Merging Turnovers (TO) to Fouls and parsing Violations
+        elif play_type == "TO":
+            # 1. Look backward for an Offensive Foul (OF) at the exact same game clock
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("hasActionInfo") == "OF" and prev_action["clock"] == action_data["clock"]:
+                    action_data["causedByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                    break
+            
+            # 2. Check if the descriptive PlayInfo text indicates a Violation
+            play_info = event.get("PLAYINFO", "").lower()
+            violation_keywords = ["travel", "second", "out of bound", "step", "violation", "carry", "goaltend"]
+            
+            if any(kw in play_info for kw in violation_keywords):
+                action_data["isViolation"] = True            
         # Merging Rebounds
         elif play_type in ("O", "D"):
             for prev_action in reversed(self.all_actions):
@@ -254,6 +276,12 @@ class GameProcessor:
                 triplets.append(f"{begin} <{RDF}> <{NS}Rebound> .")
             elif action_type == "AS":
                 triplets.append(f"{begin} <{RDF}> <{NS}Assist> .")
+            elif action_type == "TO":
+                triplets.append(f"{begin} <{RDF}> <{NS}Turnover> .")
+            elif action_type == "ST":
+                triplets.append(f"{begin} <{RDF}> <{NS}Steal> .")
+            elif action_type == "OF":
+                triplets.append(f"{begin} <{RDF}> <{NS}Foul> .")    
             else:
                 triplets.append(f"{begin} <{RDF}> <{NS}{action_type}> .")
 
@@ -306,6 +334,16 @@ class GameProcessor:
                 triplets.append(f"{begin} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
             if action.get("leadsToRebound"):
                 triplets.append(f"{begin} <{NS}leadsToRebound> <{action['leadsToRebound']}> .")
+            # Relational Linkages for Turnovers
+            if action.get("causedBySteal"):
+                triplets.append(f"{begin} <{NS}causedBySteal> <{action['causedBySteal']}> .")
+            if action.get("causedByFoul"):
+                triplets.append(f"{begin} <{NS}causedByFoul> <{action['causedByFoul']}> .")    
+            # If it was a Violation, generate a new specific Violation node and link it
+            if action.get("isViolation"):
+                violation_uri = f"<{GAME_URL_BASE}#PlayByPlay_{action['hasPlayByPlaySequence']}_Violation>"
+                triplets.append(f"{violation_uri} <{RDF}> <{NS}Violation> .")
+                triplets.append(f"{begin} <{NS}causedByViolation> {violation_uri} .")
 
         return triplets
 

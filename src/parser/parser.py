@@ -176,6 +176,7 @@ class GameProcessor:
         if event.get("POINTS_A") is not None: self.current_score_a = event["POINTS_A"]
         if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
 
+        # Initialize ALL fields to None to prevent KeyErrors in generate_triplets
         action_data = {
             "hasPlayByPlaySequence": self.play_seq,
             "originalEventId": euroleague_number_of_play,

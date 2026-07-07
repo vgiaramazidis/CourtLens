@@ -117,25 +117,6 @@ class GameProcessor:
             "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
             "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
             "hasActionInfo": play_type,
-            
-            # -- PRE-FILLED OPTIONAL KEYS TO PREVENT CRASHES --
-            "actionPlayer": None,
-            "actionCoach": None,
-            "pointsAwarded": None,
-            "coord_x": None,
-            "coord_y": None,
-            "zone": None,
-            "isFastBreak": None,
-            "isSecondChance": None,
-            "isFromTurnover": None,
-            "hasAssist": None,
-            "leadsToRebound": None,
-            "wasBlockedBy": None,
-            "associatedAction": None,
-            "causedBySteal": None,
-            "causedByFoul": None,
-            "occuredByFoul": None,
-            "isViolation": None
         }
         # Merging Assists
         if play_type == "AS":

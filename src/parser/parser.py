@@ -33,6 +33,11 @@ def generate_player_uri(player_id):
     if not player_id: return None
     return f"https://www.euroleaguebasketball.net/euroleague/players/-/{player_id.strip()}"
 
+def generate_coach_uri(coach_name):
+    if not coach_name: return None
+    clean_name = coach_name.strip().replace(", ", "_").replace(" ", "_")
+    return f"https://www.euroleaguebasketball.net/euroleague/coaches/-/{clean_name}"
+
 def lineup_key(players):
     return tuple(sorted(players))
 
@@ -49,12 +54,18 @@ class GameProcessor:
         self.current_score_a = 0
         self.current_score_b = 0
 
-        # Dynamic Starters integration (from feature_teo)
+        # Dynamic Starters integration
         self.current_lineups = self._extract_starters(boxscore_data)
+        
+        # Extract Coaches dynamically
+        self.current_coaches = {}
+        for team_stat in boxscore_data["Stats"]:
+            team_code = team_stat["Team"].strip()
+            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+            self.current_coaches[matched_code] = generate_coach_uri(team_stat.get("Coach", ""))
         
         # Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
-
         self.all_actions = []
 
     def _extract_starters(self, boxscore_data):
@@ -93,7 +104,7 @@ class GameProcessor:
         if event.get("POINTS_A") is not None: self.current_score_a = event["POINTS_A"]
         if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
 
-        # Initialize ALL fields to None to prevent KeyErrors in generate_triplets
+        # Initialize ALL fields to None to safely avoid KeyErrors in generate_triplets
         action_data = {
             "hasPlayByPlaySequence": event.get("NUMBEROFPLAY"),
             "quarter": period_name,
@@ -108,6 +119,7 @@ class GameProcessor:
             
             # -- PRE-FILLED OPTIONAL KEYS TO PREVENT CRASHES --
             "actionPlayer": None,
+            "actionCoach": None,
             "pointsAwarded": None,
             "coord_x": None,
             "coord_y": None,
@@ -118,7 +130,11 @@ class GameProcessor:
             "hasAssist": None,
             "leadsToRebound": None,
             "wasBlockedBy": None,
-            "associatedAction": None
+            "associatedAction": None,
+            "causedBySteal": None,
+            "causedByFoul": None,
+            "occuredByFoul": None,
+            "isViolation": None
         }
 
         # Merging Assists
@@ -147,15 +163,26 @@ class GameProcessor:
         # Merging Turnovers (TO) to Fouls and parsing Violations
         elif play_type == "TO":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") == "OF" and prev_action["clock"] == action_data["clock"]:
+                if prev_action.get("hasActionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
                     action_data["causedByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
                     break
             
             play_info = event.get("PLAYINFO", "").lower()
             violation_keywords = ["travel", "second", "out of bound", "step", "violation", "carry", "goaltend"]
-            
             if any(kw in play_info for kw in violation_keywords):
                 action_data["isViolation"] = True            
+
+        # Merging Foul Drawn (RV) to the specific foul committed
+        elif play_type == "RV":
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("hasActionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
+                    action_data["occuredByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                    break
+
+        # Coach's Challenge Logic
+        elif play_type == "CCH" or "challenge" in event.get("PLAYINFO", "").lower():
+            action_data["hasActionInfo"] = "Challenge"
+            action_data["actionCoach"] = self.current_coaches.get(action_data["actionTeam"])
                 
         # Merging Rebounds
         elif play_type in ("O", "D"):
@@ -196,7 +223,7 @@ class GameProcessor:
                     
                     action_data["coord_x"] = extra["coord_x"]
                     action_data["coord_y"] = extra["coord_y"]
-                    action_data["zone"] = extra["zone"] # Matches your triplets function!
+                    action_data["zone"] = extra["zone"]
                     
                     if extra['coord_x'] is not None and extra['coord_y'] is not None:
                         action_data["hasShotCoords"] = f"{extra['coord_x']},{extra['coord_y']}"
@@ -214,12 +241,6 @@ class GameProcessor:
 
     def process_substitution(self, event):
         team = event["CODETEAM"].strip()
-        if team not in (self.team_a, self.team_b):
-            return
-
-        player_id = event["PLAYER_ID"].strip()
-        if not player_id:
-            return
         if team not in (self.team_a, self.team_b): return
         player_id = event["PLAYER_ID"].strip()
         if not player_id: return
@@ -230,11 +251,6 @@ class GameProcessor:
             self.current_lineups[team].discard(player_id)
 
     def process_period(self, period_name):
-        if period_name not in self.data:
-            return
-        plays = self.data[period_name]
-        if not plays:
-            return
         if period_name not in self.data: return
         plays = self.data[period_name]
         if not plays: return
@@ -249,7 +265,7 @@ class GameProcessor:
             self.process_period(q)
 
     # --------------------------------------------------
-    # GENERATE RDF TRIPLETS (MERGED SCHEMA)
+    # GENERATE RDF TRIPLETS (NO INNER IF STATEMENTS)
     # --------------------------------------------------
     def generate_triplets(self):
         triplets = []
@@ -305,6 +321,17 @@ class GameProcessor:
                 triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
                 triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
                 triplets.append(f"{begin} <{NS}associatedAction> <{action['associatedAction']}> .")
+            elif action['hasActionInfo'] == "RV":
+                # If you didn't rename "RV" to "FoulDrawn" in your extract function, 
+                # you can force the correct class name here:
+                triplets.append(f"{begin} <{RDF}> <{NS}FoulDrawn> .") 
+                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
+                triplets.append(f"{begin} <{NS}occuredByFoul> <{action['occuredByFoul']}> .")
+            # For Coach's Challenge
+            elif action['hasActionInfo'] == "Challenge":
+                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+                triplets.append(f"{begin} <{NS}actionCoach> <{action['actionCoach']}> .")
             triplets.append("\n")
         return triplets
 

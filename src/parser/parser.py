@@ -82,7 +82,8 @@ class GameProcessor:
     def _map_points_data(self, points_data):
         shot_map = {}
         for row in points_data.get("Rows", []):
-            key = (row["ID_PLAYER"].strip(), row["MINUTE"], row["CONSOLE"])
+            # Χρησιμοποιούμε απευθείας το NUM_ANOT ως κλειδί
+            key = row.get("NUM_ANOT")
             shot_map[key] = {
                 "coord_x": row.get("COORD_X"),
                 "coord_y": row.get("COORD_Y"),
@@ -116,48 +117,43 @@ class GameProcessor:
             "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
             "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
             "hasActionInfo": play_type,
-            
-            # -- PRE-FILLED OPTIONAL KEYS TO PREVENT CRASHES --
-            "actionPlayer": None,
-            "actionCoach": None,
-            "pointsAwarded": None,
-            "coord_x": None,
-            "coord_y": None,
-            "zone": None,
-            "isFastBreak": None,
-            "isSecondChance": None,
-            "isFromTurnover": None,
-            "hasAssist": None,
-            "leadsToRebound": None,
-            "wasBlockedBy": None,
-            "associatedAction": None,
-            "causedBySteal": None,
-            "causedByFoul": None,
-            "occuredByFoul": None,
-            "isViolation": None
         }
 
         # Merging Assists
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
+                if prev_action.get("hasActionInfo") in ("2FGM", "3FGM", "FTM") and prev_action["actionTeam"] == action_data["actionTeam"]:
                     if prev_action["quarter"] == action_data["quarter"]:
                         prev_action["hasAssist"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
-                    break
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                        break
 
         # Merging Blocks
         elif play_type == "FV":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
-                    prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
-                    break
-                    
+                # Αντί για clock match, ελέγχουμε να είναι στο ίδιο δεκάλεπτο
+                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["quarter"] == action_data["quarter"]:
+                    # Ελέγχουμε ότι η ομάδα που σούταρε είναι ΔΙΑΦΟΡΕΤΙΚΗ από την ομάδα που έκανε το μπλοκ
+                    if prev_action["actionTeam"] != action_data["actionTeam"]:
+                        prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                        break
+
+        # Merging Aggressive Fouls (AG) to the specific shot attempt            
+        elif play_type == "AG":
+                for prev_action in reversed(self.all_actions):
+                    if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                        if prev_action["actionTeam"] == action_data["actionTeam"]:
+                            action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                            break
+
         # Merging Steals (ST) back to the Turnover 
         elif play_type == "ST":
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") == "TO" and prev_action["quarter"] == action_data["quarter"]:
                     if prev_action["actionTeam"] != action_data["actionTeam"]:
                         prev_action["causedBySteal"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
                         break
                         
         # Merging Turnovers (TO) to Fouls and parsing Violations
@@ -216,8 +212,9 @@ class GameProcessor:
             action_data["actionPlayer"] = generate_player_uri(player_id)
 
             # Look up extra coordinates and states for shots
-            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
-                shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
+            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM") and player_id:
+                # Πλέον κάνουμε match χρησιμοποιώντας τον μοναδικό αριθμό του play
+                shot_key = event.get("NUMBEROFPLAY")
                 if shot_key in self.shots_extra_data:
                     extra = self.shots_extra_data[shot_key]
                     
@@ -229,14 +226,26 @@ class GameProcessor:
                         action_data["hasShotCoords"] = f"{extra['coord_x']},{extra['coord_y']}"
                         
                     if play_type in ("2FGA", "3FGA", "FTA"):
+                        action_data["wasBlockedBy"] = None
+                        action_data["leadsToRebound"] = None
                         action_data["pointsAwarded"] = 0
                     else:
                         action_data["pointsAwarded"] = extra["pointsAwarded"]
+                        action_data["hasAssist"] = None
                         
                     action_data["isFastBreak"] = extra["isFastBreak"]
                     action_data["isSecondChance"] = extra["isSecondChance"]
                     action_data["isFromTurnover"] = extra["isFromTurnover"]
-
+            elif play_type in ("FTA"):
+                action_data["isFastBreak"] = False
+                action_data["isSecondChance"] = False
+                action_data["isFromTurnover"] = False
+                action_data["coord_x"] = -1
+                action_data["coord_y"] = -1
+                action_data["zone"] = " "
+                action_data["hasShotCoords"] = f"{action_data['coord_x']},{action_data['coord_y']}"
+                action_data["wasBlockedBy"] = None
+                action_data["leadsToRebound"] = None
             self.all_actions.append(action_data)
 
     def process_substitution(self, event):
@@ -279,6 +288,7 @@ class GameProcessor:
 
         triplets.append("\n")
         for action in self.all_actions:
+            print(f"Generating triplets for action: {action['hasPlayByPlaySequence']} ({action['hasActionInfo']})")
             begin=f"{subj}#PlayByPlay_{action['hasPlayByPlaySequence']}>"
             triplets.append(f"{begin} <{NS}hasPlayByPlaySequence> \"{action['hasPlayByPlaySequence']}\" .")
             triplets.append(f"{begin} <{RDF}> <{NS}{action['hasActionInfo']}> .")

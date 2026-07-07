@@ -553,7 +553,8 @@
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_012715_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011204",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_39"
     },
     {
         "hasPlayByPlaySequence": 39,
@@ -714,7 +715,8 @@
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_012715_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P005504",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_49"
     },
     {
         "hasPlayByPlaySequence": 49,
@@ -994,7 +996,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_71"
     },
     {
         "hasPlayByPlaySequence": 71,
@@ -1373,7 +1376,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P011209",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_101"
     },
     {
         "hasPlayByPlaySequence": 101,
@@ -2107,7 +2111,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_160"
     },
     {
         "hasPlayByPlaySequence": 160,
@@ -3798,7 +3803,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_284"
     },
     {
         "hasPlayByPlaySequence": 284,
@@ -4237,7 +4243,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_322"
     },
     {
         "hasPlayByPlaySequence": 322,
@@ -4903,7 +4910,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P013403",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_370"
     },
     {
         "hasPlayByPlaySequence": 370,
@@ -5788,7 +5796,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P004088",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_439"
     },
     {
         "hasPlayByPlaySequence": 439,
@@ -6329,6 +6338,7 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007975_013403",
         "hasActionInfo": "TO",
+        "causedByFoul": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_478",
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007029"
     },
     {
@@ -6693,6 +6703,7 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403",
         "hasActionInfo": "TO",
+        "causedByFoul": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_503",
         "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012774"
     },
     {
@@ -6734,7 +6745,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P012622",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_509"
     },
     {
         "hasPlayByPlaySequence": 509,
@@ -7292,7 +7304,8 @@
         "hasHomeTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383",
         "hasRoadTeamLineupSnapshot": "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_007029_007975_012622_013403",
         "hasActionInfo": "TO",
-        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975"
+        "actionPlayer": "https://www.euroleaguebasketball.net/euroleague/players/-/P007975",
+        "causedBySteal": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_553"
     },
     {
         "hasPlayByPlaySequence": 553,

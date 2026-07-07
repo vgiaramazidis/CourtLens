@@ -118,7 +118,6 @@ class GameProcessor:
             "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
             "hasActionInfo": play_type,
         }
-
         # Merging Assists
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):

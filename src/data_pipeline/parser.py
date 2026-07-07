@@ -124,6 +124,13 @@ class GameProcessor:
             matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
             self.current_coaches[matched_code] = generate_coach_uri(team_stat.get("Coach", ""))
         
+        # Extract Coaches dynamically
+        self.current_coaches = {}
+        for team_stat in boxscore_data["Stats"]:
+            team_code = team_stat["Team"].strip()
+            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+            self.current_coaches[matched_code] = generate_coach_uri(team_stat.get("Coach", ""))
+        
         # Map shot data from Points.json for easy lookup
         self.shots_extra_data = self._map_points_data(points_data)
         self.all_actions = []

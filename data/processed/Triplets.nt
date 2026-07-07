@@ -705,6 +705,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "5"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_15> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_14> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_16> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "16" .
@@ -769,6 +773,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "7"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012712> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_20> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_19> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_21> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "21" .
@@ -783,7 +791,7 @@
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "23" .
-<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#CCH> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Challenge> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#quarter> "FirstQuarter"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#clock> "07:55"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "475"^^<http://www.w3.org/2001/XMLSchema#integer> .
@@ -791,6 +799,8 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "7"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_23> <http://www.ics.forth.gr/isl/Basketball#actionCoach> <https://www.euroleaguebasketball.net/euroleague/coaches/-/TRINCHIERI_ANDREA> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_24> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "24" .
@@ -947,6 +957,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "9"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007513> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_34> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_33> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_36> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "36" .
@@ -1165,6 +1179,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "11"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012774> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_51> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_50> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_52> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "52" .
@@ -1263,6 +1281,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "13"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013403> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_63> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_62> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_64> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "64" .
@@ -1327,6 +1349,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "14"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P005161> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_67> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_66> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_68> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "68" .
@@ -1586,6 +1612,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "14"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007866> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_92> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_91> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_93> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "93" .
@@ -1842,6 +1872,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "18"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P005161> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_114> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_113> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_115> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "115" .
@@ -2019,6 +2053,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "20"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007029> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_126> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_125> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_127> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "127" .
@@ -2073,6 +2111,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "22"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012622> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_131> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_130> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_132> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "132" .
@@ -2116,6 +2158,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "23"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P004088> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_134> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_133> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_135> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "135" .
@@ -2202,6 +2248,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "23"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007975> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_142> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_141> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_143> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "143" .
@@ -2448,7 +2498,7 @@
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "165" .
-<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#CCH> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Challenge> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#quarter> "SecondQuarter"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#clock> "09:17"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "557"^^<http://www.w3.org/2001/XMLSchema#integer> .
@@ -2456,6 +2506,8 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "25"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_165> <http://www.ics.forth.gr/isl/Basketball#actionCoach> <https://www.euroleaguebasketball.net/euroleague/coaches/-/ATAMAN_ERGIN> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_166> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "166" .
@@ -2598,6 +2650,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "28"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012774> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_175> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_174> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_176> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "176" .
@@ -2705,6 +2761,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "28"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P003048> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_183> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_182> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_184> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "184" .
@@ -2805,6 +2865,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "30"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_192> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_191> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_193> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "193" .
@@ -2988,6 +3052,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "30"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013403> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_209> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_208> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_210> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "210" .
@@ -3456,6 +3524,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "38"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P002676> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_243> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_241> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_244> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "244" .
@@ -3605,6 +3677,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "42"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012712> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_255> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_254> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_256> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "256" .
@@ -3848,6 +3924,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "49"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012774> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_278> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_277> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_279> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "279" .
@@ -3870,6 +3950,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "49"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P001926> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_280> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_279> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_281> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "281" .
@@ -4088,6 +4172,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "51"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011204_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P005504> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_299> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_298> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_300> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "300" .
@@ -4347,10 +4435,14 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "51"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P001926> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_324> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_323> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "325" .
-<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#CCH> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Challenge> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#quarter> "ThirdQuarter"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#clock> "08:50"^^<http://www.w3.org/2001/XMLSchema#string> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#quarterSecondsRemaining> "530"^^<http://www.w3.org/2001/XMLSchema#integer> .
@@ -4358,6 +4450,8 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "51"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_325> <http://www.ics.forth.gr/isl/Basketball#actionCoach> <https://www.euroleaguebasketball.net/euroleague/coaches/-/ATAMAN_ERGIN> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_326> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "326" .
@@ -4726,6 +4820,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "57"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007975> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_351> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_350> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_352> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "352" .
@@ -4770,6 +4868,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "57"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P005504> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_357> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_356> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_358> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "358" .
@@ -4856,6 +4958,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "58"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P002329> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_363> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_362> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_364> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "364" .
@@ -5083,6 +5189,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "61"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P001926> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_380> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_379> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_381> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "381" .
@@ -5190,6 +5300,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "61"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013403> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_390> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_389> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_391> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "391" .
@@ -5501,6 +5615,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "69"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P003048> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_412> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_411> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_413> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "413" .
@@ -5587,6 +5705,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012712> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_420> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_419> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_421> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "421" .
@@ -5706,6 +5828,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P011204> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_433> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_432> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_434> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "434" .
@@ -5918,6 +6044,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_007975" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_454> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_453> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_455> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "455" .
@@ -6060,6 +6190,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_007975" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012774> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_464> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_463> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_465> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "465" .
@@ -6250,6 +6384,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007975_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012712> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_480> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_478> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_481> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "481" .
@@ -6307,6 +6445,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007975_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007975> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_485> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_484> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_486> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "486" .
@@ -6407,6 +6549,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007029_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_493> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_492> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_494> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "494" .
@@ -6579,6 +6725,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012622> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_505> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_503> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_506> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "506" .
@@ -6737,6 +6887,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "70"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P002329> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_522> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_521> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_523> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "523" .
@@ -6847,6 +7001,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012622> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_530> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_529> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_531> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "531" .
@@ -7057,6 +7215,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_007029_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P001926> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_547> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_546> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_548> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "548" .
@@ -7179,6 +7341,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_007029_007975_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_557> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_556> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_558> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "558" .
@@ -7298,6 +7464,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007029_007513_012622_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P012774> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_570> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_569> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_571> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "571" .
@@ -7427,6 +7597,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P013383> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_581> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_580> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_582> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "582" .
@@ -7679,6 +7853,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "72"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P005504> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_599> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_598> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_600> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "600" .
@@ -7850,6 +8028,10 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#runningRoadTeamScore> "74"^^<http://www.w3.org/2001/XMLSchema#integer> .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#hasHomeTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_011442_012712" .
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#hasRoadTeamLineup> "https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403" .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#FoulDrawn> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#actionPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/P007029> .
+<https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_611> <http://www.ics.forth.gr/isl/Basketball#occuredByFoul> <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_610> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/200#PlayByPlay_612> <http://www.ics.forth.gr/isl/Basketball#hasPlayByPlaySequence> "612" .

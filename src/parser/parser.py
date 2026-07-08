@@ -184,6 +184,10 @@ class GameProcessor:
                 if prev_action.get("hasActionInfo") in ("TO", "CM", "CMU") and prev_action["quarter"] == action_data["quarter"]:
                     action_data["occuredByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
                     break
+        elif play_type == "CCH" or "challenge" in event.get("PLAYINFO", "").lower():
+            action_data["hasActionInfo"] = "Challenge"
+            action_data["actionCoach"] = self.current_coaches.get(action_data["actionTeam"])
+
 
         # Merging Substitutions
         if play_type in ("IN", "OUT"):
@@ -345,6 +349,9 @@ class GameProcessor:
                 triplets.append(f"{begin} <{NS}causedByFoul> \"{action['causedByFoul']}\" .")
                 triplets.append(f"{begin} <{NS}causedByViolation> \"{action['causedByViolation']}\" .")
                 triplets.append(f"{begin} <{NS}causedBySteal> \"{action['causedBySteal']}\" .")
+            elif action['hasActionInfo'] == "Challenge":
+                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+                triplets.append(f"{begin} <{NS}actionCoach> <{action['actionCoach']}> .")
             triplets.append("\n")
         return triplets
 

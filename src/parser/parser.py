@@ -82,7 +82,8 @@ class GameProcessor:
     def _map_points_data(self, points_data):
         shot_map = {}
         for row in points_data.get("Rows", []):
-            key = (row["ID_PLAYER"].strip(), row["MINUTE"], row["CONSOLE"])
+            # Χρησιμοποιούμε απευθείας το NUM_ANOT ως κλειδί
+            key = row.get("NUM_ANOT")
             shot_map[key] = {
                 "coord_x": row.get("COORD_X"),
                 "coord_y": row.get("COORD_Y"),
@@ -116,52 +117,50 @@ class GameProcessor:
             "hasHomeTeamLineupSnapshot": generate_lineup_uri(self.team_a, self.current_lineups[self.team_a]),
             "hasRoadTeamLineupSnapshot": generate_lineup_uri(self.team_b, self.current_lineups[self.team_b]),
             "hasActionInfo": play_type,
-            
-            # -- PRE-FILLED OPTIONAL KEYS TO PREVENT CRASHES --
-            "actionPlayer": None,
-            "actionCoach": None,
-            "pointsAwarded": None,
-            "coord_x": None,
-            "coord_y": None,
-            "zone": None,
-            "isFastBreak": None,
-            "isSecondChance": None,
-            "isFromTurnover": None,
-            "hasAssist": None,
-            "leadsToRebound": None,
-            "wasBlockedBy": None,
-            "associatedAction": None,
-            "causedBySteal": None,
-            "causedByFoul": None,
-            "occuredByFoul": None,
-            "isViolation": None
         }
-
         # Merging Assists
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") in ("2FGM", "3FGM") and prev_action["actionTeam"] == action_data["actionTeam"]:
+                if prev_action.get("hasActionInfo") in ("2FGM", "3FGM", "FTM") and prev_action["actionTeam"] == action_data["actionTeam"]:
                     if prev_action["quarter"] == action_data["quarter"]:
                         prev_action["hasAssist"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
-                    break
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                        break
 
         # Merging Blocks
         elif play_type == "FV":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
-                    prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
-                    break
-                    
+                # Αντί για clock match, ελέγχουμε να είναι στο ίδιο δεκάλεπτο
+                if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["quarter"] == action_data["quarter"]:
+                    # Ελέγχουμε ότι η ομάδα που σούταρε είναι ΔΙΑΦΟΡΕΤΙΚΗ από την ομάδα που έκανε το μπλοκ
+                    if prev_action["actionTeam"] != action_data["actionTeam"]:
+                        prev_action["wasBlockedBy"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                        break
+
+        # Merging Aggressive Fouls (AG) to the specific shot attempt            
+        elif play_type == "AG":
+                for prev_action in reversed(self.all_actions):
+                    if prev_action.get("hasActionInfo") in ("2FGA", "3FGA") and prev_action["clock"] == action_data["clock"]:
+                        if prev_action["actionTeam"] == action_data["actionTeam"]:
+                            action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
+                            break
+
         # Merging Steals (ST) back to the Turnover 
         elif play_type == "ST":
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") == "TO" and prev_action["quarter"] == action_data["quarter"]:
                     if prev_action["actionTeam"] != action_data["actionTeam"]:
                         prev_action["causedBySteal"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                        action_data["associatedAction"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
                         break
                         
         # Merging Turnovers (TO) to Fouls and parsing Violations
         elif play_type == "TO":
+            action_data["causedByFoul"] = False
+            action_data["causedByViolation"] = False
+            action_data["causedBySteal"] = False
+            # 1. Look backward for an Offensive Foul (OF) at the exact same game clock
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
                     action_data["causedByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
@@ -170,25 +169,20 @@ class GameProcessor:
             play_info = event.get("PLAYINFO", "").lower()
             violation_keywords = ["travel", "second", "out of bound", "step", "violation", "carry", "goaltend"]
             if any(kw in play_info for kw in violation_keywords):
-                action_data["isViolation"] = True            
+                action_data["causedByViolation"] = True       
 
-        # Merging Foul Drawn (RV) to the specific foul committed
-        elif play_type == "RV":
-            for prev_action in reversed(self.all_actions):
-                if prev_action.get("hasActionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
-                    action_data["occuredByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
-                    break
-
-        # Coach's Challenge Logic
-        elif play_type == "CCH" or "challenge" in event.get("PLAYINFO", "").lower():
-            action_data["hasActionInfo"] = "Challenge"
-            action_data["actionCoach"] = self.current_coaches.get(action_data["actionTeam"])
-                
         # Merging Rebounds
         elif play_type in ("O", "D"):
             for prev_action in reversed(self.all_actions):
                 if prev_action.get("hasActionInfo") in ("2FGA", "3FGA", "FTA"):
                     prev_action["leadsToRebound"] = f"{GAME_URL_BASE}#PlayByPlay_{event.get('NUMBEROFPLAY')}"
+                    break
+        
+        # Merging Reviews (RV) to the specific foul or violation
+        elif play_type == "RV":
+            for prev_action in reversed(self.all_actions):
+                if prev_action.get("hasActionInfo") in ("TO", "CM", "CMU") and prev_action["quarter"] == action_data["quarter"]:
+                    action_data["occuredByFoul"] = f"{GAME_URL_BASE}#PlayByPlay_{prev_action['hasPlayByPlaySequence']}"
                     break
 
         # Merging Substitutions
@@ -216,8 +210,9 @@ class GameProcessor:
             action_data["actionPlayer"] = generate_player_uri(player_id)
 
             # Look up extra coordinates and states for shots
-            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM", "FTA") and player_id:
-                shot_key = (player_id, event.get("MINUTE"), event.get("MARKERTIME"))
+            if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM") and player_id:
+                # Πλέον κάνουμε match χρησιμοποιώντας τον μοναδικό αριθμό του play
+                shot_key = event.get("NUMBEROFPLAY")
                 if shot_key in self.shots_extra_data:
                     extra = self.shots_extra_data[shot_key]
                     
@@ -229,14 +224,27 @@ class GameProcessor:
                         action_data["hasShotCoords"] = f"{extra['coord_x']},{extra['coord_y']}"
                         
                     if play_type in ("2FGA", "3FGA", "FTA"):
+                        action_data["wasBlockedBy"] = None
+                        action_data["leadsToRebound"] = None
                         action_data["pointsAwarded"] = 0
                     else:
                         action_data["pointsAwarded"] = extra["pointsAwarded"]
+                        action_data["hasAssist"] = None
                         
                     action_data["isFastBreak"] = extra["isFastBreak"]
                     action_data["isSecondChance"] = extra["isSecondChance"]
                     action_data["isFromTurnover"] = extra["isFromTurnover"]
-
+            elif play_type in ("FTA"):
+                action_data["isFastBreak"] = False
+                action_data["isSecondChance"] = False
+                action_data["isFromTurnover"] = False
+                action_data["coord_x"] = -1
+                action_data["coord_y"] = -1
+                action_data["zone"] = " "
+                action_data["hasShotZone"] = None
+                action_data["hasShotCoords"] = f"{action_data['coord_x']},{action_data['coord_y']}"
+                action_data["wasBlockedBy"] = None
+                action_data["leadsToRebound"] = None
             self.all_actions.append(action_data)
 
     def process_substitution(self, event):
@@ -279,6 +287,7 @@ class GameProcessor:
 
         triplets.append("\n")
         for action in self.all_actions:
+            print(f"Generating triplets for action: {action['hasPlayByPlaySequence']} ({action['hasActionInfo']})")
             begin=f"{subj}#PlayByPlay_{action['hasPlayByPlaySequence']}>"
             triplets.append(f"{begin} <{NS}hasPlayByPlaySequence> \"{action['hasPlayByPlaySequence']}\" .")
             triplets.append(f"{begin} <{RDF}> <{NS}{action['hasActionInfo']}> .")
@@ -300,9 +309,8 @@ class GameProcessor:
                 triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
                 triplets.append(f"{begin} <{NS}pointsAwarded> \"{action['pointsAwarded']}\"^^<{XSD}integer> .")
                 triplets.append(f"{begin} <{NS}hasAssist> <{action['hasAssist']}> .")
-                triplets.append(f"{begin} <{NS}coordX> \"{action['coord_x']}\"^^<{XSD}integer> .")
-                triplets.append(f"{begin} <{NS}coordY> \"{action['coord_y']}\"^^<{XSD}integer> .")
-                triplets.append(f"{begin} <{NS}hasShotZone> \"{action['zone']}\"^^<{XSD}string> .")
+                triplets.append(f"{begin} <{NS}hasShotCoords> \"{action['hasShotCoords']}\"^^<{XSD}string> .")
+                triplets.append(f"{begin} <{NS}hasShotZone> \"{action['hasShotZone']}\"^^<{XSD}string> .")
                 triplets.append(f"{begin} <{NS}isFastBreak> \"{action['isFastBreak']}\"^^<{XSD}boolean> .")
                 triplets.append(f"{begin} <{NS}isSecondChance> \"{action['isSecondChance']}\"^^<{XSD}boolean> .")
                 triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
@@ -317,21 +325,26 @@ class GameProcessor:
                 triplets.append(f"{begin} <{NS}isFromTurnover> \"{action['isFromTurnover']}\"^^<{XSD}boolean> .")
                 triplets.append(f"{begin} <{NS}leadsToRebound> <{action['leadsToRebound']}> .")
                 triplets.append(f"{begin} <{NS}wasBlockedBy> <{action['wasBlockedBy']}> .")
-            elif action['hasActionInfo'] in ("Block", "AS", "FV", "AG"):
+            elif action['hasActionInfo'] in ("AS", "FV", "AG"):
                 triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
                 triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
                 triplets.append(f"{begin} <{NS}associatedAction> <{action['associatedAction']}> .")
+            elif action['hasActionInfo'] in ("O", "D"):
+                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
+            elif action['hasActionInfo'] in ("CM", "OF"):
+                triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
+                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
             elif action['hasActionInfo'] == "RV":
-                # If you didn't rename "RV" to "FoulDrawn" in your extract function, 
-                # you can force the correct class name here:
-                triplets.append(f"{begin} <{RDF}> <{NS}FoulDrawn> .") 
                 triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
                 triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
                 triplets.append(f"{begin} <{NS}occuredByFoul> <{action['occuredByFoul']}> .")
-            # For Coach's Challenge
-            elif action['hasActionInfo'] == "Challenge":
+            elif action['hasActionInfo'] == "TO":
                 triplets.append(f"{begin} <{NS}actionTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/{action['actionTeam']}> .")
-                triplets.append(f"{begin} <{NS}actionCoach> <{action['actionCoach']}> .")
+                triplets.append(f"{begin} <{NS}actionPlayer> <{action['actionPlayer']}> .")
+                triplets.append(f"{begin} <{NS}causedByFoul> \"{action['causedByFoul']}\" .")
+                triplets.append(f"{begin} <{NS}causedByViolation> \"{action['causedByViolation']}\" .")
+                triplets.append(f"{begin} <{NS}causedBySteal> \"{action['causedBySteal']}\" .")
             triplets.append("\n")
         return triplets
 

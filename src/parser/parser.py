@@ -4,11 +4,6 @@ from collections import defaultdict
 import os
 import requests
 
-QUARTERS = [
-    "FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter", 
-    "ExtraTime1", "ExtraTime2", "ExtraTime3"
-]
-
 # --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
@@ -326,8 +321,28 @@ class GameProcessor:
             self.extract_action_data(event, period_name)
 
     def run(self):
-        for q in QUARTERS:
+        # 1. Επεξεργασία των 4 κανονικών δεκαλέπτων
+        standard_quarters = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter"]
+        for q in standard_quarters:
             self.process_period(q)
+
+        # 2. Επεξεργασία της λίστας ExtraTime (αν το παιχνίδι πήγε σε παράταση)
+        if "ExtraTime" in self.data and self.data["ExtraTime"]:
+            current_ot = 0
+            current_ot_name = "ExtraTime1"  # Default fallback
+            
+            for event in self.data["ExtraTime"]:
+                # Κάθε φορά που βλέπουμε "Begin Period" (BP), ξεκινάει νέα παράταση
+                if event["PLAYTYPE"] == "BP":
+                    current_ot += 1
+                    current_ot_name = f"ExtraTime{current_ot}"
+                
+                # Ενημερώνουμε τις αλλαγές παικτών αν υπάρχουν
+                if event["PLAYTYPE"] in ("IN", "OUT"):
+                    self.process_substitution(event)
+                
+                # Περνάμε το event με το δυναμικό όνομα της παράτασης (π.χ. ExtraTime2)
+                self.extract_action_data(event, current_ot_name)
 
     # --------------------------------------------------
     # GENERATE RDF TRIPLETS (NO INNER IF STATEMENTS)
@@ -432,8 +447,8 @@ class GameProcessor:
 
 # 1. Όρισε τις μεταβλητές του αγώνα που θες να τραβήξεις
 season_str = "2023-24"  # Για το URL του Game Center
-season_code = "E2024"   # Κωδικός σεζόν για το API (π.χ. E2024)
-game_code = "200"       # Κωδικός παιχνιδιού
+season_code = "E2023"   # Κωδικός σεζόν για το API (π.χ. E2024)
+game_code = "170"       # Κωδικός παιχνιδιού
 
 # 2. Φτιάχνουμε το δυναμικό Game URL Base
 dynamic_game_url_base = f"https://www.euroleaguebasketball.net/euroleague/game-center/{season_str}/-/{season_code}/{game_code}"

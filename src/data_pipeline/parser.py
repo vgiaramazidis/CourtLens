@@ -302,7 +302,6 @@ class GameProcessor:
             self._update_unique_lineups()      
             return     
         else:
-            action_data["actionPlayer"] = generate_player_uri(player_id)
             action_data["actionPlayer"] = generate_uri("player", player_id)
 
             if play_type in ("2FGM", "2FGA", "3FGM", "3FGA", "FTM") and player_id:

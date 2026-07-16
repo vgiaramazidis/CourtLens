@@ -107,19 +107,12 @@ class GameProcessor:
         # Dynamic Starters integration
         self.current_lineups = self._extract_starters(boxscore_data)
         self._update_unique_lineups()
-        
+    
         # Extract Coaches dynamically
         self.current_coaches = {}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
-            self.current_coaches[matched_code] = generate_uri("coach", team_stat.get("Coach", ""))
-        
-        # Extract Coaches dynamically
-        self.current_coaches = {}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+        for index, team_stat in enumerate(boxscore_data["Stats"]):
+            # Το index 0 αντιστοιχεί στην Home Team (team_a) και το 1 στην Road Team (team_b)
+            matched_code = self.team_a if index == 0 else self.team_b
             self.current_coaches[matched_code] = generate_coach_uri(team_stat.get("Coach", ""))
         
         # Map shot data from Points.json for easy lookup
@@ -128,9 +121,9 @@ class GameProcessor:
 
     def _extract_starters(self, boxscore_data):
         starters = {self.team_a: set(), self.team_b: set()}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+        for index, team_stat in enumerate(boxscore_data["Stats"]):
+            # Το index 0 αντιστοιχεί στην Home Team (team_a) και το 1 στην Road Team (team_b)
+            matched_code = self.team_a if index == 0 else self.team_b
             
             for player in team_stat["PlayersStats"]:
                 if player.get("IsStarter") == 1:
@@ -174,7 +167,7 @@ class GameProcessor:
             "FirstQuarter": "1st",
             "SecondQuarter": "2nd",
             "ThirdQuarter": "3rd",
-            "FourthQuarter": "4th",
+            "ForthQuarter": "4th",
             "ExtraTime1": "OT",
             "ExtraTime2": "2OT",
             "ExtraTime3": "3OT",
@@ -207,31 +200,40 @@ class GameProcessor:
         # Merging Logic (Assists, Blocks, Rejects, Steals, TOs, Rebounds, Reviews, Challenges, Substitutions)
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
                 if prev_action.get("actionInfo") in ("2FGM", "3FGM", "FTM") and prev_action["actionTeam"] == action_data["actionTeam"]:
-                    if prev_action["quarter"] == action_data["quarter"]:
-                        prev_action["hasAssist"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
-                        break
+                    prev_action["hasAssist"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
+                    break
 
         elif play_type == "FV":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("2FGA", "3FGA") and prev_action["quarter"] == action_data["quarter"]:
-                    if prev_action["actionTeam"] != action_data["actionTeam"]:
-                        prev_action["blockedBy"] = generate_uri("action", euroleague_number_of_play,self.game_url_base)
-                        break
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if prev_action.get("actionInfo") in ("2FGA", "3FGA") and prev_action["actionTeam"] != action_data["actionTeam"]:
+                    prev_action["blockedBy"] = generate_uri("action", euroleague_number_of_play,self.game_url_base)
+                    break
 
         elif play_type == "ST":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") == "TO" and prev_action["quarter"] == action_data["quarter"]:
-                    if prev_action["actionTeam"] != action_data["actionTeam"]:
-                        prev_action["causedBySteal"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
-                        break
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "TO" and prev_action["actionTeam"] != action_data["actionTeam"]:
+                    prev_action["causedBySteal"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
+                    break
                         
         elif play_type == "TO":
             action_data["causedByFoul"] = None
             action_data["causedByViolation"] = None
             action_data["causedBySteal"] = None
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "OF":
                     action_data["causedByFoul"] = generate_uri("action", prev_action['originalEventId'], self.game_url_base)
                     break
             
@@ -246,10 +248,14 @@ class GameProcessor:
                     prev_action["leadsToRebound"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
                     break
         
-        elif play_type == "RV":
+        elif play_type in ("CM", "OF", "CMU"):
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("TO", "CM", "CMU") and prev_action["quarter"] == action_data["quarter"]:
-                    action_data["occuredByFoul"] = generate_uri("action", prev_action['originalEventId'], self.game_url_base)
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "RV" and not prev_action.get("occuredByFoul"):
+                    prev_action["occuredByFoul"] = generate_uri("action", action_data['originalEventId'], self.game_url_base)
                     break
 
         elif play_type == "CCH":
@@ -430,7 +436,7 @@ class GameProcessor:
             self.possessions.append(current_possession)
 
     def run(self):
-        standard_quarters = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "FourthQuarter"]
+        standard_quarters = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter"]
         for q in standard_quarters:
             self.process_period(q)
 
@@ -620,12 +626,12 @@ output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_cod
 output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
 
 def remove_nulls(obj):
-    """Αφαιρεί αναδρομικά τα κλειδιά με τιμή None από λεξικά και λίστες."""
     if isinstance(obj, list):
         return [remove_nulls(item) for item in obj if item is not None]
     elif isinstance(obj, dict):
         return {k: remove_nulls(v) for k, v in obj.items() if v is not None}
     return obj
+
 print(f"Saving merged JSON to: {output_json_path}")
 # Φτιάχνουμε ένα συνολικό αντικείμενο που έχει ΚΑΙ τα Actions ΚΑΙ τα Possessions
 combined_output = {

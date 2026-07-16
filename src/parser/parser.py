@@ -619,15 +619,23 @@ os.makedirs(output_dir, exist_ok=True)
 output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
 output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
 
+def remove_nulls(obj):
+    """Αφαιρεί αναδρομικά τα κλειδιά με τιμή None από λεξικά και λίστες."""
+    if isinstance(obj, list):
+        return [remove_nulls(item) for item in obj if item is not None]
+    elif isinstance(obj, dict):
+        return {k: remove_nulls(v) for k, v in obj.items() if v is not None}
+    return obj
 print(f"Saving merged JSON to: {output_json_path}")
 # Φτιάχνουμε ένα συνολικό αντικείμενο που έχει ΚΑΙ τα Actions ΚΑΙ τα Possessions
 combined_output = {
     "Possessions": processor.possessions,
     "AllActions": processor.all_actions
 }
+cleaned_output = remove_nulls(combined_output)
 
 with open(output_json_path, "w", encoding="utf8") as out_file:
-    json.dump(combined_output, out_file, ensure_ascii=False, indent=4)
+    json.dump(cleaned_output, out_file, ensure_ascii=False, indent=4)
 print(f"Saving Triplets to: {output_triplets_path}")
 triplets = processor.generate_triplets()
 with open(output_triplets_path, "w", encoding="utf8") as out_file:

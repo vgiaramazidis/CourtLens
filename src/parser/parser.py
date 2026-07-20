@@ -2,6 +2,8 @@ from itertools import count
 import json
 from collections import defaultdict
 import os
+import time
+import random
 import requests 
 
 # --------------------------------------------------
@@ -107,19 +109,12 @@ class GameProcessor:
         # Dynamic Starters integration
         self.current_lineups = self._extract_starters(boxscore_data)
         self._update_unique_lineups()
-        
+    
         # Extract Coaches dynamically
         self.current_coaches = {}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
-            self.current_coaches[matched_code] = generate_uri("coach", team_stat.get("Coach", ""))
-        
-        # Extract Coaches dynamically
-        self.current_coaches = {}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+        for index, team_stat in enumerate(boxscore_data["Stats"]):
+            # Το index 0 αντιστοιχεί στην Home Team (team_a) και το 1 στην Road Team (team_b)
+            matched_code = self.team_a if index == 0 else self.team_b
             self.current_coaches[matched_code] = generate_coach_uri(team_stat.get("Coach", ""))
         
         # Map shot data from Points.json for easy lookup
@@ -128,9 +123,9 @@ class GameProcessor:
 
     def _extract_starters(self, boxscore_data):
         starters = {self.team_a: set(), self.team_b: set()}
-        for team_stat in boxscore_data["Stats"]:
-            team_code = team_stat["Team"].strip()
-            matched_code = self.team_a if team_code.startswith(self.team_a[:3]) else self.team_b
+        for index, team_stat in enumerate(boxscore_data["Stats"]):
+            # Το index 0 αντιστοιχεί στην Home Team (team_a) και το 1 στην Road Team (team_b)
+            matched_code = self.team_a if index == 0 else self.team_b
             
             for player in team_stat["PlayersStats"]:
                 if player.get("IsStarter") == 1:
@@ -174,7 +169,7 @@ class GameProcessor:
             "FirstQuarter": "1st",
             "SecondQuarter": "2nd",
             "ThirdQuarter": "3rd",
-            "FourthQuarter": "4th",
+            "ForthQuarter": "4th",
             "ExtraTime1": "OT",
             "ExtraTime2": "2OT",
             "ExtraTime3": "3OT",
@@ -207,31 +202,40 @@ class GameProcessor:
         # Merging Logic (Assists, Blocks, Rejects, Steals, TOs, Rebounds, Reviews, Challenges, Substitutions)
         if play_type == "AS":
             for prev_action in reversed(self.all_actions):
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
                 if prev_action.get("actionInfo") in ("2FGM", "3FGM", "FTM") and prev_action["actionTeam"] == action_data["actionTeam"]:
-                    if prev_action["quarter"] == action_data["quarter"]:
-                        prev_action["hasAssist"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
-                        break
+                    prev_action["hasAssist"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
+                    break
 
         elif play_type == "FV":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("2FGA", "3FGA") and prev_action["quarter"] == action_data["quarter"]:
-                    if prev_action["actionTeam"] != action_data["actionTeam"]:
-                        prev_action["blockedBy"] = generate_uri("action", euroleague_number_of_play,self.game_url_base)
-                        break
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if prev_action.get("actionInfo") in ("2FGA", "3FGA") and prev_action["actionTeam"] != action_data["actionTeam"]:
+                    prev_action["blockedBy"] = generate_uri("action", euroleague_number_of_play,self.game_url_base)
+                    break
 
         elif play_type == "ST":
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") == "TO" and prev_action["quarter"] == action_data["quarter"]:
-                    if prev_action["actionTeam"] != action_data["actionTeam"]:
-                        prev_action["causedBySteal"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
-                        break
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "TO" and prev_action["actionTeam"] != action_data["actionTeam"]:
+                    prev_action["causedBySteal"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
+                    break
                         
         elif play_type == "TO":
             action_data["causedByFoul"] = None
             action_data["causedByViolation"] = None
             action_data["causedBySteal"] = None
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("CM", "OF", "U", "T", "C", "B") and prev_action["clock"] == action_data["clock"]:
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "OF":
                     action_data["causedByFoul"] = generate_uri("action", prev_action['originalEventId'], self.game_url_base)
                     break
             
@@ -246,10 +250,14 @@ class GameProcessor:
                     prev_action["leadsToRebound"] = generate_uri("action", euroleague_number_of_play, self.game_url_base)
                     break
         
-        elif play_type == "RV":
+        elif play_type in ("CM", "OF", "CMU"):
             for prev_action in reversed(self.all_actions):
-                if prev_action.get("actionInfo") in ("TO", "CM", "CMU") and prev_action["quarter"] == action_data["quarter"]:
-                    action_data["occuredByFoul"] = generate_uri("action", prev_action['originalEventId'], self.game_url_base)
+                if prev_action["quarter"] != action_data["quarter"]:
+                    break
+                if abs(prev_action["quarterSecondsRemaining"] - action_data["quarterSecondsRemaining"]) > 3:
+                    break
+                if prev_action.get("actionInfo") == "RV" and not prev_action.get("occuredByFoul"):
+                    prev_action["occuredByFoul"] = generate_uri("action", action_data['originalEventId'], self.game_url_base)
                     break
 
         elif play_type == "CCH":
@@ -419,7 +427,6 @@ class GameProcessor:
 
             if current_possession:
                 current_possession["containsAction"].append(action_id)
-                action["belongsToPossession"] = current_possession["possession_id"]
                 
             previous_action_id = action_id
                 
@@ -430,7 +437,7 @@ class GameProcessor:
             self.possessions.append(current_possession)
 
     def run(self):
-        standard_quarters = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "FourthQuarter"]
+        standard_quarters = ["FirstQuarter", "SecondQuarter", "ThirdQuarter", "ForthQuarter"]
         for q in standard_quarters:
             self.process_period(q)
 
@@ -488,8 +495,6 @@ class GameProcessor:
             "causedByFoul": ("causedByFoul", "uri"),
             "causedByViolation": ("causedByViolation", "boolean"),
             "causedBySteal": ("causedBySteal", "uri"),
-            # Link action to its possession container
-            "belongsToPossession": ("belongsToPossession", "integer") 
         }
 
         # 2. Triplets for Play-by-Play Actions
@@ -579,67 +584,104 @@ class GameProcessor:
 # USAGE (DYNAMIC API FETCH)
 # ==================================================
 
-season_str = "2024-25"
-season_code = "E2024"   
-game_code = "200"       
+season_str = "2023-24"
+season_code = "E2023"   
+MAX_GAMES = 333 
 
-dynamic_game_url_base = f"https://www.euroleaguebasketball.net/euroleague/game-center/{season_str}/-/{season_code}/{game_code}"
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+# --- Δημιουργία Session για να φαίνεται σαν πραγματικός browser ---
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
-}
+    "Referer": "https://www.euroleaguebasketball.net/",
+    "Origin": "https://www.euroleaguebasketball.net"
+})
 
-print(f"Fetching data for Game {game_code} (Season {season_code}) from Euroleague API...")
-
-try:
-    pbp_response = requests.get(f"https://live.euroleague.net/api/PlaybyPlay?gamecode={game_code}&seasoncode={season_code}", headers=headers)
-    boxscore_response = requests.get(f"https://live.euroleague.net/api/Boxscore?gamecode={game_code}&seasoncode={season_code}", headers=headers)
-    points_response = requests.get(f"https://live.euroleague.net/api/Points?gamecode={game_code}&seasoncode={season_code}", headers=headers)
-    
-    pbp_data = pbp_response.json()
-    boxscore_data = boxscore_response.json()
-    points_data = points_response.json()
-
-except Exception as e:
-    print(f"Error fetching data from API: {e}")
-    exit(1)
-
-print("Data fetched successfully. Processing...")
-
-processor = GameProcessor(pbp_data, boxscore_data, points_data, dynamic_game_url_base)
-processor.run()
-
-# --- Αποθήκευση ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(script_dir))
 output_dir = os.path.join(project_root, "data", "processed")
 os.makedirs(output_dir, exist_ok=True)
 
-output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
-output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
-
 def remove_nulls(obj):
-    """Αφαιρεί αναδρομικά τα κλειδιά με τιμή None από λεξικά και λίστες."""
     if isinstance(obj, list):
         return [remove_nulls(item) for item in obj if item is not None]
     elif isinstance(obj, dict):
         return {k: remove_nulls(v) for k, v in obj.items() if v is not None}
     return obj
-print(f"Saving merged JSON to: {output_json_path}")
-# Φτιάχνουμε ένα συνολικό αντικείμενο που έχει ΚΑΙ τα Actions ΚΑΙ τα Possessions
-combined_output = {
-    "Possessions": processor.possessions,
-    "AllActions": processor.all_actions
-}
-cleaned_output = remove_nulls(combined_output)
 
-with open(output_json_path, "w", encoding="utf8") as out_file:
-    json.dump(cleaned_output, out_file, ensure_ascii=False, indent=4)
-print(f"Saving Triplets to: {output_triplets_path}")
-triplets = processor.generate_triplets()
-with open(output_triplets_path, "w", encoding="utf8") as out_file:
-    for triple in triplets:
-        out_file.write(triple + "\n")
+print(f"Starting batch process for Season {season_code}...")
 
-print("Processing complete!")
+for gc in range(73, MAX_GAMES + 1):
+    game_code = str(gc)
+    dynamic_game_url_base = f"https://www.euroleaguebasketball.net/euroleague/game-center/{season_str}/-/{season_code}/{game_code}"
+    
+    print(f"\n[{game_code}/{MAX_GAMES}] Fetching data from API...")
+    
+    try:
+        # Χρησιμοποιούμε το 'session.get' αντί για 'requests.get'
+        pbp_response = session.get(f"https://live.euroleague.net/api/PlaybyPlay?gamecode={game_code}&seasoncode={season_code}")
+        
+        # Αν μας μπλοκάρουν (403) ή έχουμε φτάσει στο όριο (429), περιμένουμε λίγο παραπάνω και ξαναδοκιμάζουμε
+        if pbp_response.status_code in (403, 429):
+            print(f"  -> Banned/Rate Limited (Status: {pbp_response.status_code})! Sleeping for 10 seconds...")
+            time.sleep(10)
+            pbp_response = session.get(f"https://live.euroleague.net/api/PlaybyPlay?gamecode={game_code}&seasoncode={season_code}")
+
+        # Μικρή παύση 0.5 δευτ. ανάμεσα στα requests του ΙΔΙΟΥ παιχνιδιού
+        time.sleep(0.5) 
+        boxscore_response = session.get(f"https://live.euroleague.net/api/Boxscore?gamecode={game_code}&seasoncode={season_code}")
+        time.sleep(0.5)
+        points_response = session.get(f"https://live.euroleague.net/api/Points?gamecode={game_code}&seasoncode={season_code}")
+        
+        if pbp_response.status_code != 200:
+            print(f"  -> Skipping... (Status: {pbp_response.status_code})")
+            time.sleep(random.uniform(2.0, 3.5))
+            continue
+            
+        pbp_data = pbp_response.json()
+        boxscore_data = boxscore_response.json()
+        points_data = points_response.json()
+        
+        if not pbp_data or not boxscore_data:
+            print(f"  -> Game {game_code} has no valid JSON data. Skipping...")
+            time.sleep(random.uniform(2.0, 3.5))
+            continue
+
+    except Exception as e:
+        print(f"  -> Error fetching data for game {game_code}: {e}")
+        time.sleep(5) # Αν "χτυπήσει" κάποιο timeout, περιμένουμε λίγο παραπάνω
+        continue 
+
+    print("  -> Data fetched successfully. Processing...")
+    
+    try:
+        processor = GameProcessor(pbp_data, boxscore_data, points_data, dynamic_game_url_base)
+        processor.run()
+        
+        output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
+        output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
+        
+        combined_output = {
+            "Possessions": processor.possessions,
+            "AllActions": processor.all_actions
+        }
+        cleaned_output = remove_nulls(combined_output)
+        
+        with open(output_json_path, "w", encoding="utf8") as out_file:
+            json.dump(cleaned_output, out_file, ensure_ascii=False, indent=4)
+            
+        triplets = processor.generate_triplets()
+        with open(output_triplets_path, "w", encoding="utf8") as out_file:
+            for triple in triplets:
+                out_file.write(triple + "\n")
+                
+        print(f"  -> Saved successfully: AllActions_{season_code}_{game_code}.json")
+        
+    except Exception as e:
+        print(f"  -> Error processing or saving game {game_code}: {e}")
+
+    # ΠΑΥΣΗ: Από 2.5 έως 4.5 δευτερόλεπτα (τυχαία) για να φαίνεται σαν άνθρωπος
+    sleep_time = random.uniform(2.5, 4.5)
+    time.sleep(sleep_time)
+
+print("\nBatch processing complete! All games processed.")

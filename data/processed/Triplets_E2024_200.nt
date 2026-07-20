@@ -7869,247 +7869,22 @@
 <https://www.euroleaguebasketball.net/euroleague/game-center/2024-25/-/E2024/200#Possession_104> <http://www.ics.forth.gr/isl/Basketball#containsAction> <https://www.euroleaguebasketball.net/euroleague/game-center/2024-25/-/E2024/200#PlayByPlay_J444> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011983> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012715> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012715> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011983> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
-
-
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
@@ -8121,6 +7896,15 @@
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_011209> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
 
 
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
@@ -8130,13 +7914,76 @@
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_009622_011204> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_011204_011209_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_011204_012712_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_007866_009622_011204_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
 
 
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
@@ -8157,6 +8004,15 @@
 <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_011204_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
 
 
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007975_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
 <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
 <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
 <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
@@ -8166,30 +8022,174 @@
 <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_002676_003048_007029_007513> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007513_012622_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_011204_011209_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
 
 
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
-<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_009622_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/009622> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_007866_009622_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011983> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_011983_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007029_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007866> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_005161_007866_011204_012774> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012715> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_004088_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005161> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_005161_011204_011209_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/004088> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011209> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_004088_011204_011209_012712_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_005504_007513_007975_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007513_011983> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011983> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002329> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002329_003048_007029_007975_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/PAN> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/001926> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/011204> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012712> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012774> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_011204_012712_012774_013383> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013383> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/003048> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_003048_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/002676> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007029> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_002676_005504_007029_007513_012622> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012622> .
+
+
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.ics.forth.gr/isl/Basketball#Lineup> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#lineupTeam> <https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/005504> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007513> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/007975> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/012715> .
+<https://www.euroleaguebasketball.net/euroleague/teams/-/ZAL#Lineup_005504_007513_007975_012715_013403> <http://www.ics.forth.gr/isl/Basketball#includesPlayer> <https://www.euroleaguebasketball.net/euroleague/players/-/013403> .
 
 

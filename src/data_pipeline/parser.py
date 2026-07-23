@@ -584,9 +584,9 @@ class GameProcessor:
 # USAGE (DYNAMIC API FETCH)
 # ==================================================
 
-season_str = "2024-25"
-season_code = "E2024"   
-MAX_GAMES = 333 
+season_str = "2025-26"
+season_code = "E2025"   
+MAX_GAMES = 406 
 
 # --- Δημιουργία Session για να φαίνεται σαν πραγματικός browser ---
 session = requests.Session()

@@ -584,8 +584,8 @@ class GameProcessor:
 # USAGE (DYNAMIC API FETCH)
 # ==================================================
 
-season_str = "2023-24"
-season_code = "E2023"   
+season_str = "2024-25"
+season_code = "E2024"   
 MAX_GAMES = 333 
 
 # --- Δημιουργία Session για να φαίνεται σαν πραγματικός browser ---
@@ -611,10 +611,19 @@ def remove_nulls(obj):
 
 print(f"Starting batch process for Season {season_code}...")
 
-for gc in range(73, MAX_GAMES + 1):
+for gc in range(1, MAX_GAMES + 1):
     game_code = str(gc)
     dynamic_game_url_base = f"https://www.euroleaguebasketball.net/euroleague/game-center/{season_str}/-/{season_code}/{game_code}"
     
+    # --- ΝΕΟ: Ορίζουμε τα paths των αρχείων πριν κάνουμε request ---
+    output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
+    output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
+    
+    # --- ΝΕΟ: Ελέγχουμε αν τα αρχεία υπάρχουν ήδη στον φάκελο ---
+    if os.path.exists(output_json_path) and os.path.exists(output_triplets_path):
+        print(f"\n[{game_code}/{MAX_GAMES}] Files already exist. Skipping API fetch...")
+        continue # Προσπερνάμε το παιχνίδι χωρίς να κάνουμε κανένα request
+
     print(f"\n[{game_code}/{MAX_GAMES}] Fetching data from API...")
     
     try:
@@ -658,9 +667,6 @@ for gc in range(73, MAX_GAMES + 1):
         processor = GameProcessor(pbp_data, boxscore_data, points_data, dynamic_game_url_base)
         processor.run()
         
-        output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
-        output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
-        
         combined_output = {
             "Possessions": processor.possessions,
             "AllActions": processor.all_actions
@@ -675,7 +681,7 @@ for gc in range(73, MAX_GAMES + 1):
             for triple in triplets:
                 out_file.write(triple + "\n")
                 
-        print(f"  -> Saved successfully: AllActions_{season_code}_{game_code}.json")
+        print(f"  -> Saved successfully: AllActions_{season_code}_{game_code}.json & Triplets_{season_code}_{game_code}.nt")
         
     except Exception as e:
         print(f"  -> Error processing or saving game {game_code}: {e}")

@@ -35,23 +35,7 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
               
         ?season bball:hasCode '{season_code}' .
         
-       ?action rdf:type ?action_type ;
-                bball:shotCoords ?coords ;
-                bball:actionPlayer ?playerURI .
-                
-        # 1. Όνομα παίκτη για το Tooltip
-        ?playerURI rdfs:label ?playerName .
-        
-        # 2. Χρόνος της φάσης για το Video Jump (Αν υπάρχει στην οντολογία σου, π.χ. hasTime)
-        OPTIONAL {{ ?action bball:hasTime ?playTime . }}
-        
-        # 3. Όνομα του παίκτη που έδωσε την Ασίστ (Αν υπάρχει)
-        OPTIONAL {{ 
-            ?action bball:hasAssist ?assist_action .
-            ?assist_action bball:actionPlayer ?assistURI .
-            ?assistURI rdfs:label ?assistName .
-        }}
-        
+        ?action rdf:type ?action_type .
         FILTER(?action_type IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))
         
         ?action bball:shotCoords ?coords .
@@ -167,6 +151,9 @@ def get_match_playbyplay_query(game_code="170", season_code="E2023"):
     LIMIT 500
     """
 
+def get_player_name_query(player_id):
+    """
+    Γενικό ερώτημα που βρίσκει το όνομα της φανέλας οποιουδήποτε παίκτη βάσει του ID του.
 def get_filtered_player_query(player_id=None):
     """
     Δημιουργεί το SPARQL query για να αντλήσει συγκεκριμένες πληροφορίες ενός παίκτη.
@@ -286,6 +273,12 @@ def get_player_name_query(player_id):
 
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     
+    SELECT ?name
+    WHERE {{
+        ?participation bball:overPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ;
+                       bball:hasJerseyName ?name .
+    }} LIMIT 1
+    """
     SELECT (AVG(?height) AS ?avgHeight) (GROUP_CONCAT(?playerLabel; separator=", ") AS ?playersOnCourt)
     WHERE {{
         <{action_uri}> bball:runningHomeTeamLineup ?lineup .

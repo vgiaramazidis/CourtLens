@@ -3,6 +3,7 @@ import uvicorn # <-- ΠΡΟΣΘΗΚΗ: Κάνουμε import τον server
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sparql_queries import query_sparql_requests, get_filtered_shots_query
+from sparql_queries import query_sparql_requests, get_filtered_shots_query, get_player_name_query
 
 app = FastAPI(title="Euroleague API")
 
@@ -14,23 +15,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Πρόσθεσε το get_player_name_query στο import στην αρχή του αρχείου!
+
+# ... (ο υπόλοιπος κώδικας του get_shots παραμένει ίδιος) ...
+
+@app.get("/api/player/{player_id}")
+async def get_player_name(player_id: str):
+    # 1. Φτιάχνουμε το δυναμικό ερώτημα
+    query = get_player_name_query(player_id)
+    
+    # 2. Το στέλνουμε στη βάση
+    data = query_sparql_requests(query)
+    
+    # 3. Βρίσκουμε το όνομα από την απάντηση (αν δεν υπάρχει βάζουμε απλά το ID)
+    name = f"Παίκτης {player_id}" 
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    if bindings:
+        name = bindings[0].get("name", {}).get("value", name)
+        
+    return {"id": player_id, "name": name}
+
 @app.get("/api/shots")
 async def get_shots(
-    game_code: str = Query("170"), 
+    game_code: str = Query("333"), 
     season_code: str = Query("E2023"),
     player: str = Query(None), 
     assist_by: str = Query(None)
 ):
-    # 1. Κατασκευή του query
     sparql_query = get_filtered_shots_query(game_code, season_code, player, assist_by)
-    
-    # 2. Αποστολή στο endpoint
     data = query_sparql_requests(sparql_query)
     
     if not data:
         return {"error": "Failed to fetch data from SPARQL endpoint", "shots": []}
         
-    # 3. Μορφοποίηση δεδομένων για το frontend
     shots = []
     bindings = data.get("results", {}).get("bindings", [])
     
@@ -39,11 +57,17 @@ async def get_shots(
         x, y = raw_coords.split(",")
         action_type = result.get("action_type", {}).get("value", "")
         
+        # --- ΠΡΟΣΘΗΚΗ: Τραβάμε τις πεντάδες από το SPARQL result (αν υπάρχουν) ---
+        home_lineup = result.get("home_lineup", {}).get("value", "Άγνωστη πεντάδα")
+        road_lineup = result.get("road_lineup", {}).get("value", "Άγνωστη πεντάδα")
+        
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),
             "x": float(x),
             "y": float(y),
-            "isMade": "Made" in action_type 
+            "isMade": "Made" in action_type,
+            "runningHomeTeamLineup": home_lineup,   # <-- Προσθήκη
+            "runningRoadTeamLineup": road_lineup    # <-- Προσθήκη
         })
         
     return {"shots": shots}

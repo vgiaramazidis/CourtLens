@@ -1,1 +1,41 @@
-<canvas id="basketballCourt" width="500" height="470" style="border:1px solid #ccc;"></canvas>
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Euroleague 3D Shot Chart</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .controls { margin-bottom: 20px; }
+        input, button { padding: 5px; margin-right: 10px; }
+        /* Μεγαλώσαμε λίγο το παράθυρο για καλύτερη 3D εμπειρία */
+        #courtContainer { width: 600px; height: 500px; border: 1px solid #ccc; }
+    </style>
+    
+    <!-- Εξωτερικές βιβλιοθήκες για τα 3D γραφικά (Three.js & OrbitControls) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <h1>Euroleague 3D Shot Chart</h1>
+    
+    <div class="controls">
+        <label>Παίκτης (ID):</label>
+        <input type="text" id="playerSelect" placeholder="π.χ. 012774 για Nunn">
+        
+        <label>Ασίστ από (ID):</label>
+        <input type="text" id="assistSelect" placeholder="π.χ. 001926 για Slouka">
+        
+        <button id="searchBtn">Αναζήτηση</button>
+    </div>
+
+    <!-- Το νέο container όπου θα μπει το 3D γήπεδο -->
+    <div id="courtContainer"></div>
+
+    <!-- Τα δικά μας αρχεία -->
+    <script src="js/api.js"></script>
+    <script src="js/court.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>

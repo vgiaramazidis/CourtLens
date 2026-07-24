@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/api/shots")
 async def get_shots(
-    game_code: str = Query("170"), 
+    game_code: str = Query("333"), 
     season_code: str = Query("E2023"),
     player: str = Query(None), 
     assist_by: str = Query(None)

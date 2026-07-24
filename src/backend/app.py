@@ -2,6 +2,9 @@
 import uvicorn # <-- ΠΡΟΣΘΗΚΗ: Κάνουμε import τον server
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from sparql_queries import query_sparql_requests, get_filtered_shots_query
+from sparql_queries import query_sparql_requests, get_filtered_shots_query, get_player_name_query
+
 from sparql_queries import (
     query_sparql_requests, 
     get_filtered_shots_query, 

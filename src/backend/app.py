@@ -136,6 +136,102 @@ async def get_shots(
         
     return {"shots": shots}
 
+@app.get("/api/player")
+async def get_player(player: str = Query(None)):
+    # 1. Κατασκευή του query
+    sparql_query = get_filtered_player_query(player)
+    
+    # 2. Αποστολή στο endpoint
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"error": "Failed to fetch data from SPARQL endpoint", "player": {}}
+        
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    if not bindings:
+        return {"player": {}}
+        
+    # Παίρνουμε την πρώτη γραμμή
+    raw_player = bindings[0]
+    
+    # 3. Καθαρισμός: Κρατάμε ΜΟΝΟ τα 'value'
+    clean_player = {}
+    for key, field_data in raw_player.items():
+        if isinstance(field_data, dict) and "value" in field_data:
+            val = field_data["value"]
+            
+            # ΕΙΔΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΤΗ ΧΩΡΑ: Κρατάμε μόνο το τελευταίο κομμάτι του URL
+            if key == "country" and "/" in val:
+                val = val.split("/")[-1]
+                
+            clean_player[key] = val
+        else:
+            clean_player[key] = None
+
+    return {"player": clean_player}
+
+@app.get("/api/match/playbyplay")
+async def get_match_pbp(game_code: str = Query("170"), season_code: str = Query("E2023")):
+    sparql_query = get_match_playbyplay_query(game_code, season_code)
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"error": "Failed to fetch play-by-play", "actions": []}
+        
+    actions = []
+    for row in data.get("results", {}).get("bindings", []):
+        action_type_uri = row.get("actionType", {}).get("value", "")
+        action_type_name = action_type_uri.split("#")[-1] # Παίρνουμε μόνο το όνομα (π.χ. TwoPointShotMade)
+        
+        actions.append({
+            "uri": row.get("action", {}).get("value", ""),
+            "type": action_type_name,
+            "time": row.get("time", {}).get("value", ""),
+            "description": row.get("description", {}).get("value", ""),
+            "videoUrl": row.get("videoUrl", {}).get("value", None),
+            "player": row.get("playerLabel", {}).get("value", "Unknown")
+        })
+        
+    return {"actions": actions}
+
+@app.get("/api/play/context")
+async def get_play_context(action_uri: str = Query(...)):
+    sparql_query = get_play_context_query(action_uri)
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"error": "Failed to fetch play context"}
+        
+    bindings = data.get("results", {}).get("bindings", [])
+    if not bindings:
+        return {"avgHeight": None, "playersOnCourt": ""}
+        
+    row = bindings[0]
+    avg_height = row.get("avgHeight", {}).get("value", None)
+    players = row.get("playersOnCourt", {}).get("value", "")
+    
+    return {
+        "avgHeight": round(float(avg_height), 2) if avg_height else None,
+        "playersOnCourt": players
+    }
+
+@app.get("/api/games")
+async def get_games(season_code: str = Query("E2023")):
+    sparql_query = get_games_list_query(season_code)
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"games": []}
+        
+    games = []
+    for row in data.get("results", {}).get("bindings", []):
+        games.append({
+            "gameCode": row.get("gameCode", {}).get("value", ""),
+            "matchup": f"{row.get('homeTeamLabel', {}).get('value', '')} vs {row.get('awayTeamLabel', {}).get('value', '')}"
+        })
+        
+    return {"games": games}
 @app.get("/api/analytics/assist-duos")
 async def get_assist_duos(
     filter_type: str = Query(None),

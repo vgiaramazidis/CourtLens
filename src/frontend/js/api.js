@@ -37,6 +37,26 @@ async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCo
         return [];
     }
 }
+
+async function fetchFilteredPlayer(PlayerId){
+    try {
+        // Χτίζουμε δυναμικά τα query parameters
+        const params = new URLSearchParams();
+        if (playerId) params.append("player", playerId);
+        const url = `${API_BASE_URL}/api/player?${params.toString()}`;
+        console.log("Fetching from:", url);
+
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.shots; // Επιστρέφει έναν πίνακα με τα αποτελέσματα του SPARQL query
+
+    } catch (error) {
+        console.error("Σφάλμα κατά την ανάκτηση των δεδομένων:", error);
 /**
  * Ζητάει τα κορυφαία δίδυμα (Assist Duos) από το backend, με προαιρετικά φίλτρα!
  */

@@ -33,7 +33,25 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
               bball:hasSeason ?season ;
               bball:hasPlayByPlayAction ?action .
               
-        ?action rdf:type ?action_type .
+        ?season bball:hasCode '{season_code}' .
+        
+       ?action rdf:type ?action_type ;
+                bball:shotCoords ?coords ;
+                bball:actionPlayer ?playerURI .
+                
+        # 1. Όνομα παίκτη για το Tooltip
+        ?playerURI rdfs:label ?playerName .
+        
+        # 2. Χρόνος της φάσης για το Video Jump (Αν υπάρχει στην οντολογία σου, π.χ. hasTime)
+        OPTIONAL {{ ?action bball:hasTime ?playTime . }}
+        
+        # 3. Όνομα του παίκτη που έδωσε την Ασίστ (Αν υπάρχει)
+        OPTIONAL {{ 
+            ?action bball:hasAssist ?assist_action .
+            ?assist_action bball:actionPlayer ?assistURI .
+            ?assistURI rdfs:label ?assistName .
+        }}
+        
         FILTER(?action_type IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))
         
         ?action bball:shotCoords ?coords .
@@ -267,7 +285,40 @@ def get_player_name_query(player_id):
     return f"""
 
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    
+    SELECT (AVG(?height) AS ?avgHeight) (GROUP_CONCAT(?playerLabel; separator=", ") AS ?playersOnCourt)
+    WHERE {{
+        <{action_uri}> bball:runningHomeTeamLineup ?lineup .
+        ?lineup bball:hasPlayer ?player .
+        ?player rdfs:label ?playerLabel ;
+                bball:hasHeight ?height .
+    }}
+    """
 
+def get_games_list_query(season_code="E2023"):
+    """
+    Bulletproof έκδοση: Παίρνει τις ομάδες και τις ενώνει (π.χ. "Panathinaikos vs Real Madrid") 
+    χωρίς να ελέγχει booleans που μπορεί να σπάσουν το query.
+    """
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?gameCode (GROUP_CONCAT(?teamLabel; separator=" vs ") AS ?matchup)
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode ?gameCode ;
+              bball:hasSeason ?season ;
+              bball:hasTeamBoxscore ?boxscore .
+              
+        ?season bball:hasCode '{season_code}' .
+        
+        ?boxscore bball:overTeam ?team .
+        ?team rdfs:label ?teamLabel .
+    }}
+    GROUP BY ?gameCode
+    LIMIT 100
+    """
     SELECT ?name
     WHERE {{
         ?participation bball:overPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ;

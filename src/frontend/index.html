@@ -2,6 +2,82 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
+    <title>Euroleague 3D Shot Chart</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .controls { margin-bottom: 20px; }
+        input, button { padding: 5px; margin-right: 10px; }
+        /* Μεγαλώσαμε λίγο το παράθυρο για καλύτερη 3D εμπειρία */
+        #courtContainer { width: 600px; height: 500px; border: 1px solid #ccc; }
+    </style>
+    
+    <!-- Εξωτερικές βιβλιοθήκες για τα 3D γραφικά (Three.js & OrbitControls) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <h1>Euroleague 3D Shot Chart</h1>
+    
+    <div class="controls">
+        <label>Παίκτης (ID):</label>
+        <input type="text" id="playerSelect" placeholder="π.χ. 012774 για Nunn">
+        
+        <label>Ασίστ από (ID):</label>
+        <input type="text" id="assistSelect" placeholder="π.χ. 001926 για Slouka">
+        
+        <button id="searchBtn">Αναζήτηση</button>
+    </div>
+    <!-- Άλλαξε το body σου ώστε να τα βάλει δίπλα-δίπλα -->
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        
+        <!-- Το Γήπεδο (Το έχεις ήδη) -->
+        <div id="courtContainer"></div>
+
+        <!-- ΝΕΟ: Το YouTube Player -->
+        <div id="videoContainer" style="box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 8px; overflow: hidden; background: #000;">
+            <div id="player"></div>
+        </div>
+
+    </div>
+    <div id="lineupInfo" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ccc; width: 600px; font-family: sans-serif;">
+        <h3 style="margin-top:0;">Πεντάδες τη στιγμή του σουτ:</h3>
+        <div style="display: flex; justify-content: space-between;">
+            <div style="width: 48%;">
+                <strong style="color: #2c3e50;">Γηπεδούχος:</strong>
+                <div id="homePlayersList" style="margin-top: 5px; display: flex; flex-direction: column; gap: 5px;">-</div>
+            </div>
+            <div style="width: 48%;">
+                <strong style="color: #2c3e50;">Φιλοξενούμενη:</strong>
+                <div id="roadPlayersList" style="margin-top: 5px; display: flex; flex-direction: column; gap: 5px;">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ΝΕΟ: Φόρτωση του YouTube API -->
+    <script>
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: 'xRuH1qSD2dE', // Βάλε το ID του αγώνα που κατέβασες!
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 1,
+                    'rel': 0
+                }
+            });
+        }
+    </script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Τα δικά μας αρχεία -->
+    <script src="js/api.js"></script>
+    <script src="js/court.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Euroleague 3D Shot Chart & Analytics</title>
     
@@ -396,331 +472,6 @@
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <!-- Τα δικά μας αρχεία -->
-    <script src="js/api.js"></script>
-    <script src="js/court.js"></script>
-    <script src="js/main.js"></script>
-</body>
-</html>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Euroleague 3D Shot Chart & Analytics</title>
-    
-    <!-- Βιβλιοθήκες 3D -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-    <style>
-        /* === ΒΑΣΙΚΕΣ ΡΥΘΜΙΣΕΙΣ (Reset) === */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f0f2f5;
-            color: #333;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* === HEADER === */
-        header {
-            background-color: #1a1a24;
-            color: #ffffff;
-            padding: 15px 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-bottom: 4px solid #ea5314;
-            z-index: 10;
-        }
-        
-        header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        /* === ΚΥΡΙΩΣ ΠΕΡΙΒΑΛΛΟΝ (Dashboard Layout) === */
-        .dashboard-container {
-            display: flex;
-            flex: 1;
-            padding: 20px;
-            gap: 20px;
-            height: calc(100vh - 70px);
-        }
-
-        /* Κάρτες (Πάνελς) */
-        .panel {
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* ΑΡΙΣΤΕΡΗ ΜΠΑΡΑ */
-        .filters-panel {
-            width: 320px;
-            min-width: 320px;
-            overflow-y: auto;
-        }
-
-        .filters-panel h2 {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            color: #1a1a24;
-            border-bottom: 2px solid #f0f2f5;
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #555;
-        }
-
-        .form-group input, 
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus, 
-        .form-group select:focus {
-            outline: none;
-            border-color: #ea5314;
-            box-shadow: 0 0 0 2px rgba(234, 83, 20, 0.1);
-        }
-
-        .action-btn {
-            width: 100%;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-        .action-btn:active { transform: translateY(1px); }
-
-        /* ΔΕΞΙΑ ΜΠΑΡΑ: Lineups */
-        .lineups-panel {
-            width: 350px;
-            min-width: 350px;
-            overflow-y: auto;
-            display: flex;
-        }
-
-        .lineups-panel h3 {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            color: #1a1a24;
-            text-align: center;
-            border-bottom: 2px solid #f0f2f5;
-            padding-bottom: 10px;
-            width: 100%;
-        }
-
-        .teams-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-        }
-
-        .team-box h4 {
-            font-size: 0.95rem;
-            color: #ea5314;
-            margin-bottom: 10px;
-        }
-
-        .players-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>Euroleague Analytics Dashboard</h1>
-    </header>
-
-    <div class="dashboard-container">
-        
-        <!-- ΑΡΙΣΤΕΡΑ: Πάνελ Ελέγχου -->
-        <aside class="panel filters-panel">
-            
-            <!-- ΤΟ ΚΕΝΤΡΙΚΟ MENU (Dropdown) -->
-            <h2>Επιλογή Λειτουργίας</h2>
-            <div class="form-group">
-                <select id="mainModeSelect" style="border: 2px solid #2b528a; font-weight: bold; padding: 12px; background-color: #f8f9fa;">
-                    <option value="shots">-3D Shot Search</option>
-                    <option value="assist-duos">-Top Assist Duos</option>
-                    <option value="second-chance">-Second Chance Points</option>
-                    <option value="top-lineups">-Top Lineups</option>
-                    <option value="fouls-drawn">-Fouls Drawn Gravity</option>
-                    <option value="defensive-anchors">-Defensive Anchors</option>
-                </select>
-            </div>
-
-            <hr style="margin: 20px 0; border: 1px solid #e0e0e0;">
-
-            <!-- ΦΙΛΤΡΑ ΓΙΑ ΤΑ ΣΟΥΤ (Θα κρύβονται στα Analytics) -->
-            <div id="shotFiltersForm">
-                <div class="form-group">
-                    <label>Player (ID):</label>
-                    <input type="text" id="playerSelect" placeholder="π.χ. 012774 (Nunn)">
-                </div>
-                <div class="form-group">
-                    <label>Assist (ID):</label>
-                    <input type="text" id="assistSelect" placeholder="π.χ. 001926 (Slouka)">
-                </div>
-                <div class="form-group">
-                    <label>Game (Code):</label>
-                    <input type="text" id="gameSelect" placeholder="π.χ. 333">
-                </div>
-                <div class="form-group">
-                    <label>Season:</label>
-                    <select id="seasonSelect">
-                        <option value="E2023">2023-24</option>
-                        <option value="E2024">2024-25</option>
-                        <option value="E2025">2025-26</option>
-                    </select>
-                </div>
-            </div> <!-- ΕΔΩ ΚΛΕΙΝΕΙ ΤΟ shotFiltersForm -->
-
-            <hr style="margin: 20px 0; border: 1px dashed #ccc;">
-
-            <!-- EXTRA FILTERS (Αυτά θα φαίνονται ΠΑΝΤΑ) -->
-            <div id="extraFiltersContainer">
-                <div class="form-group">
-                    <label style="color: #ea5314;">Extra Filter (Optional):</label>
-                    <select id="extraFilterType">
-                        <option value="">None</option>
-                        <option value="on_court">With Teammate/Opponent on court</option>
-                        <option value="referee">With Referee</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <input type="text" id="extraFilterId" placeholder="Enter Filter ID...">
-                </div>
-                <!-- Στο index.html, βάλε το ακριβώς κάτω από το defensiveFiltersContainer -->
-                <div id="foulsFiltersContainer" style="display: none;">
-                    <div class="form-group">
-                        <label style="color: #e74c3c;">Παίκτης που κέρδισε το φάουλ (ID):</label>
-                        <input type="text" id="fouledIdInput" placeholder="π.χ. 012774 (Nunn)">
-                    </div>
-                    <div class="form-group">
-                        <label style="color: #e74c3c;">Παίκτης που έκανε το φάουλ (ID):</label>
-                        <input type="text" id="foulingIdInput" placeholder="π.χ. το ID του Fournier">
-                    </div>
-                </div>
-                <!-- Στο index.html, αντικατάστησε το προηγούμενο div με αυτό: -->
-                <div id="defensiveFiltersContainer" style="display: none;">
-                    <div class="form-group">
-                        <label style="color: #34495e;">Αμυντικός (Blocker ID):</label>
-                        <input type="text" id="blockerIdInput" placeholder="π.χ. 012774 (Nunn)">
-                    </div>
-                    <div class="form-group">
-                        <label style="color: #34495e;">Αντίπαλος Σουτέρ (Shooter ID):</label>
-                        <input type="text" id="shooterIdInput" placeholder="π.χ. το ID του Fournier">
-                    </div>
-                </div>
-            </div>
-
-            <hr style="margin: 20px 0; border: 1px dashed #ccc;">
-            <div id="analyticsGameFilterContainer" style="margin-bottom: 20px; display: none;">
-                <div class="form-group">
-                    <label style="color: #2b528a;">Κωδικός Αγώνα (Game Code):</label>
-                    <input type="text" id="analyticsGameCodeInput" placeholder="π.χ. 333">
-                </div>
-            </div>
-            <!-- ΦΙΛΤΡΑ ΧΡΟΝΟΥ -->
-            <div id="timeFiltersContainer">
-                <div class="form-group">
-                    <label style="color: #2b528a;">Δεκάλεπτο:</label>
-                    <select id="quarterSelectAnalytics">
-                        <option value="">Όλος ο αγώνας</option>
-                        <option value="1st">1st Quarter</option>
-                        <option value="2nd">2nd Quarter</option>
-                        <option value="3rd">3rd Quarter</option>
-                        <option value="4th">4th Quarter</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Από λεπτό:</label>
-                        <input type="number" id="minStart" placeholder="π.χ. 9" max="10" min="0">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Έως λεπτό:</label>
-                        <input type="number" id="minEnd" placeholder="π.χ. 5" max="10" min="0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- ΤΟ ΚΕΝΤΡΙΚΟ ΚΟΥΜΠΙ -->
-            <button id="mainActionBtn" class="action-btn" style="background-color: #ea5314;">ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ</button>
-
-        </aside>
-
-        <!-- ΚΕΝΤΡΟ: Δυναμικό Πάνελ (Γήπεδο ή Analytics) -->
-        <main class="panel" style="flex: 1; padding: 0; overflow: hidden; border: 2px solid #e0e0e0; display: flex; flex-direction: column;">
-            
-            <!-- Το 3D Γήπεδο (Φαίνεται μόνο στο "shots") -->
-            <div id="courtWrapper" style="width: 100%; height: 100%; background-color: #1a1a24; display: flex; justify-content: center; align-items: center;">
-                <div id="courtContainer" style="width: 600px; height: 500px;"></div>
-            </div>
-
-            <!-- Ο χώρος για τα Analytics (Φαίνεται στα υπόλοιπα) -->
-            <div id="analyticsWrapper" style="display: none; width: 100%; height: 100%; background-color: #f4f6f8; padding: 30px; overflow-y: auto;">
-                <h2 id="analyticsTitle" style="color: #2b528a; border-bottom: 3px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 30px; font-size: 1.8rem;">Αποτελέσματα</h2>
-                
-                <!-- Εδώ θα μπαίνουν οι κάρτες με CSS Grid για να απλώνουν ωραία -->
-                <div id="analyticsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
-                </div>
-            </div>
-        </main>
-
-        <!-- ΔΕΞΙΑ: Πεντάδες -->
-        <aside id="rightPanel" class="panel lineups-panel">
-            <div style="width: 100%;">
-                <h3>Fives (at the moment of the shot)</h3>
-                <div class="teams-container">
-                    <div class="team-box">
-                        <h4>Home Players List</h4>
-                        <div id="homePlayersList" class="players-list">- Click on a shot -</div>
-                    </div>
-                    <div class="team-box">
-                        <h4>Road Players List</h4>
-                        <div id="roadPlayersList" class="players-list">- Click on a shot -</div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-    </div>
-
-    <!-- Σύνδεση με JavaScript -->
     <script src="js/api.js"></script>
     <script src="js/court.js"></script>
     <script src="js/main.js"></script>

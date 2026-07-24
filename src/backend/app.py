@@ -473,6 +473,163 @@ async def get_defensive_anchors(
         
     return {"defensive_anchors": results}
 
+@app.get("/api/analytics/assist-duos")
+async def get_assist_duos():
+    query = get_top_assist_duos_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        # Κόβουμε το URL για να κρατήσουμε μόνο το ID του παίκτη (π.χ. "012774")
+        scorer_id = row.get("scorer", {}).get("value", "").split("/")[-1]
+        passer_id = row.get("passer", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "scorer_id": scorer_id,
+            "passer_id": passer_id,
+            "total_assists": int(row.get("totalAssists", {}).get("value", 0))
+        })
+        
+    return {"assist_duos": results}
+
+@app.get("/api/analytics/second-chance")
+async def get_second_chance():
+    query = get_second_chance_points_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        player_id = row.get("player", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "player_id": player_id,
+            "total_points": int(row.get("totalSecondChancePoints", {}).get("value", 0))
+        })
+        
+    return {"second_chance_points": results}
+
+@app.get("/api/analytics/lineups")
+async def get_top_lineups():
+    query = get_top_lineups_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        lineup_url = row.get("lineup", {}).get("value", "")
+        # Αν το URL είναι έγκυρο, εξάγουμε τα IDs της πεντάδας
+        if "#Lineup_" in lineup_url:
+            lineup_ids = lineup_url.split("#Lineup_")[1].split("_")
+        else:
+            lineup_ids = []
+            
+        results.append({
+            "lineup_url": lineup_url,
+            "players": lineup_ids,
+            "total_points": int(row.get("totalPoints", {}).get("value", 0))
+        })
+        
+    return {"top_lineups": results}
+
+@app.get("/api/analytics/clutch-performers")
+async def get_clutch_performers():
+    query = get_clutch_time_performers_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        # Παίρνουμε το ID του παίκτη κόβοντας το URL
+        player_id = row.get("player", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "player_id": player_id,
+            "clutch_points": int(row.get("clutchPoints", {}).get("value", 0)),
+            "clutch_actions": int(row.get("clutchActions", {}).get("value", 0))
+        })
+        
+    return {"clutch_performers": results}
+
+@app.get("/api/analytics/points-off-turnovers")
+async def get_points_off_turnovers():
+    query = get_points_off_turnovers_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        team_url = row.get("team", {}).get("value", "")
+        team_code = team_url.split("/")[-1] if team_url else "Άγνωστη"
+        
+        results.append({
+            "team": team_code,
+            "points_off_turnovers": int(row.get("pointsOffTurnovers", {}).get("value", 0))
+        })
+        
+    return {"points_off_turnovers": results}
+
+@app.get("/api/analytics/fast-break")
+async def get_fast_break_specialists():
+    query = get_fast_break_specialists_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        player_id = row.get("player", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "player_id": player_id,
+            "fast_break_points": int(row.get("fastBreakPoints", {}).get("value", 0)),
+            "total_attempts": int(row.get("totalAttempts", {}).get("value", 0))
+        })
+        
+    return {"fast_break_specialists": results}
+
+@app.get("/api/analytics/fouls-drawn")
+async def get_fouls_drawn():
+    query = get_foul_drawn_gravity_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        player_id = row.get("player", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "player_id": player_id,
+            "total_fouls_drawn": int(row.get("totalFoulsDrawn", {}).get("value", 0))
+        })
+        
+    return {"fouls_drawn": results}
+
+@app.get("/api/analytics/defensive-anchors")
+async def get_defensive_anchors():
+    query = get_defensive_anchors_query()
+    data = query_sparql_requests(query)
+    
+    results = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        player_id = row.get("player", {}).get("value", "").split("/")[-1]
+        
+        results.append({
+            "player_id": player_id,
+            "total_blocks": int(row.get("totalBlocks", {}).get("value", 0))
+        })
+        
+    return {"defensive_anchors": results}
+
 @app.get("/api/game/lineups")
 async def get_game_lineups(game_code: str = Query("333"), season_code: str = Query("E2023")):
     sparql_query = get_game_lineups_query(game_code, season_code)

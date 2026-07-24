@@ -3,9 +3,10 @@
  * ΓΕΝΙΚΗ ΣΥΝΑΡΤΗΣΗ: Εξάγει τα IDs, φτιάχνει τις κάρτες 
  * και ρωτάει δυναμικά τον server για το όνομα του κάθε παίκτη!
  */
+const playerCache = {};
 async function renderPlayerCards(lineupUrl, containerId) {
     const containerEl = document.getElementById(containerId);
-    containerEl.innerHTML = ""; // Καθαρισμός
+    containerEl.innerHTML = "Φόρτωση πεντάδας..."; // Δείχνουμε άμεσα Feedback
 
     if (!lineupUrl || !lineupUrl.includes("Lineup_")) {
         containerEl.innerHTML = "Δεν υπάρχουν δεδομένα πεντάδας";
@@ -15,13 +16,11 @@ async function renderPlayerCards(lineupUrl, containerId) {
     const parts = lineupUrl.split("Lineup_");
     if (parts.length < 2) return;
     
-    const playerIds = parts[1].split("_");
+    const playerIds = parts[1].split("_").map(id => id.trim()).filter(id => id);
+    containerEl.innerHTML = "";
 
-    for (const id of playerIds) {
-        const cleanId = id.trim();
-        if (!cleanId) continue;
-
-        // Στήσιμο της κάρτας HTML (αρχικά δείχνει "Φόρτωση...")
+    // Δημιουργούμε τα DOM elements για όλους τους παίκτες από τώρα
+    const cardElements = playerIds.map(cleanId => {
         const playerCard = document.createElement("div");
         playerCard.style.display = "flex";
         playerCard.style.alignItems = "center";
@@ -31,18 +30,13 @@ async function renderPlayerCards(lineupUrl, containerId) {
         playerCard.style.borderRadius = "4px";
         playerCard.style.fontSize = "13px";
 
-        // Η φωτογραφία παραμένει δυναμική μέσω του Euroleague API
         const img = document.createElement("img");
-        img.src = `https://media-api.euroleague.net/images/players/${cleanId}.png`; 
-        img.onerror = function() {
-            this.src = "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
-        };
         img.width = 24;
         img.height = 24;
         img.style.borderRadius = "50%";
         img.style.objectFit = "cover";
+        img.src = "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png"; // Default μέχρι να φορτώσει
 
-        // Εδώ θα μπει το δυναμικό όνομα
         const nameSpan = document.createElement("span");
         nameSpan.innerText = "Φόρτωση..."; 
 
@@ -50,18 +44,42 @@ async function renderPlayerCards(lineupUrl, containerId) {
         playerCard.appendChild(nameSpan);
         containerEl.appendChild(playerCard);
 
-        // --- ΔΥΝΑΜΙΚΗ ΑΝΑΖΗΤΗΣΗ ---
-        // Ρωτάμε το νέο μας API endpoint για το όνομα του παίκτη!
+        return { cleanId, nameSpan, img };
+    });
+
+    // --- ΠΑΡΑΛΛΗΛΗ ΦΟΡΤΩΣΗ ΟΛΩΝ ΤΩΝ ΠΑΙΚΤΩΝ (Promise.all) ---
+    // Αντί για for...of loop που περιμένει έναν-ένα, τους τρεχουμε ΟΛΟΥΣ μαζί!
+    await Promise.all(cardElements.map(async ({ cleanId, nameSpan, img }) => {
         try {
-            const response = await fetch(`http://localhost:8000/api/player/${cleanId}`);
+            // 1. Ελέγχουμε αν τον έχουμε αποθηκευμένο στη μνήμη (Cache)
+            if (playerCache[cleanId]) {
+                nameSpan.innerText = playerCache[cleanId].name;
+                if (playerCache[cleanId].img) img.src = playerCache[cleanId].img;
+                return;
+            }
+
+            // 2. Αλλιώς κάνουμε fetch από το backend
+            const response = await fetch(`http://localhost:8000/api/player?player=${cleanId}`);
             const data = await response.json();
-            // Αντικαθιστούμε το "Φόρτωση..." με το πραγματικό όνομα (π.χ. "NUNN")
-            nameSpan.innerText = data.name; 
+            const playerData = data.player;
+
+            if (playerData) {
+                const playerName = playerData.name || `ID: ${cleanId}`;
+                const playerImg = playerData.img || "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
+
+                // Αποθήκευση στη cache
+                playerCache[cleanId] = { name: playerName, img: playerImg };
+
+                nameSpan.innerText = playerName;
+                img.src = playerImg;
+            } else {
+                nameSpan.innerText = `ID: ${cleanId}`;
+            }
         } catch (err) {
-            console.error("Σφάλμα κατά την εύρεση ονόματος:", err);
+            console.error(`Σφάλμα για τον παίκτη ${cleanId}:`, err);
             nameSpan.innerText = `ID: ${cleanId}`;
         }
-    }
+    }));
 }
 const container = document.getElementById("courtContainer");
 
@@ -163,10 +181,11 @@ container.addEventListener('click', (event) => {
 
         // --- ΝΕΟ: THE VIDEO JUMP ---
         const seconds = clickedShot.userData.videoSeconds;
+        console.log(`Geia ${seconds} `);
         // Αν έχουμε δευτερόλεπτα (δεν είναι 0) και ο player του YouTube έχει φορτώσει
         if (seconds && seconds > 0 && typeof player !== 'undefined' && player.seekTo) {
             // Πάμε 4 δευτερόλεπτα ΠΡΙΝ το σουτ για να δούμε τη φάση
-            let jumpTime = seconds - 5; 
+            let jumpTime = seconds - 8; 
             if (jumpTime < 0) jumpTime = 0;
             
             console.log(`Jump on video: ${jumpTime} seconds`);

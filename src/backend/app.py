@@ -7,14 +7,18 @@ import csv
 import os
 
 # --- ΦΟΡΤΩΣΗ ΤΟΥ CSV ΜΕ ΤΟΥΣ ΧΡΟΝΟΥΣ ---
-CLOCK_MAP = {}
+TIMELINE = []
 csv_path = "game_clock_map.csv"
 if os.path.exists(csv_path):
-    with open(csv_path, mode='r') as f:
+    with open(csv_path, mode='r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Αποθηκεύει π.χ. CLOCK_MAP["08:24"] = 1020.5
-            CLOCK_MAP[row["game_clock"]] = float(row["video_time_sec"])
+            TIMELINE.append({
+                "video_sec": float(row["video_time_sec"]),
+                "clock": row["game_clock"].strip(),
+                "quarter": row["quarter"].strip()
+            })
+    print(f"Success: The file found {csv_path}")
 else:
     print(f"Attention: The file not found {csv_path}")
 
@@ -75,15 +79,43 @@ async def get_shots(
 
         # --- ΝΕΟ: Παίρνουμε τον χρόνο της φάσης ---
         play_time = result.get("clockTime", {}).get("value", "") # π.χ. "08:24" (Βάλε το σωστό κλειδί αν λέγεται αλλιώς)
-        
+        quarter = result.get("quarter", {}).get("value", "")
+        print(play_time,quarter)
         # --- ΝΕΟ: Αντιστοίχιση με τα δευτερόλεπτα του YouTube ---
+# --- ΝΕΑ ΛΟΓΙΚΗ: Μετατροπή σε δευτερόλεπτα & Ανοχή ±2 ---
+        def time_to_seconds(t_str):
+            if not t_str: return None
+            try:
+                if ":" in t_str:
+                    m, s = map(int, t_str.split(":"))
+                    return m * 60 + s
+                elif "." in t_str:
+                    return float(t_str)
+            except ValueError:
+                return None
+        
         video_seconds = 0
-        if play_time:
-            # Ελέγχουμε αν υπάρχει ως "09:42" ή "9:42" στο Dictionary
-            if play_time in CLOCK_MAP:
-                video_seconds = CLOCK_MAP[play_time]
-            elif play_time.lstrip("0") in CLOCK_MAP:
-                video_seconds = CLOCK_MAP[play_time.lstrip("0")]
+        target_sec = time_to_seconds(play_time)
+
+        if target_sec is not None and quarter:
+            closest_diff = float('inf') # Αρχικοποίηση με άπειρο
+
+            for entry in TIMELINE:
+                if entry["quarter"] == quarter:
+                    ocr_sec = time_to_seconds(entry["clock"])
+                    
+                    if ocr_sec is not None:
+                        diff = abs(target_sec - ocr_sec)
+                        
+                        # Ελέγχουμε αν είμαστε εντός της ανοχής των 4 δευτερολέπτων (±4)
+                        # και κρατάμε την πιο κοντινή τιμή που θα βρούμε
+                        if diff <= 4 and diff < closest_diff:
+                            closest_diff = diff
+                            video_seconds = entry["video_sec"]
+                            
+                            # Αν βρήκαμε ακριβώς το ίδιο δευτερόλεπτο (απόκλιση 0), σταματάμε το ψάξιμο
+                            if diff == 0:
+                                break
 
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),

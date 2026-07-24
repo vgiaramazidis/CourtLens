@@ -26,7 +26,7 @@ def get_filtered_shots_query(game_code="333", season_code="E2023", player_id=Non
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime
+    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
@@ -40,10 +40,10 @@ def get_filtered_shots_query(game_code="333", season_code="E2023", player_id=Non
         
         ?action bball:shotCoords ?coords .
         
-        # --- ΠΡΟΣΘΗΚΗ: Παίρνουμε τις πεντάδες από το action ---
         OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
         OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
         OPTIONAL {{ ?action bball:clock ?clockTime . }}
+        OPTIONAL {{ ?action bball:quarter ?quarter . }}
     """
     
     if player_id:

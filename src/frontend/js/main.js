@@ -17,6 +17,9 @@ mainModeSelect.addEventListener("change", (e) => {
         shooterFilter.style.display = (mode === "defensive-anchors") ? "block" : "none";
     }
 
+    // ΠΡΟΣΘΗΚΗ: Τυπώνουμε τα δεδομένα για να δούμε τι ήρθε!
+    console.log("Δεδομένα που ήρθαν από τον Server:", shotsData);
+
     // 3. Ζωγραφίζουμε το γήπεδο
     drawShots(shotsData);
 });

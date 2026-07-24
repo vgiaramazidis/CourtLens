@@ -47,11 +47,18 @@ def get_stream_url(url):
 # =========================
 def parse_clock(text):
     text = text.upper().strip()
-    text = text.replace("O", "0").replace("I", "1").replace("S", "5").replace("B", "8")
+    text = text.replace("O", "0").replace("I", "1").replace("S", "5").replace("B", "8").replace("Z", "2")
+    print(text)
+    # 1. Ψάχνει πρώτα για κλασική μορφή λεπτών:δευτερολέπτων (π.χ. 09:23 ή 9:23)
+    match_mmss = re.search(r"(\d{1,2}:\d{2})", text)
+    if match_mmss:
+        return match_mmss.group(1)
 
-    match = re.search(r"(\d{1,2}:\d{2})", text)
-    if match:
-        return match.group(1)
+    # 2. Ψάχνει για μορφή με δέκατα του δευτερολέπτου (π.χ. 10.0, 9.9, 5.2)
+    match_dec = re.search(r"(\d{1,2}[\.\:]\d)", text)
+    if match_dec:
+# Παίρνουμε το string και αν τυχαίνει να έχει ':' το κάνουμε '.'
+        return match_dec.group(1).replace(":", ".")
     return None
 
 # =========================
@@ -78,7 +85,9 @@ def main():
 
     results = []
     last_clock = None
-
+    # --- ΝΕΟ: Αυτόματο tracking περιόδων ---
+    quarters_list = ["1st", "2nd", "3rd", "4th", "OT","2OT","3OT","4OT"]
+    quarter_index = 0  # Ξεκινάμε από το 1st quarter (μπορείς να το αλλάξεις αν ξεκινάς από άλλο λεπτό) 
     print(f"Processing video... Τα PNG αποθηκεύονται στο φάκελο '{DEBUG_FOLDER}'")
 
     while True:
@@ -109,11 +118,40 @@ def main():
                 if prob > CONFIDENCE_THRESHOLD:
                     clock = parse_clock(text)
                     if clock and clock != last_clock:
-                        video_time = frame_id / fps
-                        results.append((video_time, clock))
-                        print(f"[{prob:.2f}] {video_time:.2f}s -> {clock}")
-                        last_clock = clock
+                        # Βοηθητική συνάρτηση για μετατροπή σε δευτερόλεπτα
+                        def get_seconds(c_str):
+                            if not c_str: return None
+                            try:
+                                if ":" in c_str:
+                                    m, s = map(int, c_str.split(":"))
+                                    return m * 60 + s
+                                elif "." in c_str:
+                                    return float(c_str) 
+                            except:
+                                return None
 
+                        curr_sec = get_seconds(clock)
+                        prev_sec = get_seconds(last_clock)
+
+                        # --- ΝΕΟ: ΦΙΛΤΡΟ ΓΙΑ ΛΑΘΟΣ ΔΕΚΑΔΙΚΑ (π.χ. "4.1" αντί για "4:19") ---
+                        # Αν το OCR βρήκε τελεία (δηλαδή δέκατα), αλλά ο προηγούμενος χρόνος
+                        # ήταν πάνω από 1 λεπτό (60 δευτερόλεπτα), τότε είναι λάθος του OCR!
+                        if "." in clock and prev_sec is not None and prev_sec >= 70:
+                            continue  # Αγνοούμε αυτή τη μέτρηση και πάμε στο επόμενο καρέ
+
+                        # --- ΕΞΥΠΝΟΣ ΕΛΕΓΧΟΣ ΑΛΛΑΓΗΣ ΠΕΡΙΟΔΟΥ ---
+                        if prev_sec is not None and curr_sec is not None:
+                            # Αν ο προηγούμενός μας χρόνος ήταν πολύ χαμηλός (π.χ. κάτω από 15s) 
+                            # και ο τρέχων εκτινάχθηκε ξαναψηλά (πάνω από 9 λεπτά / 540s)
+                            if prev_sec <= 15 and curr_sec >= 540:
+                                if quarter_index < len(quarters_list) - 1:
+                                    quarter_index += 1
+
+                        current_quarter = quarters_list[quarter_index]
+                        video_time = frame_id / fps
+                        results.append((video_time, current_quarter, clock))
+                        print(f"[{prob:.2f}] {video_time:.2f}s ({current_quarter}) -> {clock}")
+                        last_clock = clock
         except Exception as e:
             print(f"Error at frame {frame_id}: {e}")
 
@@ -125,9 +163,9 @@ def main():
         print("Saving CSV...")
         with open(OUTPUT_CSV, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["video_time_sec", "game_clock"])
-            for v, c in results:
-                writer.writerow([round(v, 2), c])
+            writer.writerow(["video_time_sec", "quarter", "game_clock"])
+            for v, q, c in results:
+                writer.writerow([round(v, 2), q , c])
         print("DONE ->", OUTPUT_CSV)
     else:
         print("No data found. Check your ROI dimensions!")

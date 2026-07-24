@@ -1,5 +1,68 @@
 // court.js
+/**
+ * ΓΕΝΙΚΗ ΣΥΝΑΡΤΗΣΗ: Εξάγει τα IDs, φτιάχνει τις κάρτες 
+ * και ρωτάει δυναμικά τον server για το όνομα του κάθε παίκτη!
+ */
+async function renderPlayerCards(lineupUrl, containerId) {
+    const containerEl = document.getElementById(containerId);
+    containerEl.innerHTML = ""; // Καθαρισμός
 
+    if (!lineupUrl || !lineupUrl.includes("Lineup_")) {
+        containerEl.innerHTML = "Δεν υπάρχουν δεδομένα πεντάδας";
+        return;
+    }
+
+    const parts = lineupUrl.split("Lineup_");
+    if (parts.length < 2) return;
+    
+    const playerIds = parts[1].split("_");
+
+    for (const id of playerIds) {
+        const cleanId = id.trim();
+        if (!cleanId) continue;
+
+        // Στήσιμο της κάρτας HTML (αρχικά δείχνει "Φόρτωση...")
+        const playerCard = document.createElement("div");
+        playerCard.style.display = "flex";
+        playerCard.style.alignItems = "center";
+        playerCard.style.gap = "8px";
+        playerCard.style.background = "#f9f9f9";
+        playerCard.style.padding = "4px 8px";
+        playerCard.style.borderRadius = "4px";
+        playerCard.style.fontSize = "13px";
+
+        // Η φωτογραφία παραμένει δυναμική μέσω του Euroleague API
+        const img = document.createElement("img");
+        img.src = `https://media-api.euroleague.net/images/players/${cleanId}.png`; 
+        img.onerror = function() {
+            this.src = "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
+        };
+        img.width = 24;
+        img.height = 24;
+        img.style.borderRadius = "50%";
+        img.style.objectFit = "cover";
+
+        // Εδώ θα μπει το δυναμικό όνομα
+        const nameSpan = document.createElement("span");
+        nameSpan.innerText = "Φόρτωση..."; 
+
+        playerCard.appendChild(img);
+        playerCard.appendChild(nameSpan);
+        containerEl.appendChild(playerCard);
+
+        // --- ΔΥΝΑΜΙΚΗ ΑΝΑΖΗΤΗΣΗ ---
+        // Ρωτάμε το νέο μας API endpoint για το όνομα του παίκτη!
+        try {
+            const response = await fetch(`http://localhost:8000/api/player/${cleanId}`);
+            const data = await response.json();
+            // Αντικαθιστούμε το "Φόρτωση..." με το πραγματικό όνομα (π.χ. "NUNN")
+            nameSpan.innerText = data.name; 
+        } catch (err) {
+            console.error("Σφάλμα κατά την εύρεση ονόματος:", err);
+            nameSpan.innerText = `ID: ${cleanId}`;
+        }
+    }
+}
 const container = document.getElementById("courtContainer");
 
 // --- 1. Βασικό στήσιμο της 3D σκηνής ---
@@ -91,7 +154,8 @@ container.addEventListener('click', (event) => {
 
     if (intersects.length > 0) {
         const clickedShot = intersects[0].object;
-
+        renderPlayerCards(clickedShot.userData.homeLineup, "homePlayersList");
+        renderPlayerCards(clickedShot.userData.roadLineup, "roadPlayersList");
         if (clickedShot.userData.isMade) {
             drawTrajectory(clickedShot.position, hoopPosition);
         }
@@ -142,8 +206,11 @@ function drawShots(shots) {
         const sphere = new THREE.Mesh(sphereGeo, shot.isMade ? madeMat : missedMat);
         sphere.position.set(mapX, 1.5, mapZ);
         
-        sphere.userData = { isMade: shot.isMade };
-        
+        sphere.userData = { 
+                isMade: shot.isMade,
+                homeLineup: shot.runningHomeTeamLineup || "Άγνωστη πεντάδα",
+                roadLineup: shot.runningRoadTeamLineup || "Άγνωστη πεντάδα"
+            };        
         scene.add(sphere);
         shotMeshes.push(sphere); 
     });

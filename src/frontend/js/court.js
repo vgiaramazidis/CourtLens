@@ -148,16 +148,32 @@ container.addEventListener('click', (event) => {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
+    
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(shotMeshes);
-
+    
     if (intersects.length > 0) {
         const clickedShot = intersects[0].object;
         renderPlayerCards(clickedShot.userData.homeLineup, "homePlayersList");
         renderPlayerCards(clickedShot.userData.roadLineup, "roadPlayersList");
+        
         if (clickedShot.userData.isMade) {
             drawTrajectory(clickedShot.position, hoopPosition);
+        }
+
+        // --- ΝΕΟ: THE VIDEO JUMP ---
+        const seconds = clickedShot.userData.videoSeconds;
+        // Αν έχουμε δευτερόλεπτα (δεν είναι 0) και ο player του YouTube έχει φορτώσει
+        if (seconds && seconds > 0 && typeof player !== 'undefined' && player.seekTo) {
+            // Πάμε 4 δευτερόλεπτα ΠΡΙΝ το σουτ για να δούμε τη φάση
+            let jumpTime = seconds - 5; 
+            if (jumpTime < 0) jumpTime = 0;
+            
+            console.log(`Jump on video: ${jumpTime} seconds`);
+            player.seekTo(jumpTime, true);
+            player.playVideo();
+        }else{
+            console.log("YouTube Player not ready or not found time for this play.");
         }
     }
 });
@@ -206,11 +222,12 @@ function drawShots(shots) {
         const sphere = new THREE.Mesh(sphereGeo, shot.isMade ? madeMat : missedMat);
         sphere.position.set(mapX, 1.5, mapZ);
         
-        sphere.userData = { 
-                isMade: shot.isMade,
-                homeLineup: shot.runningHomeTeamLineup || "Άγνωστη πεντάδα",
-                roadLineup: shot.runningRoadTeamLineup || "Άγνωστη πεντάδα"
-            };        
+        sphere.userData = {
+            isMade: shot.isMade,
+            homeLineup: shot.runningHomeTeamLineup || "",
+            roadLineup: shot.runningRoadTeamLineup || "",
+            videoSeconds: shot.videoSeconds // <-- ΝΕΟ
+        };      
         scene.add(sphere);
         shotMeshes.push(sphere); 
     });

@@ -27,6 +27,8 @@ data/raw/*.json
 data/processed/*.json
 data/processed/*.nt
 
+debug_frames/*.png
+
 # Secrets / Environment Variables
 .env
 

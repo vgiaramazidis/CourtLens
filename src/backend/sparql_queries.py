@@ -114,38 +114,6 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
     query += "\n    } LIMIT 500"
     return query
 
-def get_filtered_player_query(player_id=None):
-    """
-    Δημιουργεί το SPARQL query για να αντλήσει συγκεκριμένες πληροφορίες ενός παίκτη.
-    """
-    if not player_id:
-        return ""
-        
-    query = f"""
-    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-    
-    SELECT ?name ?height ?weight ?position ?birthDate ?country (SAMPLE(?biography) AS ?bio) (SAMPLE(?achievements) AS ?achievements_text) (SAMPLE(?image) AS ?img)
-    WHERE {{
-        BIND(<https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> AS ?player)
-
-        OPTIONAL {{ ?player rdfs:label ?name . }}
-        OPTIONAL {{ ?player bball:hasHeight ?height . }}
-        OPTIONAL {{ ?player bball:hasWeight ?weight . }}
-        OPTIONAL {{ ?player bball:hasPosition ?position . }}
-        OPTIONAL {{ ?player bball:hasBirthDate ?birthDate . }}
-        OPTIONAL {{ ?player bball:hasCountry ?country . }}
-        OPTIONAL {{ ?player bball:hasBiography ?biography . }}
-        OPTIONAL {{ ?player bball:hasAchievements ?achievements . }}
-        OPTIONAL {{ ?player foaf:depiction ?image . }}
-    }} 
-    GROUP BY ?name ?height ?weight ?position ?birthDate ?country
-    LIMIT 1
-    """
-
-    
-    return query
 
 def get_match_playbyplay_query(game_code="170", season_code="E2023"):
     """
@@ -183,13 +151,6 @@ def get_match_playbyplay_query(game_code="170", season_code="E2023"):
     LIMIT 500
     """
 
-def get_play_context_query(action_uri):
-    """
-    Φέρνει πληροφορίες για μια συγκεκριμένη φάση: ποιοι παίκτες ήταν στο παρκέ 
-    και υπολογίζει το μέσο ύψος τους.
-def get_player_name_query(player_id):
-    """
-    Γενικό ερώτημα που βρίσκει το όνομα της φανέλας οποιουδήποτε παίκτη βάσει του ID του.
 def get_filtered_player_query(player_id=None):
     """
     Δημιουργεί το SPARQL query για να αντλήσει συγκεκριμένες πληροφορίες ενός παίκτη.
@@ -342,19 +303,20 @@ def get_games_list_query(season_code="E2023"):
     GROUP BY ?gameCode
     LIMIT 100
     """
+
+def get_player_name_query(player_id):
+    """
+    Γενικό ερώτημα που βρίσκει το όνομα της φανέλας οποιουδήποτε παίκτη βάσει του ID του.
+    """
+    return f"""
+
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+
     SELECT ?name
     WHERE {{
         ?participation bball:overPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ;
                        bball:hasJerseyName ?name .
     }} LIMIT 1
-    """
-    SELECT (AVG(?height) AS ?avgHeight) (GROUP_CONCAT(?playerLabel; separator=", ") AS ?playersOnCourt)
-    WHERE {{
-        <{action_uri}> bball:runningHomeTeamLineup ?lineup .
-        ?lineup bball:hasPlayer ?player .
-        ?player rdfs:label ?playerLabel ;
-                bball:hasHeight ?height .
-    }}
     """
 
 def get_games_list_query(season_code="E2023"):
@@ -380,12 +342,6 @@ def get_games_list_query(season_code="E2023"):
     }}
     GROUP BY ?gameCode
     LIMIT 100
-    """
-    SELECT ?name
-    WHERE {{
-        ?participation bball:overPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ;
-                       bball:hasJerseyName ?name .
-    }} LIMIT 1
     """
 
 def get_top_assist_duos_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None):
@@ -428,7 +384,6 @@ def get_top_assist_duos_query(filter_type=None, filter_id=None):
     """
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     SELECT ?scorer ?passer (COUNT(?action) AS ?totalAssists)
     WHERE {

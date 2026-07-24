@@ -28,9 +28,18 @@
         
         <button id="searchBtn">Αναζήτηση</button>
     </div>
+    <!-- Άλλαξε το body σου ώστε να τα βάλει δίπλα-δίπλα -->
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        
+        <!-- Το Γήπεδο (Το έχεις ήδη) -->
+        <div id="courtContainer"></div>
 
-    <!-- Το νέο container όπου θα μπει το 3D γήπεδο -->
-    <div id="courtContainer"></div>
+        <!-- ΝΕΟ: Το YouTube Player -->
+        <div id="videoContainer" style="box-shadow: 0 10px 25px rgba(0,0,0,0.15); border-radius: 8px; overflow: hidden; background: #000;">
+            <div id="player"></div>
+        </div>
+
+    </div>
     <div id="lineupInfo" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ccc; width: 600px; font-family: sans-serif;">
         <h3 style="margin-top:0;">Πεντάδες τη στιγμή του σουτ:</h3>
         <div style="display: flex; justify-content: space-between;">
@@ -44,6 +53,24 @@
             </div>
         </div>
     </div>
+
+    <!-- ΝΕΟ: Φόρτωση του YouTube API -->
+    <script>
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '360',
+                width: '640',
+                videoId: 'xRuH1qSD2dE', // Βάλε το ID του αγώνα που κατέβασες!
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 1,
+                    'rel': 0
+                }
+            });
+        }
+    </script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <!-- Τα δικά μας αρχεία -->
     <script src="js/api.js"></script>
     <script src="js/court.js"></script>

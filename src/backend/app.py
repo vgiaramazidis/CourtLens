@@ -63,23 +63,17 @@ async def get_shots(
         action_type_full = result.get("action_type", {}).get("value", "")
         action_type = action_type_full.split("#")[-1] # Παίρνουμε μόνο το 'TwoPointShotMade'
         
-        # Νέα δεδομένα από το SPARQL
-        player_name = result.get("playerName", {}).get("value", "Unknown Player")
-        assist_name = result.get("assistName", {}).get("value", None)
-        play_time = result.get("playTime", {}).get("value", "00:00")
+        # --- ΠΡΟΣΘΗΚΗ: Τραβάμε τις πεντάδες από το SPARQL result (αν υπάρχουν) ---
+        home_lineup = result.get("home_lineup", {}).get("value", "Άγνωστη πεντάδα")
+        road_lineup = result.get("road_lineup", {}).get("value", "Άγνωστη πεντάδα")
         
-        # Φτιάχνουμε το Tooltip κείμενο για το UI
-        tooltip = f"{player_name} - {action_type}"
-        if assist_name:
-            tooltip += f" (Assist by {assist_name})"
-            
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),
             "x": float(x),
             "y": float(y),
             "isMade": "Made" in action_type,
-            "tooltip": tooltip,     # <-- The Hover
-            "videoTime": play_time  # <-- The Video Jump
+            "runningHomeTeamLineup": home_lineup,   # <-- Προσθήκη
+            "runningRoadTeamLineup": road_lineup    # <-- Προσθήκη
         })
         
     return {"shots": shots}

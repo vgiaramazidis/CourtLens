@@ -328,3 +328,36 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+
+const tooltip = document.getElementById("shotTooltip");
+
+container.addEventListener('mousemove', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; // Διόρθωση: -1 αντί για +1 για το Y
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(shotMeshes);
+    
+    if (intersects.length > 0) {
+        const hoveredShot = intersects[0].object;
+        const status = hoveredShot.userData.isMade ? "🟢 Εύστοχο" : "🔴 Άστοχο";
+        const time = hoveredShot.userData.playTime || "Άγνωστος χρόνος";
+        
+        tooltip.style.display = "block";
+        tooltip.style.left = (event.pageX + 15) + "px";
+        tooltip.style.top = (event.pageY + 15) + "px";
+        
+        // Μπορείς να προσθέσεις το actionType (π.χ. 3pt) αν το περνάς από το app.py!
+        tooltip.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">Στατιστικά Σουτ</div>
+            Χρόνος: ${time}<br>
+            Κατάσταση: ${status}
+        `;
+        
+        document.body.style.cursor = "pointer";
+    } else {
+        tooltip.style.display = "none";
+        document.body.style.cursor = "default";
+    }
+});

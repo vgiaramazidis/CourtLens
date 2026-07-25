@@ -20,13 +20,18 @@
     <h1>Euroleague 3D Shot Chart</h1>
     
     <div class="controls">
-        <label>Παίκτης (ID):</label>
-        <input type="text" id="playerSelect" placeholder="π.χ. 012774 για Nunn">
+        <label>Παίκτης (Name/ID):</label>
+        <input type="text" id="playerSelect" placeholder="π.χ. 012774 or Nunn">
         
-        <label>Ασίστ από (ID):</label>
-        <input type="text" id="assistSelect" placeholder="π.χ. 001926 για Slouka">
+        <label>Ασίστ από (Name/ID):</label>
+        <input type="text" id="assistSelect" placeholder="π.χ. 001926 or Slouka">
         
         <button id="searchBtn">Αναζήτηση</button>
+        <label>Επιλογή Πεντάδας:</label>
+        <select id="lineupSelect" style="width: 300px;">
+            <option value="">-- Όλες οι Πεντάδες --</option>
+            <!-- Θα γεμίσει δυναμικά μέσω JavaScript -->
+        </select>
     </div>
     <!-- Άλλαξε το body σου ώστε να τα βάλει δίπλα-δίπλα -->
     <div style="display: flex; gap: 20px; align-items: flex-start;">
@@ -53,6 +58,22 @@
             </div>
         </div>
     </div>
+        <!-- Τα νέα φίλτρα (βάλε τα δίπλα/κάτω από τα υπάρχοντα) -->
+    <div class="lineup-controls" style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+        <h3>Ανάλυση Πεντάδων</h3>
+        <label>Γηπεδούχος:</label>
+        <select id="homeLineupSelect" style="margin-right: 15px;"><option value="">-- Επιλογή --</option></select>
+        
+        <label>Φιλοξενούμενος:</label>
+        <select id="roadLineupSelect"><option value="">-- Επιλογή --</option></select>
+        
+        <!-- Εδώ θα εμφανίζονται τα κουμπάκια των 5 παικτών -->
+        <div id="lineupPlayersDiv" style="margin-top: 15px; display: flex; gap: 10px;"></div>
+    </div>
+
+    <!-- Το Tooltip (Κρυφό αρχικά) -->
+    <div id="shotTooltip" style="position: absolute; display: none; background: rgba(0,0,0,0.85); color: #fff; padding: 10px; border-radius: 6px; pointer-events: none; z-index: 1000; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+    </div>
 
     <!-- ΝΕΟ: Φόρτωση του YouTube API -->
     <script>
@@ -65,7 +86,8 @@
                 playerVars: {
                     'playsinline': 1,
                     'controls': 1,
-                    'rel': 0
+                    'rel': 0,
+                    'origin': window.location.origin
                 }
             });
         }

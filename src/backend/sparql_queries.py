@@ -20,7 +20,7 @@ def query_sparql_requests(sparql_query):
         print(f"HTTP Request failed: {e}")
         return None
 
-def get_filtered_shots_query(game_code="333", season_code="E2023", player_id=None, assist_by_id=None):
+def get_filtered_shots_query(game_code="333", season_code="E2023", player_id=None, assist_by_id=None, lineup_uri=None):
     query = f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -47,14 +47,36 @@ def get_filtered_shots_query(game_code="333", season_code="E2023", player_id=Non
     """
     
     if player_id:
-        query += f"\n        ?action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ."
+        # Έλεγχος: Είναι νούμερο (ID) ή κείμενο (Όνομα);
+        if player_id.isdigit():
+            query += f"\n        ?action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ."
+        else:
+            # Αν είναι όνομα, ψάχνουμε με CONTAINS αγνοώντας κεφαλαία/μικρά (LCASE)
+            query += f"""
+        ?action bball:actionPlayer ?action_player_node .
+        ?action_player_node rdfs:label ?player_name_label .
+        FILTER(CONTAINS(LCASE(STR(?player_name_label)), LCASE('{player_id}')))
+        """
         
     if assist_by_id:
-        query += f"""
+        if assist_by_id.isdigit():
+            query += f"""
         ?action bball:hasAssist ?assist_action .
         ?assist_action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{assist_by_id}> .
         """
-        
+        else:
+            query += f"""
+        ?action bball:hasAssist ?assist_action .
+        ?assist_action bball:actionPlayer ?assist_player_node .
+        ?assist_player_node rdfs:label ?assist_name_label .
+        FILTER(CONTAINS(LCASE(STR(?assist_name_label)), LCASE('{assist_by_id}')))
+        """
+    if lineup_uri:
+        query += f"""
+        {{ ?action bball:runningHomeTeamLineup <{lineup_uri}> . }}
+        UNION
+        {{ ?action bball:runningRoadTeamLineup <{lineup_uri}> . }}
+        """
     query += "\n    } LIMIT 500"
     return query
 
@@ -415,4 +437,34 @@ def get_defensive_anchors_query():
     GROUP BY ?player
     ORDER BY DESC(?totalBlocks)
     LIMIT 10
+    """
+
+def get_game_lineups_query(game_code="333", season_code="E2023"):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?lineup ?teamType (GROUP_CONCAT(DISTINCT ?playerName; separator=", ") AS ?players)
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode '{game_code}' ;
+              bball:hasSeason ?season ;
+              bball:hasPlayByPlayAction ?action .
+        ?season bball:hasCode '{season_code}' .
+        
+        # Μαρκάρουμε αν η πεντάδα είναι γηπεδούχος ή φιλοξενούμενη δυναμικά
+        {{ 
+            ?action bball:runningHomeTeamLineup ?lineup . 
+            BIND("home" AS ?teamType)
+        }}
+        UNION
+        {{ 
+            ?action bball:runningRoadTeamLineup ?lineup . 
+            BIND("road" AS ?teamType)
+        }}
+        
+        ?lineup bball:includesPlayer ?playerNode .
+        ?playerNode rdfs:label ?playerName .
+    }}
+    GROUP BY ?lineup ?teamType
     """

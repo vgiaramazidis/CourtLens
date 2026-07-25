@@ -132,28 +132,111 @@ gridHelper.material.opacity = 0.5;
 gridHelper.material.transparent = true;
 scene.add(gridHelper);
 
-// --- 3. Δημιουργία Μπασκέτας ---
-// Ταμπλό - Πιο ρεαλιστικό "γυαλί"
-const boardGeo = new THREE.BoxGeometry(18, 10.5, 0.5); 
+// --- ΚΛΙΜΑΚΑ & ΣΥΝΤΕΤΑΓΜΕΝΕΣ FIBA / EUROLEAGUE ---
+const S = 0.92; // Scale factor για να γίνουν όλες οι γραμμές πιο "στενές" και να αγκαλιάζουν τα σουτ
+// Η Euroleague έχει το στεφάνι στο 0,0! Άρα η baseline πάει προς τα πίσω κατά 1.575m
+const OFFSET_Z = 15.75 * S; 
+
+// --- ΠΡΟΣΘΗΚΗ: ΖΩΓΡΑΦΙΖΟΝΤΑΣ ΤΟ ΓΗΠΕΔΟ (FIBA LINES) ---
+function drawCourtLines() {
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+    const linesGroup = new THREE.Group();
+    linesGroup.position.y = 0.2; 
+
+    function createLine(points) {
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        return new THREE.Line(geometry, lineMaterial);
+    }
+
+    // 1. Εξωτερικές Γραμμές (Μισό Γήπεδο)
+    const w = 75 * S; 
+    const halfCourtZ = OFFSET_Z - (140 * S); 
+    linesGroup.add(createLine([
+        new THREE.Vector3(-w, 0, OFFSET_Z),
+        new THREE.Vector3(w, 0, OFFSET_Z),
+        new THREE.Vector3(w, 0, halfCourtZ),
+        new THREE.Vector3(-w, 0, halfCourtZ),
+        new THREE.Vector3(-w, 0, OFFSET_Z)
+    ]));
+
+    // 2. Ρακέτα (Paint) 
+    const pw = 24.5 * S;
+    const pl = OFFSET_Z - (58 * S); 
+    linesGroup.add(createLine([
+        new THREE.Vector3(-pw, 0, OFFSET_Z),
+        new THREE.Vector3(-pw, 0, pl),
+        new THREE.Vector3(pw, 0, pl),
+        new THREE.Vector3(pw, 0, OFFSET_Z)
+    ]));
+
+    // 3. Ημικύκλιο Βολών
+    const rFT = 18 * S;
+    const ftCurve = new THREE.EllipseCurve(0, pl, rFT, rFT, 0, Math.PI, false, 0);
+    const ftPoints = ftCurve.getPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y));
+    linesGroup.add(createLine(ftPoints));
+
+    const ftCurveBottom = new THREE.EllipseCurve(0, pl, rFT, rFT, Math.PI, Math.PI * 2, false, 0);
+    const ftPointsBottom = ftCurveBottom.getPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y));
+    const dashedMaterial = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 2, gapSize: 2 });
+    const ftBottomGeo = new THREE.BufferGeometry().setFromPoints(ftPointsBottom);
+    const ftBottomLine = new THREE.Line(ftBottomGeo, dashedMaterial);
+    ftBottomLine.computeLineDistances(); 
+    linesGroup.add(ftBottomLine);
+
+    // 4. Γραμμή Τριπόντου (Το τρίποντο ξεκινάει με κέντρο το στεφάνι στο 0,0!)
+    const r3P = 67.5 * S;
+    const cornerW = 66 * S;
+    const cornerDepth = OFFSET_Z - (29.9 * S); 
+
+    linesGroup.add(createLine([
+        new THREE.Vector3(-cornerW, 0, OFFSET_Z),
+        new THREE.Vector3(-cornerW, 0, cornerDepth) 
+    ]));
+    linesGroup.add(createLine([
+        new THREE.Vector3(cornerW, 0, OFFSET_Z),
+        new THREE.Vector3(cornerW, 0, cornerDepth)
+    ]));
+
+    // Τέλεια μαθηματική ένωση του τόξου με τις γωνίες
+    const angleOffset = Math.atan2(Math.abs(cornerDepth), cornerW);
+    const tpCurve = new THREE.EllipseCurve(
+        0, 0,                      // Κέντρο είναι πλέον το (0,0)
+        r3P, r3P,                
+        Math.PI + angleOffset,     
+        Math.PI * 2 - angleOffset, 
+        false,                     
+        0
+    );
+    const tpPoints = tpCurve.getPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y));
+    linesGroup.add(createLine(tpPoints));
+
+    // 5. Κέντρο Γηπέδου 
+    const centerCurve = new THREE.EllipseCurve(0, halfCourtZ, rFT, rFT, 0, Math.PI, true, 0);
+    const centerPoints = centerCurve.getPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y));
+    linesGroup.add(createLine(centerPoints));
+
+    scene.add(linesGroup);
+}
+drawCourtLines();
+
+// --- 3. ΤΑΜΠΛΟ & ΣΤΕΦΑΝΙ (Τέλεια προσαρμοσμένα) ---
+const boardGeo = new THREE.BoxGeometry(18 * S, 10.5 * S, 0.5); 
 const boardMat = new THREE.MeshStandardMaterial({ 
-    color: 0xe6f2ff, // Ελαφριά γαλάζια απόχρωση γυαλιού
-    transparent: true, 
-    opacity: 0.35, // Πιο διάφανο
-    roughness: 0.1
+    color: 0xe6f2ff, transparent: true, opacity: 0.35, roughness: 0.1 
 });
 const backboard = new THREE.Mesh(boardGeo, boardMat);
-backboard.position.set(0, 15, 0); 
+backboard.position.set(0, 15, OFFSET_Z - (12 * S)); // 1.2m μπροστά από τη baseline
 scene.add(backboard);
 
-// Στεφάνι (Torus) - Το αυθεντικό πορτοκαλί-κόκκινο χρώμα (Basketball Rim Orange)
-const rimGeo = new THREE.TorusGeometry(2.25, 0.3, 8, 24); 
+const rimGeo = new THREE.TorusGeometry(2.25 * S, 0.3, 8, 24); 
 const rimMat = new THREE.MeshStandardMaterial({ color: 0xeb5314 }); 
 const rim = new THREE.Mesh(rimGeo, rimMat);
 rim.rotation.x = Math.PI / 2; 
-rim.position.set(0, 14, -2.5); 
+rim.position.set(0, 14, 0); // Το στεφάνι είναι πλέον ακριβώς στο 0,0!
 scene.add(rim);
 
-const hoopPosition = new THREE.Vector3(0, 14, -2.5);
+// Ανανεώνουμε και τη μεταβλητή για το πού καταλήγει η τροχιά
+const hoopPosition = new THREE.Vector3(0, 14, 0);
 
 // --- 4. Σουτ & Αλληλεπίδραση (Κλικ) ---
 let shotMeshes = [];
@@ -245,7 +328,8 @@ function drawShots(shots) {
             isMade: shot.isMade,
             homeLineup: shot.runningHomeTeamLineup || "",
             roadLineup: shot.runningRoadTeamLineup || "",
-            videoSeconds: shot.videoSeconds // <-- ΝΕΟ
+            videoSeconds: shot.videoSeconds,
+            playTime: shot.playTime
         };      
         scene.add(sphere);
         shotMeshes.push(sphere); 
@@ -259,3 +343,36 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+
+const tooltip = document.getElementById("shotTooltip");
+
+container.addEventListener('mousemove', (event) => {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; // Διόρθωση: -1 αντί για +1 για το Y
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(shotMeshes);
+    
+    if (intersects.length > 0) {
+        const hoveredShot = intersects[0].object;
+        const status = hoveredShot.userData.isMade ? "🟢 Εύστοχο" : "🔴 Άστοχο";
+        const time = hoveredShot.userData.playTime || "Άγνωστος χρόνος";
+        
+        tooltip.style.display = "block";
+        tooltip.style.left = (event.pageX + 15) + "px";
+        tooltip.style.top = (event.pageY + 15) + "px";
+        
+        // Μπορείς να προσθέσεις το actionType (π.χ. 3pt) αν το περνάς από το app.py!
+        tooltip.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">Στατιστικά Σουτ</div>
+            Χρόνος: ${time}<br>
+            Κατάσταση: ${status}
+        `;
+        
+        document.body.style.cursor = "pointer";
+    } else {
+        tooltip.style.display = "none";
+        document.body.style.cursor = "default";
+    }
+});

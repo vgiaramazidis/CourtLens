@@ -52,3 +52,24 @@ async function fetchFilteredPlayer(PlayerId){
         return [];
     }
 }
+
+// Συνάρτηση για να φορτώσει τις πεντάδες στο UI
+async function loadGameLineups() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=333&season_code=E2023`);
+        const data = await response.json();
+        
+        const lineupSelect = document.getElementById("lineupSelect");
+        
+        data.lineups.forEach(lineup => {
+            const option = document.createElement("option");
+            option.value = lineup.uri;
+            // Εμφανίζει τα ονόματα των παικτών της πεντάδας στο μενού
+            option.textContent = lineup.players; 
+            lineupSelect.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error("Σφάλμα κατά τη φόρτωση των πεντάδων:", error);
+    }
+}

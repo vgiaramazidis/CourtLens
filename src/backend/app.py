@@ -2,7 +2,7 @@
 import uvicorn # <-- ΠΡΟΣΘΗΚΗ: Κάνουμε import τον server
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sparql_queries import get_filtered_player_query, get_games_list_query, get_match_playbyplay_query, get_play_context_query, query_sparql_requests, get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query, get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query, get_points_off_turnovers_query, get_fast_break_specialists_query, get_foul_drawn_gravity_query, get_defensive_anchors_query
+from sparql_queries import get_filtered_player_query, get_game_lineups_query, get_games_list_query, get_match_playbyplay_query, get_play_context_query, query_sparql_requests, get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query, get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query, get_points_off_turnovers_query, get_fast_break_specialists_query, get_foul_drawn_gravity_query, get_defensive_anchors_query
 import csv
 import os
 
@@ -56,7 +56,8 @@ async def get_shots(
     game_code: str = Query("333"), 
     season_code: str = Query("E2023"),
     player: str = Query(None), 
-    assist_by: str = Query(None)
+    assist_by: str = Query(None),
+    lineup_uri: str = Query(None)
 ):
     sparql_query = get_filtered_shots_query(game_code, season_code, player, assist_by)
     data = query_sparql_requests(sparql_query)
@@ -384,6 +385,29 @@ async def get_defensive_anchors():
         
     return {"defensive_anchors": results}
 
+@app.get("/api/game/lineups")
+async def get_game_lineups(game_code: str = Query("333"), season_code: str = Query("E2023")):
+    sparql_query = get_game_lineups_query(game_code, season_code)
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"error": "Failed to fetch lineups", "lineups": []}
+        
+    lineups = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        lineup_uri = row.get("lineup", {}).get("value", "")
+        team_type = row.get("teamType", {}).get("value", "") # "home" ή "road"
+        players_str = row.get("players", {}).get("value", "")
+        
+        lineups.append({
+            "uri": lineup_uri,
+            "teamType": team_type,
+            "players": players_str
+        })
+        
+    return {"lineups": lineups}
 
 # --- ΠΡΟΣΘΗΚΗ: Το παρακάτω block τρέχει όταν πατάς το βελάκι στο VS Code ---
 if __name__ == "__main__":

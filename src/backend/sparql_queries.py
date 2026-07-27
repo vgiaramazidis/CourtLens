@@ -20,14 +20,14 @@ def query_sparql_requests(sparql_query):
         print(f"HTTP Request failed: {e}")
         return None
 
-def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None, assist_by_id=None, filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None):    
+def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None, assist_by_id=None, filter_type=None, filter_id=None):
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup
-    WHERE {
+    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter
+    WHERE {{
         ?game a bball:Game ;
               bball:hasSeason ?season ;
               bball:hasPlayByPlayAction ?action .
@@ -37,8 +37,10 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
         
         ?action bball:shotCoords ?coords .
         
-        OPTIONAL { ?action bball:runningHomeTeamLineup ?home_lineup . }
-        OPTIONAL { ?action bball:runningRoadTeamLineup ?road_lineup . }
+        OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
+        OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
+        OPTIONAL {{ ?action bball:clock ?clockTime . }}
+        OPTIONAL {{ ?action bball:quarter ?quarter . }}
     """
     
     # 1. Φίλτρο Σεζόν
@@ -51,13 +53,36 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
         
     # 3. Φίλτρο Παίκτη (Σουτέρ)
     if player_id:
-        query += f"\n        ?action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ."
+        # Έλεγχος: Είναι νούμερο (ID) ή κείμενο (Όνομα);
+        if player_id.isdigit():
+            query += f"\n        ?action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ."
+        else:
+            # Αν είναι όνομα, ψάχνουμε με CONTAINS αγνοώντας κεφαλαία/μικρά (LCASE)
+            query += f"""
+        ?action bball:actionPlayer ?action_player_node .
+        ?action_player_node rdfs:label ?player_name_label .
+        FILTER(CONTAINS(LCASE(STR(?player_name_label)), LCASE('{player_id}')))
+        """
         
     # 4. Φίλτρο Ασίστ
     if assist_by_id:
-        query += f"""
+        if assist_by_id.isdigit():
+            query += f"""
         ?action bball:hasAssist ?assist_action .
         ?assist_action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{assist_by_id}> .
+        """
+        else:
+            query += f"""
+        ?action bball:hasAssist ?assist_action .
+        ?assist_action bball:actionPlayer ?assist_player_node .
+        ?assist_player_node rdfs:label ?assist_name_label .
+        FILTER(CONTAINS(LCASE(STR(?assist_name_label)), LCASE('{assist_by_id}')))
+        """
+    if lineup_uri:
+        query += f"""
+        {{ ?action bball:runningHomeTeamLineup <{lineup_uri}> . }}
+        UNION
+        {{ ?action bball:runningRoadTeamLineup <{lineup_uri}> . }}
         """
         
     # 5. ΤΑ ΝΕΑ ΦΙΛΤΡΑ
@@ -73,18 +98,46 @@ def get_filtered_shots_query(game_code=None, season_code="E2023", player_id=None
             EXISTS {{ ?road_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }}
         )
         """
-    if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
-
-    if min_start is not None and min_end is not None and min_start != "" and min_end != "":
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        query += f"""
-        ?action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """    
+        
     query += "\n    } LIMIT 500"
     return query
+
+
+def get_match_playbyplay_query(game_code="170", season_code="E2023"):
+    """
+    Διορθωμένη ταξινόμηση: Αγνοεί τα κενά (FILTER BOUND) ώστε να φέρει τις πραγματικές φάσεις με τη σωστή χρονική σειρά.
+    """
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?action ?actionType ?time ?description ?videoUrl ?playerLabel
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode '{game_code}' ;
+              bball:hasSeason ?season ;
+              bball:hasPlayByPlayAction ?action .
+              
+        ?season bball:hasCode '{season_code}' .
+        
+        ?action rdf:type ?actionType .
+        
+        # ΠΡΟΣΟΧΗ: Αν αυτά τα 3 properties ονομάζονται αλλιώς στην οντολογία σου, πρέπει να τα αλλάξουμε
+        OPTIONAL {{ ?action bball:hasTime ?time . }}
+        OPTIONAL {{ ?action bball:hasDescription ?description . }}
+        OPTIONAL {{ ?action bball:hasVideoUrl ?videoUrl . }}
+        OPTIONAL {{ 
+            ?action bball:actionPlayer ?player .
+            ?player rdfs:label ?playerLabel .
+        }}
+        
+        # Εξαναγκάζουμε να φέρει ΜΟΝΟ φάσεις που έχουν χρόνο, για να δουλέψει σωστά το ORDER BY
+        FILTER(BOUND(?time))
+    }}
+    ORDER BY ?time
+    LIMIT 500
+    """
 
 def get_filtered_player_query(player_id=None):
     """
@@ -159,9 +212,6 @@ def get_play_context_query(action_uri):
     """
     Φέρνει πληροφορίες για μια συγκεκριμένη φάση: ποιοι παίκτες ήταν στο παρκέ 
     και υπολογίζει το μέσο ύψος τους.
-def get_player_name_query(player_id):
-    """
-    Γενικό ερώτημα που βρίσκει το όνομα της φανέλας οποιουδήποτε παίκτη βάσει του ID του.
     """
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
@@ -199,6 +249,15 @@ def get_games_list_query(season_code="E2023"):
     GROUP BY ?gameCode
     LIMIT 100
     """
+
+def get_player_name_query(player_id):
+    """
+    Γενικό ερώτημα που βρίσκει το όνομα της φανέλας οποιουδήποτε παίκτη βάσει του ID του.
+    """
+    return f"""
+
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+
     SELECT ?name
     WHERE {{
         ?participation bball:overPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> ;
@@ -206,10 +265,45 @@ def get_games_list_query(season_code="E2023"):
     }} LIMIT 1
     """
 
-def get_top_assist_duos_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None):
+def get_games_list_query(season_code="E2023"):
+    """
+    Bulletproof έκδοση: Παίρνει τις ομάδες και τις ενώνει (π.χ. "Panathinaikos vs Real Madrid") 
+    χωρίς να ελέγχει booleans που μπορεί να σπάσουν το query.
+    """
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?gameCode (GROUP_CONCAT(?teamLabel; separator=" vs ") AS ?matchup)
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode ?gameCode ;
+              bball:hasSeason ?season ;
+              bball:hasTeamBoxscore ?boxscore .
+              
+        ?season bball:hasCode '{season_code}' .
+        
+        ?boxscore bball:overTeam ?team .
+        ?team rdfs:label ?teamLabel .
+    }}
+    GROUP BY ?gameCode
+    LIMIT 100
+    """
+
+
+
+def get_top_assist_duos_query():
+    """
+    Επιστρέφει τα καλύτερα δίδυμα (Scorer - Passer) βάσει ασίστ.
+    """
+    return """
+def get_top_assist_duos_query(filter_type=None, filter_id=None):
+    """
+    Επιστρέφει τα καλύτερα δίδυμα (Scorer - Passer).
+    Αν δοθεί filter_type (referee ή on_court) και filter_id, φιλτράρει αντίστοιχα!
+    """
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     SELECT ?scorer ?passer (COUNT(?action) AS ?totalAssists)
     WHERE {
@@ -218,27 +312,24 @@ def get_top_assist_duos_query(filter_type=None, filter_id=None, quarter=None, mi
         ?assistAction bball:actionPlayer ?passer .
     """
 
-    # ... (Εδώ παραμένουν τα προηγούμενα φίλτρα για filter_type / filter_id) ...
-
-    # ΦΙΛΤΡΟ ΔΕΚΑΛΕΠΤΟΥ (π.χ. "3rd")
-    if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
-
-    # ΦΙΛΤΡΟ ΧΡΟΝΟΥ (Μετατροπή λεπτών σε δευτερόλεπτα)
-    if min_start is not None and min_end is not None:
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        # Το χρονόμετρο μετράει αντίστροφα, άρα ?seconds <= sec_start ΚΑΙ ?seconds >= sec_end
+    # ΦΙΛΤΡΟ ΔΙΑΙΤΗΤΗ (π.χ. OJLL)
+    if filter_type == "referee" and filter_id:
         query += f"""
-        ?action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
+        ?game bball:hasPlayByPlayAction ?action ;
+              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
         """
         
+    # ΦΙΛΤΡΟ ΠΑΙΚΤΗ ΣΤΟ ΠΑΡΚΕ (π.χ. 012774)
+    elif filter_type == "on_court" and filter_id:
+        query += f"""
+        OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
+        OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
+        FILTER (
+            EXISTS {{ ?home_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }} ||
+            EXISTS {{ ?road_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }}
+        )
+        """
+
     query += """
     }
     GROUP BY ?scorer ?passer
@@ -247,9 +338,9 @@ def get_top_assist_duos_query(filter_type=None, filter_id=None, quarter=None, mi
     """
     return query
 
-def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None):
+def get_second_chance_points_query(filter_type=None, filter_id=None):
     """
-    Επιστρέφει τους κορυφαίους παίκτες σε πόντους από δεύτερη ευκαιρία.
+    Επιστρέφει τους κορυφαίους παίκτες σε πόντους από δεύτερη ευκαιρία (επιθετικό ριμπάουντ).
     """
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
@@ -262,12 +353,14 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
                 bball:pointsAwarded ?points .
     """
 
-    # ΦΙΛΤΡΑ: Διαιτητής ή Παίκτης στο παρκέ
+    # ΦΙΛΤΡΟ 1: Διαιτητής
     if filter_type == "referee" and filter_id:
         query += f"""
         ?game bball:hasPlayByPlayAction ?action ;
               bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
         """
+        
+    # ΦΙΛΤΡΟ 2: Παίκτης στο παρκέ (teammate/opponent)
     elif filter_type == "on_court" and filter_id:
         query += f"""
         OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
@@ -278,24 +371,6 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
         )
         """
 
-    # ΦΙΛΤΡΟ: Δεκάλεπτο
-    if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
-
-    # ΦΙΛΤΡΟ: Χρόνος (Μετατροπή λεπτών σε δευτερόλεπτα)
-    if min_start is not None and min_end is not None and min_start != "" and min_end != "":
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        query += f"""
-        ?action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
-        """
-
     query += """
     }
     GROUP BY ?player
@@ -304,9 +379,9 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
     """
     return query
 
-def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None):
+def get_top_lineups_query(filter_type=None, filter_id=None):
     """
-    Επιστρέφει τις πιο παραγωγικές πεντάδες βάσει συνολικών πόντων, με υποστήριξη φίλτρων.
+    Επιστρέφει τις πιο παραγωγικές πεντάδες (βάσει συνολικών πόντων που σκοράρουν).
     """
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
@@ -318,13 +393,14 @@ def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_st
                 bball:runningHomeTeamLineup ?lineup .
     """
 
-    # ΦΙΛΤΡΟ: Διαιτητής
+    # ΦΙΛΤΡΟ 1: Αν έχει μπει συγκεκριμένος διαιτητής (π.χ. OJLL)
     if filter_type == "referee" and filter_id:
         query += f"""
         ?game bball:hasPlayByPlayAction ?action ;
               bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
         """
-    # ΦΙΛΤΡΟ: Παίκτης στην πεντάδα
+        
+    # ΦΙΛΤΡΟ 2: Αν ψάχνουμε πεντάδες που παίζει συγκεκριμένος παίκτης (π.χ. 012774)
     elif filter_type == "on_court" and filter_id:
         query += f"""
         FILTER (
@@ -332,24 +408,6 @@ def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_st
         )
         """
 
-    # ΦΙΛΤΡΟ: Δεκάλεπτο
-    if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
-
-    # ΦΙΛΤΡΟ: Χρόνος (Δευτερόλεπτα)
-    if min_start is not None and min_end is not None and min_start != "" and min_end != "":
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        query += f"""
-        ?action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
-        """
-        
     query += """
     }
     GROUP BY ?lineup
@@ -358,132 +416,144 @@ def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_st
     """
     return query
 
-def get_foul_drawn_gravity_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, fouled_id=None, fouling_id=None, game_code=None):
-    query = """
+def get_clutch_time_performers_query():
+    """
+    Επιστρέφει τους παίκτες που σκοράρουν τους περισσότερους πόντους 
+    στο 4ο δεκάλεπτο όταν η διαφορά στο σκορ είναι 5 πόντοι ή μικρότερη.
+    """
+    return """
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    SELECT ?player (SUM(xsd:integer(?points)) AS ?clutchPoints) (COUNT(?action) AS ?clutchActions)
+    WHERE {
+        # Ψάχνουμε ενέργειες στο 4ο δεκάλεπτο που έδωσαν πόντους
+        ?action bball:quarter 4 ;
+                bball:actionPlayer ?player ;
+                bball:pointsAwarded ?points ;
+                bball:runningHomeTeamScore ?homeScore ;
+                bball:runningRoadTeamScore ?roadScore .
+                
+        # ΦΙΛΤΡΟ: Η απόλυτη διαφορά του σκορ (Home - Road) να είναι <= 5
+        FILTER(ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) <= 5)
+    }
+    GROUP BY ?player
+    ORDER BY DESC(?clutchPoints)
+    LIMIT 10
+    """
+
+def get_points_off_turnovers_query():
+    """
+    Επιστρέφει τις ομάδες που πετυχαίνουν τους περισσότερους πόντους 
+    αμέσως μετά από λάθος (turnover) του αντιπάλου.
+    """
+    return """
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    SELECT ?team (SUM(xsd:integer(?points)) AS ?pointsOffTurnovers)
+    WHERE {
+        # Βρίσκουμε τα σουτ που προήλθαν από turnover
+        ?action bball:isFromTurnover "true"^^xsd:boolean ;
+                bball:actionPlayer ?player ;
+                bball:pointsAwarded ?points .
+                
+        # Βρίσκουμε την ομάδα του παίκτη μέσω της συμμετοχής
+        ?participation bball:overPlayer ?player ;
+                       bball:hasTeam ?team .
+                       
+        ?game bball:hasPlayByPlayAction ?action .
+    }
+    GROUP BY ?team
+    ORDER BY DESC(?pointsOffTurnovers)
+    LIMIT 10
+    """
+
+def get_fast_break_specialists_query():
+    """
+    Επιστρέφει τους κορυφαίους παίκτες στον αιφνιδιασμό (Fast Break) 
+    βάσει πόντων και συνολικών προσπαθειών.
+    """
+    return """
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    SELECT ?player (SUM(xsd:integer(?points)) AS ?fastBreakPoints) (COUNT(?action) AS ?totalAttempts)
+    WHERE {
+        # Βρίσκουμε τα σουτ που έγιναν στον αιφνιδιασμό
+        ?action bball:isFastBreak "true"^^xsd:boolean ;
+                bball:actionPlayer ?player ;
+                bball:pointsAwarded ?points .
+    }
+    GROUP BY ?player
+    ORDER BY DESC(?fastBreakPoints)
+    LIMIT 10
+    """
+
+def get_foul_drawn_gravity_query():
+    """
+    Επιστρέφει τους παίκτες που κερδίζουν τα περισσότερα φάουλ 
+    (ιδιαίτερα κατά τη διάρκεια προσπαθειών για σουτ).
+    """
+    return """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     SELECT ?player (COUNT(?action) AS ?totalFoulsDrawn)
     WHERE {
+        # Εντοπίζουμε τις ενέργειες τύπου FoulDrawn
         ?action rdf:type bball:FoulDrawn ;
                 bball:actionPlayer ?player .
-    """
-    
-    if fouled_id:
-        query += f"\n        FILTER(?player = <https://www.euroleaguebasketball.net/euroleague/players/-/{fouled_id}>)"
-
-    if fouling_id:
-        query += f"""
-        ?action bball:occuredByFoul ?foul_action .
-        ?foul_action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{fouling_id}> .
-        """
-
-    if filter_type == "referee" and filter_id:
-        query += f"""
-        ?game bball:hasPlayByPlayAction ?action ;
-              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
-        """
-    elif filter_type == "on_court" and filter_id:
-        query += f"""
-        OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
-        OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
-        FILTER (
-            EXISTS {{ ?home_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }} ||
-            EXISTS {{ ?road_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }}
-        )
-        """
-
-    if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
-
-    if min_start is not None and min_end is not None and min_start != "" and min_end != "":
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        query += f"""
-        ?action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
-        """
-    query += """
     }
     GROUP BY ?player
     ORDER BY DESC(?totalFoulsDrawn)
     LIMIT 10
     """
-    return query
 
-def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, shooter_id=None, blocker_id=None, game_code=None):
-    query = """
-    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-    SELECT ?player (COUNT(?block_action) AS ?totalBlocks)
-    WHERE {
-        ?block_action rdf:type bball:Block ;
-                      bball:actionPlayer ?player .
+def get_defensive_anchors_query():
     """
+    Επιστρέφει τους κορυφαίους αμυντικούς πυλώνες (Defensive Anchors) 
+    βάσει των μπλοκ (blocks) που μοιράζουν στα αντίπαλα σουτ.
+    """
+    return """
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 
-    # ΝΕΟ: Αν θέλουμε συγκεκριμένο αμυντικό
-    if blocker_id:
-        query += f"\n        FILTER(?player = <https://www.euroleaguebasketball.net/euroleague/players/-/{blocker_id}>)"
-
-    if shooter_id:
-        query += f"""
-        ?shot_action bball:blockedBy ?block_action ;
-                     bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{shooter_id}> .
-        """
-    # ΝΕΟ: Αν θέλουμε να δούμε ποιον έκοψε (π.χ. τον Φουρνιέ)
-    if shooter_id:
-        query += f"""
-        # Συνδέουμε την τάπα με το άστοχο σουτ, και φιλτράρουμε τον σουτέρ
-        ?shot_action bball:blockedBy ?block_action ;
-                     bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{shooter_id}> .
-        """
-
-    # Φίλτρα διαιτητή ή αν ήταν κάποιος άλλος παίκτης στο παρκέ (όπως τα είχαμε)
-    if filter_type == "referee" and filter_id:
-        query += f"""
-        ?game bball:hasPlayByPlayAction ?block_action ;
-              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
-        """
-    elif filter_type == "on_court" and filter_id:
-        query += f"""
-        OPTIONAL {{ ?block_action bball:runningHomeTeamLineup ?home_lineup . }}
-        OPTIONAL {{ ?block_action bball:runningRoadTeamLineup ?road_lineup . }}
-        FILTER (
-            EXISTS {{ ?home_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }} ||
-            EXISTS {{ ?road_lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{filter_id}> }}
-        )
-        """
-
-    # Φίλτρο δεκαλέπτου
-    if quarter:
-        query += f'\n        ?block_action bball:quarter "{quarter}" .'
-
-    # Φίλτρο λεπτών
-    if min_start is not None and min_end is not None and min_start != "" and min_end != "":
-        sec_start = int(min_start) * 60
-        sec_end = int(min_end) * 60
-        query += f"""
-        ?block_action bball:quarterSecondsRemaining ?seconds .
-        FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?block_action .
-        """
-
-    query += """
+    SELECT ?player (COUNT(?action) AS ?totalBlocks)
+    WHERE {
+        # Εντοπίζουμε τα σουτ που έχουν μπλοκαριστεί και ποιος παίκτης έκανε το μπλοκ
+        ?action bball:blockedBy ?player .
     }
     GROUP BY ?player
     ORDER BY DESC(?totalBlocks)
     LIMIT 10
     """
-    return query
+
+def get_game_lineups_query(game_code="333", season_code="E2023"):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?lineup ?teamType (GROUP_CONCAT(DISTINCT ?playerName; separator=", ") AS ?players)
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode '{game_code}' ;
+              bball:hasSeason ?season ;
+              bball:hasPlayByPlayAction ?action .
+        ?season bball:hasCode '{season_code}' .
+        
+        # Μαρκάρουμε αν η πεντάδα είναι γηπεδούχος ή φιλοξενούμενη δυναμικά
+        {{ 
+            ?action bball:runningHomeTeamLineup ?lineup . 
+            BIND("home" AS ?teamType)
+        }}
+        UNION
+        {{ 
+            ?action bball:runningRoadTeamLineup ?lineup . 
+            BIND("road" AS ?teamType)
+        }}
+        
+        ?lineup bball:includesPlayer ?playerNode .
+        ?playerNode rdfs:label ?playerName .
+    }}
+    GROUP BY ?lineup ?teamType
+    """

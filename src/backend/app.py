@@ -53,15 +53,16 @@ async def get_player_name(player_id: str):
 
 @app.get("/api/shots")
 async def get_shots(
-    game_code: str = Query("333"), 
+    game_code: str = Query(None), 
     season_code: str = Query("E2023"),
     player: str = Query(None), 
     assist_by: str = Query(None),
-    lineup_uri: str = Query(None)
+    filter_type: str = Query(None), # "on_court" ή "referee"
+    filter_id: str = Query(None)    # Το ID
 ):
-    sparql_query = get_filtered_shots_query(game_code, season_code, player, assist_by)
+    sparql_query = get_filtered_shots_query(game_code, season_code, player, assist_by, filter_type, filter_id)
     data = query_sparql_requests(sparql_query)
-    
+
     if not data:
         return {"error": "Failed to fetch data from SPARQL endpoint", "shots": []}
         
@@ -131,6 +132,13 @@ async def get_shots(
         
     return {"shots": shots}
 
+@app.get("/api/analytics/assist-duos")
+async def get_assist_duos(
+    filter_type: str = Query(None),
+    filter_id: str = Query(None)
+):
+    # Περνάμε τα φίλτρα στο query
+    query = get_top_assist_duos_query(filter_type, filter_id)
 @app.get("/api/player")
 async def get_player(player: str = Query(None)):
     # 1. Κατασκευή του query
@@ -250,8 +258,11 @@ async def get_assist_duos():
     return {"assist_duos": results}
 
 @app.get("/api/analytics/second-chance")
-async def get_second_chance():
-    query = get_second_chance_points_query()
+async def get_second_chance(
+    filter_type: str = Query(None),
+    filter_id: str = Query(None)
+):
+    query = get_second_chance_points_query(filter_type, filter_id)
     data = query_sparql_requests(query)
     
     results = []
@@ -268,8 +279,11 @@ async def get_second_chance():
     return {"second_chance_points": results}
 
 @app.get("/api/analytics/lineups")
-async def get_top_lineups():
-    query = get_top_lineups_query()
+async def get_top_lineups(
+    filter_type: str = Query(None),
+    filter_id: str = Query(None)
+):
+    query = get_top_lineups_query(filter_type, filter_id)
     data = query_sparql_requests(query)
     
     results = []

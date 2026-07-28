@@ -176,7 +176,8 @@
                     <option value="assist-duos">-Top Assist Duos</option>
                     <option value="second-chance">-Second Chance Points</option>
                     <option value="top-lineups">-Top Lineups</option>
-                    <option value="clutch">-Clutch Performers</option>
+                    <option value="fouls-drawn">-Fouls Drawn Gravity</option>
+                    <option value="defensive-anchors">-Defensive Anchors</option>
                 </select>
             </div>
 
@@ -218,9 +219,63 @@
                         <option value="referee">With Referee</option>
                     </select>
                 </div>
-
+                
                 <div class="form-group">
                     <input type="text" id="extraFilterId" placeholder="Enter Filter ID...">
+                </div>
+                <!-- Στο index.html, βάλε το ακριβώς κάτω από το defensiveFiltersContainer -->
+                <div id="foulsFiltersContainer" style="display: none;">
+                    <div class="form-group">
+                        <label style="color: #e74c3c;">Παίκτης που κέρδισε το φάουλ (ID):</label>
+                        <input type="text" id="fouledIdInput" placeholder="π.χ. 012774 (Nunn)">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #e74c3c;">Παίκτης που έκανε το φάουλ (ID):</label>
+                        <input type="text" id="foulingIdInput" placeholder="π.χ. το ID του Fournier">
+                    </div>
+                </div>
+                <!-- Στο index.html, αντικατάστησε το προηγούμενο div με αυτό: -->
+                <div id="defensiveFiltersContainer" style="display: none;">
+                    <div class="form-group">
+                        <label style="color: #34495e;">Αμυντικός (Blocker ID):</label>
+                        <input type="text" id="blockerIdInput" placeholder="π.χ. 012774 (Nunn)">
+                    </div>
+                    <div class="form-group">
+                        <label style="color: #34495e;">Αντίπαλος Σουτέρ (Shooter ID):</label>
+                        <input type="text" id="shooterIdInput" placeholder="π.χ. το ID του Fournier">
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin: 20px 0; border: 1px dashed #ccc;">
+            <div id="analyticsGameFilterContainer" style="margin-bottom: 20px; display: none;">
+                <div class="form-group">
+                    <label style="color: #2b528a;">Κωδικός Αγώνα (Game Code):</label>
+                    <input type="text" id="analyticsGameCodeInput" placeholder="π.χ. 333">
+                </div>
+            </div>
+            <!-- ΦΙΛΤΡΑ ΧΡΟΝΟΥ -->
+            <div id="timeFiltersContainer">
+                <div class="form-group">
+                    <label style="color: #2b528a;">Δεκάλεπτο:</label>
+                    <select id="quarterSelectAnalytics">
+                        <option value="">Όλος ο αγώνας</option>
+                        <option value="1st">1st Quarter</option>
+                        <option value="2nd">2nd Quarter</option>
+                        <option value="3rd">3rd Quarter</option>
+                        <option value="4th">4th Quarter</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Από λεπτό:</label>
+                        <input type="number" id="minStart" placeholder="π.χ. 9" max="10" min="0">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Έως λεπτό:</label>
+                        <input type="number" id="minEnd" placeholder="π.χ. 5" max="10" min="0">
+                    </div>
                 </div>
             </div>
 

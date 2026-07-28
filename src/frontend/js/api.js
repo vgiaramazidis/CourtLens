@@ -5,13 +5,16 @@ const API_BASE_URL = "http://localhost:8000"; // Η διεύθυνση του Py
 /**
  * Ζητάει τα σουτ από το backend βάσει φίλτρων.
  */
-async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = "E2023", filterType = null, filterId = null) {
+async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = "E2023", filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null) {
     try {
         const params = new URLSearchParams();
         if (playerId) params.append("player", playerId);
         if (assistPlayerId) params.append("assist_by", assistPlayerId);
         if (gameCode) params.append("game_code", gameCode);
         if (seasonCode) params.append("season_code", seasonCode);
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
         
         if (filterType && filterId) {
             params.append("filter_type", filterType);
@@ -34,13 +37,16 @@ async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCo
         return [];
     }
 }
-
 /**
  * Ζητάει τα κορυφαία δίδυμα (Assist Duos) από το backend, με προαιρετικά φίλτρα!
  */
-async function fetchTopAssistDuos(filterType = null, filterId = null) {
+async function fetchTopAssistDuos(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {    
     try {
         const params = new URLSearchParams();
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
+        if (gameCode) params.append("game_code", gameCode);
         if (filterType && filterId) {
             params.append("filter_type", filterType);
             params.append("filter_id", filterId);
@@ -99,16 +105,20 @@ async function loadGameLineups() {
     }
 }
 /**
- * Ζητάει τις Καλύτερες Πεντάδες (Top Lineups) με τα προαιρετικά φίλτρα.
+ * Ζητάει τις Καλύτερες Πεντάδες (Top Lineups) με όλα τα φίλτρα.
  */
-async function fetchTopLineups(filterType = null, filterId = null) {
+async function fetchTopLineups(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {
     try {
         const params = new URLSearchParams();
+        
         if (filterType && filterId) {
             params.append("filter_type", filterType);
             params.append("filter_id", filterId);
         }
-
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
+        if (gameCode) params.append("game_code", gameCode);
         const url = `${API_BASE_URL}/api/analytics/lineups?${params.toString()}`;
         const response = await fetch(url);
         
@@ -121,18 +131,22 @@ async function fetchTopLineups(filterType = null, filterId = null) {
         return [];
     }
 }
-
 /**
- * Ζητάει τους Second Chance Points με προαιρετικά φίλτρα.
+ * Ζητάει τους Second Chance Points με όλα τα φίλτρα.
  */
-async function fetchSecondChancePoints(filterType = null, filterId = null) {
+async function fetchSecondChancePoints(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {
     try {
         const params = new URLSearchParams();
+        
+        // Χτίζουμε το URL μόνο με όσα φίλτρα έχουν όντως τιμή
         if (filterType && filterId) {
             params.append("filter_type", filterType);
             params.append("filter_id", filterId);
         }
-
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
+        if (gameCode) params.append("game_code", gameCode);
         const url = `${API_BASE_URL}/api/analytics/second-chance?${params.toString()}`;
         const response = await fetch(url);
         
@@ -142,6 +156,54 @@ async function fetchSecondChancePoints(filterType = null, filterId = null) {
         return data.second_chance_points;
     } catch (error) {
         console.error("Σφάλμα κατά την ανάκτηση των Second Chance Points:", error);
+        return [];
+    }
+}
+
+async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, fouledId = null, foulingId = null,gameCode = null) {
+    try {
+        const params = new URLSearchParams();
+        if (filterType && filterId) {
+            params.append("filter_type", filterType);
+            params.append("filter_id", filterId);
+        }
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
+        if (fouledId) params.append("fouled_id", fouledId);
+        if (foulingId) params.append("fouling_id", foulingId);
+        if (gameCode) params.append("game_code", gameCode);
+        const url = `${API_BASE_URL}/api/analytics/fouls-drawn?${params.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.fouls_drawn;
+    } catch (error) {
+        console.error("Σφάλμα Fouls Drawn:", error);
+        return [];
+    }
+}
+
+async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, shooterId = null, blockerId = null,gameCode = null) {
+    try {
+        const params = new URLSearchParams();
+        if (filterType && filterId) {
+            params.append("filter_type", filterType);
+            params.append("filter_id", filterId);
+        }
+        if (quarter) params.append("quarter", quarter);
+        if (minStart) params.append("min_start", minStart);
+        if (minEnd) params.append("min_end", minEnd);
+        if (shooterId) params.append("shooter_id", shooterId);
+        if (blockerId) params.append("blocker_id", blockerId); // <-- ΝΕΟ
+        if (gameCode) params.append("game_code", gameCode);
+        const url = `${API_BASE_URL}/api/analytics/defensive-anchors?${params.toString()}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.defensive_anchors;
+    } catch (error) {
+        console.error("Σφάλμα Defensive Anchors:", error);
         return [];
     }
 }

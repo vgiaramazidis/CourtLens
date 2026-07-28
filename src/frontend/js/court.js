@@ -313,7 +313,6 @@ function drawShots(shots) {
     }
 
     const sphereGeo = new THREE.SphereGeometry(1.5, 16, 16);
-    // Κρατάμε το πράσινο και το κόκκινο για Data Visualization, αλλά τα κάνουμε λίγο πιο "παστέλ" για να δένουν με τον φωτισμό
     const madeMat = new THREE.MeshStandardMaterial({ color: 0x27ae60 }); 
     const missedMat = new THREE.MeshStandardMaterial({ color: 0xc0392b }); 
 
@@ -329,10 +328,56 @@ function drawShots(shots) {
             homeLineup: shot.runningHomeTeamLineup || "",
             roadLineup: shot.runningRoadTeamLineup || "",
             videoSeconds: shot.videoSeconds,
-            playTime: shot.playTime
+            playTime: shot.playTime,
+            playerName: shot.playerName // <-- Αποθηκεύουμε το όνομα του παίκτη!
         };      
         scene.add(sphere);
         shotMeshes.push(sphere); 
+    });
+
+    // Καλούμε την συνάρτηση για να γεμίσει και η λίστα στα δεξιά
+    renderPlayByPlay(shots);
+}
+
+// --- ΝΕΟ: ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΤΟ PLAY-BY-PLAY ---
+function renderPlayByPlay(shots) {
+    const list = document.getElementById("pbpList");
+    if (!list) return;
+    list.innerHTML = ""; // Καθάρισμα λίστας
+
+    if (shots.length === 0) {
+        list.innerHTML = "<li style='color: #777; text-align: center;'>Δεν βρέθηκαν σουτ.</li>";
+        return;
+    }
+
+    shots.forEach(shot => {
+        const li = document.createElement("li");
+        li.style.padding = "10px";
+        li.style.borderBottom = "1px solid #eee";
+        li.style.cursor = "pointer";
+        li.style.transition = "background 0.2s";
+        li.style.fontSize = "13px";
+        
+        const statusIcon = shot.isMade ? "🟢" : "🔴";
+        const playerName = shot.playerName || "Άγνωστος";
+        const time = shot.playTime || "00:00";
+        
+        li.innerHTML = `<strong>${time}</strong> - ${statusIcon} <b>${playerName}</b>`;
+        
+        li.onmouseover = () => li.style.background = "#f0f8ff";
+        li.onmouseout = () => li.style.background = "transparent";
+        
+        // ΟΤΑΝ ΚΑΝΕΙΣ ΚΛΙΚ ΣΤΗ ΛΙΣΤΑ, ΠΑΕΙ ΤΟ ΒΙΝΤΕΟ ΕΚΕΙ!
+        li.onclick = () => {
+            if (shot.videoSeconds && shot.videoSeconds > 0 && typeof player !== 'undefined' && player.seekTo) {
+                let jumpTime = shot.videoSeconds - 5;
+                if (jumpTime < 0) jumpTime = 0;
+                player.seekTo(jumpTime, true);
+                player.playVideo();
+            }
+        };
+        
+        list.appendChild(li);
     });
 }
 
@@ -349,7 +394,7 @@ const tooltip = document.getElementById("shotTooltip");
 container.addEventListener('mousemove', (event) => {
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; // Διόρθωση: -1 αντί για +1 για το Y
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; 
     
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(shotMeshes);
@@ -358,14 +403,15 @@ container.addEventListener('mousemove', (event) => {
         const hoveredShot = intersects[0].object;
         const status = hoveredShot.userData.isMade ? "🟢 Εύστοχο" : "🔴 Άστοχο";
         const time = hoveredShot.userData.playTime || "Άγνωστος χρόνος";
+        const pName = hoveredShot.userData.playerName || "Άγνωστος Παίκτης";
         
         tooltip.style.display = "block";
         tooltip.style.left = (event.pageX + 15) + "px";
         tooltip.style.top = (event.pageY + 15) + "px";
         
-        // Μπορείς να προσθέσεις το actionType (π.χ. 3pt) αν το περνάς από το app.py!
+        // Το Tooltip τώρα δείχνει δυναμικά το όνομα του παίκτη!
         tooltip.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">Στατιστικά Σουτ</div>
+            <div style="font-weight: 900; margin-bottom: 5px; color: #f1c40f; font-size: 16px;">${pName}</div>
             Χρόνος: ${time}<br>
             Κατάσταση: ${status}
         `;

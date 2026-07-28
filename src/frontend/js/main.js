@@ -12,14 +12,24 @@ const rightPanel = document.getElementById("rightPanel");
 // --- 1. ΛΟΓΙΚΗ ΓΙΑ ΤΗΝ ΑΛΛΑΓΗ ΤΟΥ DROPDOWN ---
 mainModeSelect.addEventListener("change", (e) => {
     const mode = e.target.value;
+    const shooterFilter = document.getElementById("defensiveFiltersContainer");
+    if (shooterFilter) {
+        shooterFilter.style.display = (mode === "defensive-anchors") ? "block" : "none";
+    }
 
+    const foulsFilter = document.getElementById("foulsFiltersContainer");
+    if (foulsFilter) {
+        foulsFilter.style.display = (mode === "fouls-drawn") ? "block" : "none";
+    }
+    const analyticsGameFilter = document.getElementById("analyticsGameFilterContainer");
     if (mode === "shots") {
+        
         // Επιστροφή στο Γήπεδο
         shotFiltersForm.style.display = "block";
         courtWrapper.style.display = "flex";
         analyticsWrapper.style.display = "none";
         rightPanel.style.display = "flex"; // Επαναφέρουμε τις πεντάδες
-        
+        if (analyticsGameFilter) analyticsGameFilter.style.display = "none";
         mainActionBtn.innerText = "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ";
         mainActionBtn.style.backgroundColor = "#ea5314"; 
     } else {
@@ -28,7 +38,7 @@ mainModeSelect.addEventListener("change", (e) => {
         courtWrapper.style.display = "none";
         analyticsWrapper.style.display = "block";
         rightPanel.style.display = "none"; 
-        
+        if (analyticsGameFilter) analyticsGameFilter.style.display = "block";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #777; font-style: italic; font-size: 1.1rem;'>Πάτα 'ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ' για να δεις τα δεδομένα...</div>";
         analyticsTitle.innerText = "Αποτελέσματα Ανάλυσης";
         
@@ -40,6 +50,16 @@ mainModeSelect.addEventListener("change", (e) => {
 // --- 2. ΛΟΓΙΚΗ ΟΤΑΝ ΠΑΤΑΕΙ ΤΟ ΚΟΥΜΠΙ ---
 mainActionBtn.addEventListener("click", async () => {
     const mode = mainModeSelect.value;
+    const filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : null;
+    const filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : null;
+    const quarter = document.getElementById("quarterSelectAnalytics") ? document.getElementById("quarterSelectAnalytics").value : null;
+    const minStart = document.getElementById("minStart") ? document.getElementById("minStart").value : null;
+    const shooterId = document.getElementById("shooterIdInput") ? document.getElementById("shooterIdInput").value : null;
+    const blockerId = document.getElementById("blockerIdInput") ? document.getElementById("blockerIdInput").value : null;
+    const fouledId = document.getElementById("fouledIdInput") ? document.getElementById("fouledIdInput").value : null;
+    const foulingId = document.getElementById("foulingIdInput") ? document.getElementById("foulingIdInput").value : null;
+    const gameCode = document.getElementById("analyticsGameCodeInput") ? document.getElementById("analyticsGameCodeInput").value.trim() : null;
+
 
     if (mode === "shots") {
         // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΟ 3D COURT ====
@@ -48,7 +68,7 @@ mainActionBtn.addEventListener("click", async () => {
         const selectedGame = document.getElementById("gameSelect").value;
         const selectedSeason = document.getElementById("seasonSelect").value;
         
-        const shotsData = await fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason);
+        const shotsData = await fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd);
         drawShots(shotsData); 
     }else if (mode === "top-lineups") {
         // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΑ TOP LINEUPS ====
@@ -59,8 +79,7 @@ mainActionBtn.addEventListener("click", async () => {
         const filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : "";
         const filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : "";
         
-        const lineups = await fetchTopLineups(filterType, filterId); 
-        
+        const lineups = await fetchTopLineups(filterType, filterId, quarter, minStart, minEnd, gameCode);
         if (!lineups || lineups.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
@@ -117,30 +136,107 @@ mainActionBtn.addEventListener("click", async () => {
                 fetchPlayerNameForCard(playerId, `name_${playerId}_${index}`);
             });
         });
-    }else if (mode === "second-chance") {
-        // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΑ SECOND CHANCE POINTS ====
-        analyticsTitle.innerText = "Second Chance Points ";
-        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #27ae60; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
+    } else if (mode === "fouls-drawn") {
+        analyticsTitle.innerText = "Fouls Drawn Gravity";
+        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #e74c3c; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : "";
-        const filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : "";
-        
-        const players = await fetchSecondChancePoints(filterType, filterId); 
-        
+        // Κλήση με τα variables που έχουν ήδη διαβαστεί στο event listener!
+        const players = await fetchFoulsDrawn(filterType, filterId, quarter, minStart, minEnd, fouledId, foulingId, gameCode);
         if (!players || players.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
         }
 
-        analyticsContent.innerHTML = ""; 
-
+        analyticsContent.innerHTML = "";
         players.forEach((player, index) => {
             const card = document.createElement("div");
             card.style.background = "#fff";
             card.style.padding = "20px";
             card.style.borderRadius = "12px";
             card.style.boxShadow = "0 4px 15px rgba(0,0,0,0.05)";
-            card.style.borderTop = "5px solid #27ae60"; // Πράσινο χρώμα 
+            card.style.borderTop = "5px solid #e74c3c";
+            card.style.display = "flex";
+            card.style.alignItems = "center";
+            card.style.justifyContent = "space-between";
+
+            card.innerHTML = `
+                <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
+                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                    <img src="https://media-api-front.euroleague.net/images/players/p${player.player_id}.png" 
+                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                         style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #e74c3c; background-color: #fff;">
+                    <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_fd_${player.player_id}_${index}">...</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
+                    <span style="font-size: 2.2rem; color: #e74c3c; font-weight: 900;">${player.total_fouls_drawn}</span>
+                    <span style="font-size: 0.75rem; font-weight: bold; color: #555;">ΚΕΡΔΙΣΜΕΝΑ ΦΑΟΥΛ</span>
+                </div>
+            `;
+            analyticsContent.appendChild(card);
+            fetchPlayerNameForCard(player.player_id, `name_fd_${player.player_id}_${index}`);
+        });
+
+    } else if (mode === "defensive-anchors") {
+        analyticsTitle.innerText = "Defensive Anchors ";
+        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #34495e; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
+        
+        // Κλήση με τα variables
+        const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, gameCode);        
+        if (!players || players.length === 0) {
+            analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
+            return;
+        }
+
+        analyticsContent.innerHTML = "";
+        players.forEach((player, index) => {
+            const card = document.createElement("div");
+            card.style.background = "#fff";
+            card.style.padding = "20px";
+            card.style.borderRadius = "12px";
+            card.style.boxShadow = "0 4px 15px rgba(0,0,0,0.05)";
+            card.style.borderTop = "5px solid #34495e";
+            card.style.display = "flex";
+            card.style.alignItems = "center";
+            card.style.justifyContent = "space-between";
+
+            card.innerHTML = `
+                <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
+                <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                    <img src="https://media-api-front.euroleague.net/images/players/p${player.player_id}.png" 
+                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                         style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #34495e; background-color: #fff;">
+                    <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_da_${player.player_id}_${index}">...</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
+                    <span style="font-size: 2.2rem; color: #34495e; font-weight: 900;">${player.total_blocks}</span>
+                    <span style="font-size: 0.75rem; font-weight: bold; color: #555;">ΜΠΛΟΚ (ΤΑΠΕΣ)</span>
+                </div>
+            `;
+            analyticsContent.appendChild(card);
+            fetchPlayerNameForCard(player.player_id, `name_da_${player.player_id}_${index}`);
+        });
+    }else if (mode === "second-chance") {
+        // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΑ SECOND CHANCE POINTS ====
+        analyticsTitle.innerText = "Second Chance Points 🏀";
+        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #27ae60; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
+        
+        // Κάνουμε fetch περνώντας τις μεταβλητές (filterType, quarter, κτλ) που ήδη έχουμε διαβάσει στην αρχή του click event!
+        const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, gameCode);        
+        if (!players || players.length === 0) {
+            analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα για αυτά τα φίλτρα.</div>";
+            return;
+        }
+
+        analyticsContent.innerHTML = ""; 
+
+        // Δημιουργία των πράσινων καρτών
+        players.forEach((player, index) => {
+            const card = document.createElement("div");
+            card.style.background = "#fff";
+            card.style.padding = "20px";
+            card.style.borderRadius = "12px";
+            card.style.boxShadow = "0 4px 15px rgba(0,0,0,0.05)";
+            card.style.borderTop = "5px solid #27ae60"; // Πράσινο χρώμα για τα Second Chance
             card.style.display = "flex";
             card.style.alignItems = "center";
             card.style.justifyContent = "space-between";
@@ -163,6 +259,7 @@ mainActionBtn.addEventListener("click", async () => {
             
             analyticsContent.appendChild(card);
             
+            // Φέρνουμε το όνομα του παίκτη
             fetchPlayerNameForCard(player.player_id, `name_${player.player_id}_${index}`);
         });
     }else if (mode === "assist-duos") {
@@ -174,9 +271,12 @@ mainActionBtn.addEventListener("click", async () => {
         const filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : "";
         const filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : "";
         
-        // Καλούμε την API στέλνοντας τα φίλτρα
-        const duos = await fetchTopAssistDuos(filterType, filterId);
+        const quarter = document.getElementById("quarterSelectAnalytics").value;
+        const minStart = document.getElementById("minStart").value;
+        const minEnd = document.getElementById("minEnd").value;
         
+        // Στέλνουμε και τα 5 φίλτρα!
+        const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, gameCode);        
         if (!duos || duos.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;

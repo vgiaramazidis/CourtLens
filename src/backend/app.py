@@ -1,8 +1,15 @@
 # src/backend/app.py
-import uvicorn # <-- ΠΡΟΣΘΗΚΗ: Κάνουμε import τον server
+import uvicorn
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sparql_queries import get_filtered_player_query, get_game_lineups_query, get_games_list_query, get_match_playbyplay_query, get_play_context_query, query_sparql_requests, get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query, get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query, get_points_off_turnovers_query, get_fast_break_specialists_query, get_foul_drawn_gravity_query, get_defensive_anchors_query
+from sparql_queries import (
+    get_filtered_player_query, get_game_lineups_query, get_games_list_query, 
+    get_match_playbyplay_query, get_play_context_query, query_sparql_requests, 
+    get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query, 
+    get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query, 
+    get_points_off_turnovers_query, get_fast_break_specialists_query, 
+    get_foul_drawn_gravity_query, get_defensive_anchors_query
+)
 import csv
 import os
 
@@ -32,18 +39,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Βοηθητική συνάρτηση για τα δευτερόλεπτα
+def time_to_seconds(t_str):
+    if not t_str: return None
+    try:
+        if ":" in t_str:
+            m, s = map(int, t_str.split(":"))
+            return m * 60 + s
+        elif "." in t_str:
+            return float(t_str)
+    except ValueError:
+        return None
 
-
+# ==========================================
+# ENDPOINTS
+# ==========================================
 
 @app.get("/api/player/{player_id}")
 async def get_player_name(player_id: str):
-    # 1. Φτιάχνουμε το δυναμικό ερώτημα
     query = get_player_name_query(player_id)
-    
-    # 2. Το στέλνουμε στη βάση
     data = query_sparql_requests(query)
     
-    # 3. Βρίσκουμε το όνομα από την απάντηση (αν δεν υπάρχει βάζουμε απλά το ID)
     name = f"Παίκτης {player_id}" 
     bindings = data.get("results", {}).get("bindings", [])
     
@@ -58,13 +74,27 @@ async def get_shots(
     season_code: str = Query("E2023"),
     player: str = Query(None), 
     assist_by: str = Query(None),
-    filter_type: str = Query(None), # "on_court" ή "referee"
-    filter_id: str = Query(None),    # Το ID
+    lineup_uri: str = Query(None), 
+    filter_type: str = Query(None), 
+    filter_id: str = Query(None),    
     quarter: str = Query(None), 
     min_start: str = Query(None), 
     min_end: str = Query(None)
 ):
-    sparql_query = get_filtered_shots_query(game_code, season_code, player, assist_by, filter_type, filter_id, quarter, min_start, min_end)
+    # Κλήση στο SPARQL (Προσάρμοσε τις παραμέτρους αν η συνάρτησή σου δέχεται διαφορετικές)
+    # ΔΙΟΡΘΩΣΗ: Περνάμε τα arguments με το ΟΝΟΜΑ τους
+    sparql_query = get_filtered_shots_query(
+        game_code=game_code, 
+        season_code=season_code, 
+        player_id=player, 
+        assist_by_id=assist_by, 
+        filter_type=filter_type, 
+        filter_id=filter_id, 
+        quarter=quarter, 
+        min_start=min_start, 
+        min_end=min_end, 
+        lineup_uri=lineup_uri
+    )
     data = query_sparql_requests(sparql_query)
 
     if not data:
@@ -77,49 +107,31 @@ async def get_shots(
         raw_coords = result.get("coords", {}).get("value", "0,0")
         x, y = raw_coords.split(",")
         action_type_full = result.get("action_type", {}).get("value", "")
-        action_type = action_type_full.split("#")[-1] # Παίρνουμε μόνο το 'TwoPointShotMade'
+        action_type = action_type_full.split("#")[-1] 
         
-        # --- ΠΡΟΣΘΗΚΗ: Τραβάμε τις πεντάδες από το SPARQL result (αν υπάρχουν) ---
         home_lineup = result.get("home_lineup", {}).get("value", "Άγνωστη πεντάδα")
         road_lineup = result.get("road_lineup", {}).get("value", "Άγνωστη πεντάδα")
 
-        # --- ΝΕΟ: Παίρνουμε τον χρόνο της φάσης ---
-        play_time = result.get("clockTime", {}).get("value", "") # π.χ. "08:24" (Βάλε το σωστό κλειδί αν λέγεται αλλιώς)
-        quarter = result.get("quarter", {}).get("value", "")
-        print(play_time,quarter)
-        # --- ΝΕΟ: Αντιστοίχιση με τα δευτερόλεπτα του YouTube ---
-# --- ΝΕΑ ΛΟΓΙΚΗ: Μετατροπή σε δευτερόλεπτα & Ανοχή ±2 ---
-        def time_to_seconds(t_str):
-            if not t_str: return None
-            try:
-                if ":" in t_str:
-                    m, s = map(int, t_str.split(":"))
-                    return m * 60 + s
-                elif "." in t_str:
-                    return float(t_str)
-            except ValueError:
-                return None
-        
+        play_time = result.get("clockTime", {}).get("value", "") 
+        quarter_val = result.get("quarter", {}).get("value", "")
+        player_name = result.get("playerName", {}).get("value", "Άγνωστος Παίκτης")
+
         video_seconds = 0
         target_sec = time_to_seconds(play_time)
 
-        if target_sec is not None and quarter:
-            closest_diff = float('inf') # Αρχικοποίηση με άπειρο
+        if target_sec is not None and quarter_val:
+            closest_diff = float('inf') 
 
             for entry in TIMELINE:
-                if entry["quarter"] == quarter:
+                if entry["quarter"] == quarter_val:
                     ocr_sec = time_to_seconds(entry["clock"])
                     
                     if ocr_sec is not None:
                         diff = abs(target_sec - ocr_sec)
                         
-                        # Ελέγχουμε αν είμαστε εντός της ανοχής των 4 δευτερολέπτων (±4)
-                        # και κρατάμε την πιο κοντινή τιμή που θα βρούμε
                         if diff <= 4 and diff < closest_diff:
                             closest_diff = diff
                             video_seconds = entry["video_sec"]
-                            
-                            # Αν βρήκαμε ακριβώς το ίδιο δευτερόλεπτο (απόκλιση 0), σταματάμε το ψάξιμο
                             if diff == 0:
                                 break
 
@@ -128,20 +140,18 @@ async def get_shots(
             "x": float(x),
             "y": float(y),
             "isMade": "Made" in action_type,
-            "runningHomeTeamLineup": home_lineup,   # <-- Προσθήκη
-            "runningRoadTeamLineup": road_lineup,    # <-- Προσθήκη
-            "playTime": play_time,           # Το στέλνουμε για το Tooltip
-            "videoSeconds": video_seconds    # Το στέλνουμε για το Video Jump!
+            "runningHomeTeamLineup": home_lineup,   
+            "runningRoadTeamLineup": road_lineup,    
+            "playTime": play_time,           
+            "videoSeconds": video_seconds,
+            "playerName": player_name
         })
         
     return {"shots": shots}
 
 @app.get("/api/player")
 async def get_player(player: str = Query(None)):
-    # 1. Κατασκευή του query
     sparql_query = get_filtered_player_query(player)
-    
-    # 2. Αποστολή στο endpoint
     data = query_sparql_requests(sparql_query)
     
     if not data:
@@ -152,19 +162,14 @@ async def get_player(player: str = Query(None)):
     if not bindings:
         return {"player": {}}
         
-    # Παίρνουμε την πρώτη γραμμή
     raw_player = bindings[0]
     
-    # 3. Καθαρισμός: Κρατάμε ΜΟΝΟ τα 'value'
     clean_player = {}
     for key, field_data in raw_player.items():
         if isinstance(field_data, dict) and "value" in field_data:
             val = field_data["value"]
-            
-            # ΕΙΔΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΤΗ ΧΩΡΑ: Κρατάμε μόνο το τελευταίο κομμάτι του URL
             if key == "country" and "/" in val:
                 val = val.split("/")[-1]
-                
             clean_player[key] = val
         else:
             clean_player[key] = None
@@ -182,7 +187,7 @@ async def get_match_pbp(game_code: str = Query("170"), season_code: str = Query(
     actions = []
     for row in data.get("results", {}).get("bindings", []):
         action_type_uri = row.get("actionType", {}).get("value", "")
-        action_type_name = action_type_uri.split("#")[-1] # Παίρνουμε μόνο το όνομα (π.χ. TwoPointShotMade)
+        action_type_name = action_type_uri.split("#")[-1] 
         
         actions.append({
             "uri": row.get("action", {}).get("value", ""),
@@ -232,128 +237,51 @@ async def get_games(season_code: str = Query("E2023")):
         })
         
     return {"games": games}
+
+@app.get("/api/game/lineups")
+async def get_game_lineups(game_code: str = Query("333"), season_code: str = Query("E2023")):
+    sparql_query = get_game_lineups_query(game_code, season_code)
+    data = query_sparql_requests(sparql_query)
+    
+    if not data:
+        return {"error": "Failed to fetch lineups", "lineups": []}
+        
+    lineups = []
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        lineup_uri = row.get("lineup", {}).get("value", "")
+        team_type = row.get("teamType", {}).get("value", "") 
+        players_str = row.get("players", {}).get("value", "")
+        
+        lineups.append({
+            "uri": lineup_uri,
+            "teamType": team_type,
+            "players": players_str
+        })
+        
+    return {"lineups": lineups}
+
+# ==========================================
+# ANALYTICS ENDPOINTS
+# ==========================================
+
 @app.get("/api/analytics/assist-duos")
 async def get_assist_duos(
     filter_type: str = Query(None),
     filter_id: str = Query(None),
     quarter: str = Query(None),
-    min_start: int = Query(None),
-    min_end: int = Query(None),
+    min_start: str = Query(None),
+    min_end: str = Query(None),
     game_code: str = Query(None)
 ):
-    # Περνάμε τα φίλτρα στο query
-    query = get_top_assist_duos_query(filter_type, filter_id)
-@app.get("/api/player")
-async def get_player(player: str = Query(None)):
-    # 1. Κατασκευή του query
-    sparql_query = get_filtered_player_query(player)
-    
-    # 2. Αποστολή στο endpoint
-    data = query_sparql_requests(sparql_query)
-    
-    if not data:
-        return {"error": "Failed to fetch data from SPARQL endpoint", "player": {}}
-        
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    if not bindings:
-        return {"player": {}}
-        
-    # Παίρνουμε την πρώτη γραμμή
-    raw_player = bindings[0]
-    
-    # 3. Καθαρισμός: Κρατάμε ΜΟΝΟ τα 'value'
-    clean_player = {}
-    for key, field_data in raw_player.items():
-        if isinstance(field_data, dict) and "value" in field_data:
-            val = field_data["value"]
-            
-            # ΕΙΔΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΤΗ ΧΩΡΑ: Κρατάμε μόνο το τελευταίο κομμάτι του URL
-            if key == "country" and "/" in val:
-                val = val.split("/")[-1]
-                
-            clean_player[key] = val
-        else:
-            clean_player[key] = None
-
-    return {"player": clean_player}
-
-@app.get("/api/match/playbyplay")
-async def get_match_pbp(game_code: str = Query("170"), season_code: str = Query("E2023")):
-    sparql_query = get_match_playbyplay_query(game_code, season_code)
-    data = query_sparql_requests(sparql_query)
-    
-    if not data:
-        return {"error": "Failed to fetch play-by-play", "actions": []}
-        
-    actions = []
-    for row in data.get("results", {}).get("bindings", []):
-        action_type_uri = row.get("actionType", {}).get("value", "")
-        action_type_name = action_type_uri.split("#")[-1] # Παίρνουμε μόνο το όνομα (π.χ. TwoPointShotMade)
-        
-        actions.append({
-            "uri": row.get("action", {}).get("value", ""),
-            "type": action_type_name,
-            "time": row.get("time", {}).get("value", ""),
-            "description": row.get("description", {}).get("value", ""),
-            "videoUrl": row.get("videoUrl", {}).get("value", None),
-            "player": row.get("playerLabel", {}).get("value", "Unknown")
-        })
-        
-    return {"actions": actions}
-
-@app.get("/api/play/context")
-async def get_play_context(action_uri: str = Query(...)):
-    sparql_query = get_play_context_query(action_uri)
-    data = query_sparql_requests(sparql_query)
-    
-    if not data:
-        return {"error": "Failed to fetch play context"}
-        
-    bindings = data.get("results", {}).get("bindings", [])
-    if not bindings:
-        return {"avgHeight": None, "playersOnCourt": ""}
-        
-    row = bindings[0]
-    avg_height = row.get("avgHeight", {}).get("value", None)
-    players = row.get("playersOnCourt", {}).get("value", "")
-    
-    return {
-        "avgHeight": round(float(avg_height), 2) if avg_height else None,
-        "playersOnCourt": players
-    }
-
-@app.get("/api/games")
-async def get_games(season_code: str = Query("E2023")):
-    sparql_query = get_games_list_query(season_code)
-    data = query_sparql_requests(sparql_query)
-    
-    if not data:
-        return {"games": []}
-        
-    games = []
-    for row in data.get("results", {}).get("bindings", []):
-        games.append({
-            "gameCode": row.get("gameCode", {}).get("value", ""),
-            "matchup": f"{row.get('homeTeamLabel', {}).get('value', '')} vs {row.get('awayTeamLabel', {}).get('value', '')}"
-        })
-        
-    return {"games": games}
-
-@app.get("/api/analytics/assist-duos")
-async def get_assist_duos():
-    query = get_top_assist_duos_query()
-    # Περνάμε όλες τις παραμέτρους στη συνάρτηση
     query = get_top_assist_duos_query(filter_type, filter_id, quarter, min_start, min_end, game_code)
     data = query_sparql_requests(query)
-    
-    # ... (Το υπόλοιπο παραμένει ίδιο) ...
     
     results = []
     bindings = data.get("results", {}).get("bindings", [])
     
     for row in bindings:
-        # Κόβουμε το URL για να κρατήσουμε μόνο το ID του παίκτη (π.χ. "012774")
         scorer_id = row.get("scorer", {}).get("value", "").split("/")[-1]
         passer_id = row.get("passer", {}).get("value", "").split("/")[-1]
         
@@ -429,7 +357,7 @@ async def get_fouls_drawn(
     min_end: str = Query(None),
     fouled_id: str = Query(None),
     fouling_id: str = Query(None),
-    game_code: str = Query(None) # <-- ΝΕΟ
+    game_code: str = Query(None) 
 ):
     query = get_foul_drawn_gravity_query(filter_type, filter_id, quarter, min_start, min_end, fouled_id, fouling_id, game_code)
     data = query_sparql_requests(query)
@@ -455,10 +383,9 @@ async def get_defensive_anchors(
     min_end: str = Query(None),
     shooter_id: str = Query(None),
     blocker_id: str = Query(None),
-    game_code: str = Query(None) # <-- ΝΕΟ
+    game_code: str = Query(None) 
 ):
     query = get_defensive_anchors_query(filter_type, filter_id, quarter, min_start, min_end, shooter_id, blocker_id, game_code)
-    # ... η υπόλοιπη συνάρτηση μένει ίδια ...
     data = query_sparql_requests(query)
     
     results = []
@@ -473,69 +400,6 @@ async def get_defensive_anchors(
         
     return {"defensive_anchors": results}
 
-@app.get("/api/analytics/assist-duos")
-async def get_assist_duos():
-    query = get_top_assist_duos_query()
-    data = query_sparql_requests(query)
-    
-    results = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        # Κόβουμε το URL για να κρατήσουμε μόνο το ID του παίκτη (π.χ. "012774")
-        scorer_id = row.get("scorer", {}).get("value", "").split("/")[-1]
-        passer_id = row.get("passer", {}).get("value", "").split("/")[-1]
-        
-        results.append({
-            "scorer_id": scorer_id,
-            "passer_id": passer_id,
-            "total_assists": int(row.get("totalAssists", {}).get("value", 0))
-        })
-        
-    return {"assist_duos": results}
-
-@app.get("/api/analytics/second-chance")
-async def get_second_chance():
-    query = get_second_chance_points_query()
-    data = query_sparql_requests(query)
-    
-    results = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        player_id = row.get("player", {}).get("value", "").split("/")[-1]
-        
-        results.append({
-            "player_id": player_id,
-            "total_points": int(row.get("totalSecondChancePoints", {}).get("value", 0))
-        })
-        
-    return {"second_chance_points": results}
-
-@app.get("/api/analytics/lineups")
-async def get_top_lineups():
-    query = get_top_lineups_query()
-    data = query_sparql_requests(query)
-    
-    results = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        lineup_url = row.get("lineup", {}).get("value", "")
-        # Αν το URL είναι έγκυρο, εξάγουμε τα IDs της πεντάδας
-        if "#Lineup_" in lineup_url:
-            lineup_ids = lineup_url.split("#Lineup_")[1].split("_")
-        else:
-            lineup_ids = []
-            
-        results.append({
-            "lineup_url": lineup_url,
-            "players": lineup_ids,
-            "total_points": int(row.get("totalPoints", {}).get("value", 0))
-        })
-        
-    return {"top_lineups": results}
-
 @app.get("/api/analytics/clutch-performers")
 async def get_clutch_performers():
     query = get_clutch_time_performers_query()
@@ -545,7 +409,6 @@ async def get_clutch_performers():
     bindings = data.get("results", {}).get("bindings", [])
     
     for row in bindings:
-        # Παίρνουμε το ID του παίκτη κόβοντας το URL
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
         
         results.append({
@@ -594,68 +457,6 @@ async def get_fast_break_specialists():
         
     return {"fast_break_specialists": results}
 
-@app.get("/api/analytics/fouls-drawn")
-async def get_fouls_drawn():
-    query = get_foul_drawn_gravity_query()
-    data = query_sparql_requests(query)
-    
-    results = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        player_id = row.get("player", {}).get("value", "").split("/")[-1]
-        
-        results.append({
-            "player_id": player_id,
-            "total_fouls_drawn": int(row.get("totalFoulsDrawn", {}).get("value", 0))
-        })
-        
-    return {"fouls_drawn": results}
-
-@app.get("/api/analytics/defensive-anchors")
-async def get_defensive_anchors():
-    query = get_defensive_anchors_query()
-    data = query_sparql_requests(query)
-    
-    results = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        player_id = row.get("player", {}).get("value", "").split("/")[-1]
-        
-        results.append({
-            "player_id": player_id,
-            "total_blocks": int(row.get("totalBlocks", {}).get("value", 0))
-        })
-        
-    return {"defensive_anchors": results}
-
-@app.get("/api/game/lineups")
-async def get_game_lineups(game_code: str = Query("333"), season_code: str = Query("E2023")):
-    sparql_query = get_game_lineups_query(game_code, season_code)
-    data = query_sparql_requests(sparql_query)
-    
-    if not data:
-        return {"error": "Failed to fetch lineups", "lineups": []}
-        
-    lineups = []
-    bindings = data.get("results", {}).get("bindings", [])
-    
-    for row in bindings:
-        lineup_uri = row.get("lineup", {}).get("value", "")
-        team_type = row.get("teamType", {}).get("value", "") # "home" ή "road"
-        players_str = row.get("players", {}).get("value", "")
-        
-        lineups.append({
-            "uri": lineup_uri,
-            "teamType": team_type,
-            "players": players_str
-        })
-        
-    return {"lineups": lineups}
-
-# --- ΠΡΟΣΘΗΚΗ: Το παρακάτω block τρέχει όταν πατάς το βελάκι στο VS Code ---
+# --- Block εκτέλεσης ---
 if __name__ == "__main__":
-    # Τρέχει το αρχείο 'app' και την εφαρμογή 'app'
-    # Το reload=True σημαίνει ότι αν κάνεις save μια αλλαγή, ο server κάνει restart μόνος του!
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

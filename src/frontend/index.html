@@ -67,6 +67,15 @@
                     <option value="defensive-anchors">- Defensive Anchors</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label style="color: #ea5314; font-weight: bold;">Season:</label>
+                <select id="seasonSelect" style="border: 2px solid #ea5314;">
+                    <option value="">Όλες οι Σεζόν</option>
+                    <option value="E2023">2023-24</option>
+                    <option value="E2024">2024-25</option>
+                    <option value="E2025">2025-26</option>
+                </select>
+            </div>
 
             <hr style="margin: 15px 0; border: 1px solid #e0e0e0;">
 
@@ -84,14 +93,7 @@
                     <label>Game (Code):</label>
                     <input type="text" id="gameSelect" placeholder="π.χ. 333">
                 </div>
-                <div class="form-group">
-                    <label>Season:</label>
-                    <select id="seasonSelect">
-                        <option value="E2023">2023-24</option>
-                        <option value="E2024">2024-25</option>
-                        <option value="E2025">2025-26</option>
-                    </select>
-                </div>
+                
                 
                 <!-- ΑΝΑΛΥΣΗ ΠΕΝΤΑΔΩΝ (Ενσωματώθηκε στα φίλτρα του Shot Search) -->
                 <div style="background: #f8f9fa; border-radius: 6px; padding: 10px; margin-top: 15px; border: 1px solid #e0e0e0;">
@@ -121,27 +123,27 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <input type="text" id="extraFilterId" placeholder="Enter Filter ID...">
+                    <input type="text" id="extraFilterId" placeholder="Enter Filter Name/ID (π.χ. Sloukas)">
                 </div>
                 
                 <div id="foulsFiltersContainer" style="display: none;">
                     <div class="form-group">
-                        <label style="color: #e74c3c;">Κέρδισε Φάουλ (ID):</label>
+                        <label style="color: #e74c3c;">Κέρδισε Φάουλ :</label>
                         <input type="text" id="fouledIdInput" placeholder="π.χ. Nunn">
                     </div>
                     <div class="form-group">
-                        <label style="color: #e74c3c;">Έκανε Φάουλ (ID):</label>
+                        <label style="color: #e74c3c;">Έκανε Φάουλ :</label>
                         <input type="text" id="foulingIdInput" placeholder="π.χ. Fournier">
                     </div>
                 </div>
 
                 <div id="defensiveFiltersContainer" style="display: none;">
                     <div class="form-group">
-                        <label style="color: #34495e;">Αμυντικός (Blocker ID):</label>
+                        <label style="color: #34495e;">Αμυντικός :</label>
                         <input type="text" id="blockerIdInput" placeholder="π.χ. Lessort">
                     </div>
                     <div class="form-group">
-                        <label style="color: #34495e;">Σουτέρ (Shooter ID):</label>
+                        <label style="color: #34495e;">Σουτέρ :</label>
                         <input type="text" id="shooterIdInput" placeholder="π.χ. Tavares">
                     </div>
                 </div>

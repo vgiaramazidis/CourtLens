@@ -298,21 +298,37 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
     """
     return query
 
-def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None):
-    query = """
+def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None, season_code="E2023"):
+    # Προσοχή: Χρησιμοποιούμε f-string και διπλές αγκύλες {{ }} για το UNION
+    query = f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     SELECT ?lineup (SUM(xsd:integer(?points)) AS ?totalPoints)
-    WHERE {
+    WHERE {{
+        # Συνδέουμε εξαρχής το Παιχνίδι, τη Σεζόν και τις Φάσεις
+        ?game a bball:Game ;
+              bball:hasSeason ?season ;
+              bball:hasPlayByPlayAction ?action .
+              
+        ?season bball:hasCode '{season_code}' .
+
+        # 1. Βρίσκουμε τους πόντους και ΠΟΙΑ ομάδα σκόραρε
         ?action bball:pointsAwarded ?points ;
-                bball:runningHomeTeamLineup ?lineup .
+                bball:actionTeam ?team .
+                
+        # 2. Βρίσκουμε την πεντάδα και βεβαιωνόμαστε ότι ανήκει στην ΙΔΙΑ ομάδα
+        ?lineup bball:lineupTeam ?team .
+        
+        # 3. Ελέγχουμε τόσο τις γηπεδούχες όσο και τις φιλοξενούμενες πεντάδες
+        {{ ?action bball:runningHomeTeamLineup ?lineup . }}
+        UNION
+        {{ ?action bball:runningRoadTeamLineup ?lineup . }}
     """
 
     if filter_type == "referee" and filter_id:
         query += f"""
-        ?game bball:hasPlayByPlayAction ?action ;
-              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
+        ?game bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
         """
     elif filter_type == "on_court" and filter_id:
         query += f"""
@@ -331,11 +347,10 @@ def get_top_lineups_query(filter_type=None, filter_id=None, quarter=None, min_st
         ?action bball:quarterSecondsRemaining ?seconds .
         FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
         """
+        
     if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
-        """
+        # Εφόσον το ?game έχει ήδη οριστεί, προσθέτουμε μόνο το φίλτρο
+        query += f"\n        ?game bball:hasCode '{game_code}' ."
         
     query += """
     }

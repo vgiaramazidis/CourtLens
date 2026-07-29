@@ -50,6 +50,9 @@ mainModeSelect.addEventListener("change", (e) => {
 // --- 2. ΛΟΓΙΚΗ ΟΤΑΝ ΠΑΤΑΕΙ ΤΟ ΚΟΥΜΠΙ ---
 mainActionBtn.addEventListener("click", async () => {
     const mode = mainModeSelect.value;
+    // Πιάνουμε τη Season από παντού!
+    const selectedSeason = document.getElementById("seasonSelect") ? document.getElementById("seasonSelect").value : "";
+    
     const filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : null;
     const filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : null;
     const quarter = document.getElementById("quarterSelectAnalytics") ? document.getElementById("quarterSelectAnalytics").value : null;
@@ -62,21 +65,20 @@ mainActionBtn.addEventListener("click", async () => {
     const gameCode = document.getElementById("analyticsGameCodeInput") ? document.getElementById("analyticsGameCodeInput").value.trim() : null;
 
     if (mode === "shots") {
-        // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΟ 3D COURT ====
         const selectedPlayer = document.getElementById("playerSelect") ? document.getElementById("playerSelect").value : null;
         const selectedAssistant = document.getElementById("assistSelect") ? document.getElementById("assistSelect").value : null;
         const selectedGame = document.getElementById("gameSelect") ? document.getElementById("gameSelect").value : null;
-        const selectedSeason = document.getElementById("seasonSelect") ? document.getElementById("seasonSelect").value : "E2023";
         
+        // Στέλνουμε το selectedSeason
         const shotsData = await fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd);
         drawShots(shotsData); 
     } 
     else if (mode === "top-lineups") {
-        // ==== ΕΚΤΕΛΕΣΗ ΓΙΑ ΤΑ TOP LINEUPS ====
         analyticsTitle.innerText = "Top Lineups";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const lineups = await fetchTopLineups(filterType, filterId, quarter, minStart, minEnd, gameCode);
+        // Στέλνουμε το selectedSeason
+        const lineups = await fetchTopLineups(filterType, filterId, quarter, minStart, minEnd, gameCode, selectedSeason);
         if (!lineups || lineups.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
@@ -111,14 +113,17 @@ mainActionBtn.addEventListener("click", async () => {
                 playerDiv.style.flexDirection = "column";
                 playerDiv.style.alignItems = "center";
                 playerDiv.style.width = "18%"; 
+                
                 playerDiv.innerHTML = `
-                    <img src="https://media-api-front.euroleague.net/images/players/p${playerId}.png" 
-                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <!-- Προστέθηκε ID στην εικόνα και default avatar -->
+                    <img id="img_lineup_${playerId}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                          style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc; background-color: #fff;">
-                    <span style="font-size: 0.7rem; margin-top: 5px; font-weight: 700; color: #333; text-align: center; word-break: break-word;" id="name_${playerId}_${index}">...</span>
+                    <span style="font-size: 0.7rem; margin-top: 5px; font-weight: 700; color: #333; text-align: center; word-break: break-word;" id="name_lineup_${playerId}_${index}">...</span>
                 `;
                 playersContainer.appendChild(playerDiv);
-                fetchPlayerNameForCard(playerId, `name_${playerId}_${index}`);
+                
+                // Καλούμε τη ΝΕΑ συνάρτηση για κάθε παίκτη της πεντάδας!
+                fetchPlayerDetailsForCard(playerId, `name_lineup_${playerId}_${index}`, `img_lineup_${playerId}_${index}`);
             });
         });
     } 
@@ -126,7 +131,7 @@ mainActionBtn.addEventListener("click", async () => {
         analyticsTitle.innerText = "Fouls Drawn Gravity";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #e74c3c; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const players = await fetchFoulsDrawn(filterType, filterId, quarter, minStart, minEnd, fouledId, foulingId, gameCode);
+        const players = await fetchFoulsDrawn(filterType, filterId, quarter, minStart, minEnd, fouledId, foulingId, gameCode, selectedSeason);
         if (!players || players.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
@@ -147,9 +152,10 @@ mainActionBtn.addEventListener("click", async () => {
             card.innerHTML = `
                 <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
-                    <img src="https://media-api-front.euroleague.net/images/players/p${player.player_id}.png" 
-                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <!-- Προστέθηκε ID στην εικόνα και default avatar -->
+                    <img id="img_fd_${player.player_id}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                          style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #e74c3c; background-color: #fff;">
+                    
                     <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_fd_${player.player_id}_${index}">...</span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
@@ -158,14 +164,16 @@ mainActionBtn.addEventListener("click", async () => {
                 </div>
             `;
             analyticsContent.appendChild(card);
-            fetchPlayerNameForCard(player.player_id, `name_fd_${player.player_id}_${index}`);
+            
+            // Καλούμε τη ΝΕΑ συνάρτηση!
+            fetchPlayerDetailsForCard(player.player_id, `name_fd_${player.player_id}_${index}`, `img_fd_${player.player_id}_${index}`);
         });
     } 
     else if (mode === "defensive-anchors") {
         analyticsTitle.innerText = "Defensive Anchors";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #34495e; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, gameCode);        
+        const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, gameCode, selectedSeason);        
         if (!players || players.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
@@ -186,9 +194,10 @@ mainActionBtn.addEventListener("click", async () => {
             card.innerHTML = `
                 <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
-                    <img src="https://media-api-front.euroleague.net/images/players/p${player.player_id}.png" 
-                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <!-- Προστέθηκε ID στην εικόνα και default avatar -->
+                    <img id="img_da_${player.player_id}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                          style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #34495e; background-color: #fff;">
+                    
                     <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_da_${player.player_id}_${index}">...</span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
@@ -197,14 +206,16 @@ mainActionBtn.addEventListener("click", async () => {
                 </div>
             `;
             analyticsContent.appendChild(card);
-            fetchPlayerNameForCard(player.player_id, `name_da_${player.player_id}_${index}`);
+            
+            // Καλούμε τη ΝΕΑ συνάρτηση!
+            fetchPlayerDetailsForCard(player.player_id, `name_da_${player.player_id}_${index}`, `img_da_${player.player_id}_${index}`);
         });
     }
     else if (mode === "second-chance") {
         analyticsTitle.innerText = "Second Chance Points 🏀";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #27ae60; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, gameCode);        
+        const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, gameCode, selectedSeason);        
         if (!players || players.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα για αυτά τα φίλτρα.</div>";
             return;
@@ -225,10 +236,12 @@ mainActionBtn.addEventListener("click", async () => {
             card.innerHTML = `
                 <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
-                    <img src="https://media-api-front.euroleague.net/images/players/p${player.player_id}.png" 
-                         onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <!-- Προστέθηκε ID στην εικόνα και μπήκε το default avatar -->
+                    <img id="img_sc_${player.player_id}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                          style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #27ae60; background-color: #fff;">
-                    <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_${player.player_id}_${index}">...</span>
+                    
+                    <!-- Ανανεώθηκε το ID στο span του ονόματος -->
+                    <span style="font-size: 0.9rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_sc_${player.player_id}_${index}">...</span>
                 </div>
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
                     <span style="font-size: 2.2rem; color: #27ae60; font-weight: 900;">${player.total_points}</span>
@@ -236,14 +249,16 @@ mainActionBtn.addEventListener("click", async () => {
                 </div>
             `;
             analyticsContent.appendChild(card);
-            fetchPlayerNameForCard(player.player_id, `name_${player.player_id}_${index}`);
+            
+            // Καλούμε τη ΝΕΑ συνάρτηση περνώντας και το id της εικόνας
+            fetchPlayerDetailsForCard(player.player_id, `name_sc_${player.player_id}_${index}`, `img_sc_${player.player_id}_${index}`);
         });
     }
     else if (mode === "assist-duos") {
         analyticsTitle.innerText = "Top Assist Duos";
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
         
-        const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, gameCode);        
+        const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, gameCode, selectedSeason);        
         if (!duos || duos.length === 0) {
             analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
             return;
@@ -263,29 +278,35 @@ mainActionBtn.addEventListener("click", async () => {
 
             card.innerHTML = `
                 <div style="font-weight: 900; font-size: 1.5rem; color: #ccc; width: 40px;">#${index + 1}</div>
+                
+                <!-- PASSER -->
                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
-                    <img src="https://media-api-front.euroleague.net/images/players/p${duo.passer_id}.png" 
-                        onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <img id="img_passer_${duo.passer_id}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                         style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #e0e0e0; background-color: #fff;">
-                    <span style="font-size: 0.85rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_${duo.passer_id}_${index}">...</span>
+                    <span style="font-size: 0.85rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_passer_${duo.passer_id}_${index}">...</span>
                     <span style="font-size: 0.7rem; color: #888;">PASSER</span>
                 </div>
+                
+                <!-- STATS -->
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 15px;">
                     <span style="font-size: 1.8rem; color: #ea5314; font-weight: 900;">${duo.total_assists}</span>
                     <span style="font-size: 0.75rem; font-weight: bold; color: #555; letter-spacing: 1px;">ΑΣΙΣΤ</span>
                     <span style="color: #2b528a; font-size: 1.5rem; margin-top: -5px;">➔</span>
                 </div>
+                
+                <!-- SCORER -->
                 <div style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
-                    <img src="https://media-api-front.euroleague.net/images/players/p${duo.scorer_id}.png" 
-                        onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png'"
+                    <img id="img_scorer_${duo.scorer_id}_${index}" src="https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png" 
                         style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #ea5314; background-color: #fff;">
-                    <span style="font-size: 0.85rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_${duo.scorer_id}_${index}">...</span>
+                    <span style="font-size: 0.85rem; margin-top: 8px; font-weight: 700; color: #333;" id="name_scorer_${duo.scorer_id}_${index}">...</span>
                     <span style="font-size: 0.7rem; color: #888;">SCORER</span>
                 </div>
             `;
             analyticsContent.appendChild(card);
-            fetchPlayerNameForCard(duo.passer_id, `name_${duo.passer_id}_${index}`);
-            fetchPlayerNameForCard(duo.scorer_id, `name_${duo.scorer_id}_${index}`);
+            
+            // Κλήση της νέας συνάρτησης!
+            fetchPlayerDetailsForCard(duo.passer_id, `name_passer_${duo.passer_id}_${index}`, `img_passer_${duo.passer_id}_${index}`);
+            fetchPlayerDetailsForCard(duo.scorer_id, `name_scorer_${duo.scorer_id}_${index}`, `img_scorer_${duo.scorer_id}_${index}`);
         });
     } 
     else {
@@ -295,17 +316,37 @@ mainActionBtn.addEventListener("click", async () => {
 });
 
 // --- Βοηθητικές Συναρτήσεις ---
-async function fetchPlayerNameForCard(playerId, htmlElementId) {
+async function fetchPlayerDetailsForCard(playerId, nameElementId, imgElementId) {
     try {
-        const response = await fetch(`http://localhost:8000/api/player/${playerId}`);
+        // 1. Fetch από το backend (όπως ακριβώς στο court.js)
+        const response = await fetch(`http://localhost:8000/api/player?player=${playerId}`);
         const data = await response.json();
-        let displayName = data.name;
-        if (displayName.includes(",")) {
-            displayName = displayName.split(",")[0]; 
+        const playerData = data.player;
+
+        const nameEl = document.getElementById(nameElementId);
+        const imgEl = document.getElementById(imgElementId);
+
+        if (playerData) {
+            // Όνομα
+            let playerName = playerData.name || `ID: ${playerId}`;
+            if (playerName.includes(",")) {
+                playerName = playerName.split(",")[0]; 
+            }
+            if (nameEl) nameEl.innerText = playerName;
+
+            // Εικόνα: Παίρνει αυτή της βάσης, αλλιώς βάζει το default (όπως στο court.js)
+            const playerImg = playerData.img || "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
+            if (imgEl) imgEl.src = playerImg;
+        } else {
+            if (nameEl) nameEl.innerText = `ID: ${playerId}`;
+            if (imgEl) imgEl.src = "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
         }
-        document.getElementById(htmlElementId).innerText = displayName;
     } catch (err) {
-        document.getElementById(htmlElementId).innerText = `ID: ${playerId}`;
+        console.error(`Σφάλμα για τον παίκτη ${playerId}:`, err);
+        const nameEl = document.getElementById(nameElementId);
+        const imgEl = document.getElementById(imgElementId);
+        if (nameEl) nameEl.innerText = `ID: ${playerId}`;
+        if (imgEl) imgEl.src = "https://www.euroleaguebasketball.net/media/com_easysocial/avatars/users/default_avatar.png";
     }
 }
 

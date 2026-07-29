@@ -273,9 +273,10 @@ async def get_assist_duos(
     quarter: str = Query(None),
     min_start: str = Query(None),
     min_end: str = Query(None),
-    game_code: str = Query(None)
+    game_code: str = Query(None),
+    season_code: str = Query(None)
 ):
-    query = get_top_assist_duos_query(filter_type, filter_id, quarter, min_start, min_end, game_code)
+    query = get_top_assist_duos_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
     data = query_sparql_requests(query)
     
     results = []
@@ -300,9 +301,10 @@ async def get_second_chance(
     quarter: str = Query(None),
     min_start: str = Query(None),
     min_end: str = Query(None),
-    game_code: str = Query(None)
+    game_code: str = Query(None),
+    season_code: str = Query(None)
 ):
-    query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code)
+    query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code,season_code)
     data = query_sparql_requests(query)
     
     results = []
@@ -325,9 +327,10 @@ async def get_top_lineups(
     quarter: str = Query(None),
     min_start: str = Query(None),
     min_end: str = Query(None),
-    game_code: str = Query(None)
+    game_code: str = Query(None),
+    season_code: str = Query(None) # ΠΡΟΣΘΗΚΗ
 ):
-    query = get_top_lineups_query(filter_type, filter_id, quarter, min_start, min_end, game_code)
+    query = get_top_lineups_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
     data = query_sparql_requests(query)
     
     results = []
@@ -357,9 +360,10 @@ async def get_fouls_drawn(
     min_end: str = Query(None),
     fouled_id: str = Query(None),
     fouling_id: str = Query(None),
-    game_code: str = Query(None) 
+    game_code: str = Query(None),
+    season_code: str = Query(None) 
 ):
-    query = get_foul_drawn_gravity_query(filter_type, filter_id, quarter, min_start, min_end, fouled_id, fouling_id, game_code)
+    query = get_foul_drawn_gravity_query(filter_type, filter_id, quarter, min_start, min_end, fouled_id, fouling_id, game_code,season_code)
     data = query_sparql_requests(query)
     
     results = []
@@ -383,9 +387,10 @@ async def get_defensive_anchors(
     min_end: str = Query(None),
     shooter_id: str = Query(None),
     blocker_id: str = Query(None),
-    game_code: str = Query(None) 
+    game_code: str = Query(None),
+    season_code: str = Query(None) 
 ):
-    query = get_defensive_anchors_query(filter_type, filter_id, quarter, min_start, min_end, shooter_id, blocker_id, game_code)
+    query = get_defensive_anchors_query(filter_type, filter_id, quarter, min_start, min_end, shooter_id, blocker_id, game_code,season_code)
     data = query_sparql_requests(query)
     
     results = []

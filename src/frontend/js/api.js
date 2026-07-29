@@ -62,13 +62,14 @@ async function fetchFilteredPlayer(playerId){
 /**
  * Ζητάει τα κορυφαία δίδυμα (Assist Duos).
  */
-async function fetchTopAssistDuos(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {    
+async function fetchTopAssistDuos(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null, seasonCode = null) {    
     try {
         const params = new URLSearchParams();
         if (quarter) params.append("quarter", quarter);
         if (minStart) params.append("min_start", minStart);
         if (minEnd) params.append("min_end", minEnd);
         if (gameCode) params.append("game_code", gameCode);
+        if (seasonCode) params.append("season_code", seasonCode);
         if (filterType && filterId) {
             params.append("filter_type", filterType);
             params.append("filter_id", filterId);
@@ -90,7 +91,7 @@ async function fetchTopAssistDuos(filterType = null, filterId = null, quarter = 
 /**
  * Ζητάει τις Καλύτερες Πεντάδες (Top Lineups).
  */
-async function fetchTopLineups(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {
+async function fetchTopLineups(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null, seasonCode = null) {
     try {
         const params = new URLSearchParams();
         if (filterType && filterId) {
@@ -101,6 +102,7 @@ async function fetchTopLineups(filterType = null, filterId = null, quarter = nul
         if (minStart) params.append("min_start", minStart);
         if (minEnd) params.append("min_end", minEnd);
         if (gameCode) params.append("game_code", gameCode);
+        if (seasonCode) params.append("season_code", seasonCode); // ΠΡΟΣΘΗΚΗ
         
         const url = `${API_BASE_URL}/api/analytics/lineups?${params.toString()}`;
         const response = await fetch(url);
@@ -118,7 +120,7 @@ async function fetchTopLineups(filterType = null, filterId = null, quarter = nul
 /**
  * Ζητάει τους Second Chance Points.
  */
-async function fetchSecondChancePoints(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null) {
+async function fetchSecondChancePoints(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null,seasonCode=null) {
     try {
         const params = new URLSearchParams();
         if (filterType && filterId) {
@@ -129,7 +131,7 @@ async function fetchSecondChancePoints(filterType = null, filterId = null, quart
         if (minStart) params.append("min_start", minStart);
         if (minEnd) params.append("min_end", minEnd);
         if (gameCode) params.append("game_code", gameCode);
-        
+        if (seasonCode) params.append("season_code", seasonCode);
         const url = `${API_BASE_URL}/api/analytics/second-chance?${params.toString()}`;
         const response = await fetch(url);
         
@@ -146,7 +148,7 @@ async function fetchSecondChancePoints(filterType = null, filterId = null, quart
 /**
  * Ζητάει τα Κερδισμένα Φάουλ (Fouls Drawn).
  */
-async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, fouledId = null, foulingId = null, gameCode = null) {
+async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, fouledId = null, foulingId = null, gameCode = null,seasonCode=null) {
     try {
         const params = new URLSearchParams();
         if (filterType && filterId) {
@@ -159,7 +161,7 @@ async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = nul
         if (fouledId) params.append("fouled_id", fouledId);
         if (foulingId) params.append("fouling_id", foulingId);
         if (gameCode) params.append("game_code", gameCode);
-        
+        if (seasonCode) params.append("season_code", seasonCode);
         const url = `${API_BASE_URL}/api/analytics/fouls-drawn?${params.toString()}`;
         const response = await fetch(url);
         
@@ -175,7 +177,7 @@ async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = nul
 /**
  * Ζητάει τους Αμυντικούς Ογκόλιθους (Defensive Anchors - Blocks).
  */
-async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, shooterId = null, blockerId = null, gameCode = null) {
+async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, shooterId = null, blockerId = null, gameCode = null,seasonCode=null) {
     try {
         const params = new URLSearchParams();
         if (filterType && filterId) {
@@ -188,7 +190,7 @@ async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter
         if (shooterId) params.append("shooter_id", shooterId);
         if (blockerId) params.append("blocker_id", blockerId); 
         if (gameCode) params.append("game_code", gameCode);
-        
+        if (seasonCode) params.append("season_code", seasonCode);
         const url = `${API_BASE_URL}/api/analytics/defensive-anchors?${params.toString()}`;
         const response = await fetch(url);
         

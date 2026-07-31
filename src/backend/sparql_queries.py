@@ -587,7 +587,7 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
             EXISTS {{
                 ?road_lineup bball:includesPlayer ?rPlayer .
                 ?rPlayer rdfs:label ?rName .
-                FILTER(regex(str(?rName), '\\\\b{fofilter_iduled_id}\\\\b', 'i'))
+                FILTER(regex(str(?rName), '\\\\b{filter_id}\\\\b', 'i'))
             }}
         )
         """

@@ -27,7 +27,7 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName
+    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?isFastBreak ?isSecondChance ?isFromTurnover
     WHERE {{
         ?game a bball:Game ;
               bball:hasPlayByPlayAction ?action .
@@ -47,7 +47,9 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
         OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
         OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
         OPTIONAL {{ ?action bball:clock ?clockTime . }}
-        OPTIONAL {{ ?action bball:quarter ?quarter . }}
+        OPTIONAL {{ ?action bball:isFastBreak ?isFastBreak . }}
+        OPTIONAL {{ ?action bball:isSecondChance ?isSecondChance . }}
+        OPTIONAL {{ ?action bball:isFromTurnover ?isFromTurnover . }}        
         
         ?action bball:actionPlayer ?playerNode .
         ?playerNode rdfs:label ?playerName .
@@ -187,20 +189,20 @@ def get_games_list_query(season_code="E2023"):
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?gameCode (GROUP_CONCAT(?teamLabel; separator=" vs ") AS ?matchup)
+    SELECT ?gameCode ?homeLabel ?awayLabel
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode ?gameCode ;
               bball:hasSeason ?season ;
-              bball:hasTeamBoxscore ?boxscore .
+              bball:homeTeam ?homeTeam ;
+              bball:roadTeam ?roadTeam .
               
         ?season bball:hasCode '{season_code}' .
         
-        ?boxscore bball:overTeam ?team .
-        ?team rdfs:label ?teamLabel .
+        ?homeTeam rdfs:label ?homeLabel .
+        ?roadTeam rdfs:label ?awayLabel .
     }}
-    GROUP BY ?gameCode
-    LIMIT 100
+    ORDER BY DESC(xsd:integer(?gameCode))
     """
 
 def get_player_name_query(player_id):
@@ -288,7 +290,7 @@ def get_top_assist_duos_query(filter_type=None, filter_id=None, quarter=None, mi
     """
     return query
 
-def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None, season_code=None):
+def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=None, min_start=None, min_end=None, game_code=None, season_code=None, player_id=None):
     query = """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -308,6 +310,17 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
                 bball:actionPlayer ?player ;
                 bball:pointsAwarded ?points .
     """
+
+    # --- ΝΕΟ ΦΙΛΤΡΟ ΓΙΑ ΤΟΝ ΠΑΙΚΤΗ ---
+    if player_id:
+        if player_id.isdigit():
+            query += f"\n        FILTER(?player = <https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}>)"
+        else:
+            query += f"""
+        ?player rdfs:label ?playerName .
+        FILTER(regex(str(?playerName), '\\\\b{player_id}\\\\b', 'i'))
+        """
+    # ----------------------------------
 
     if filter_type == "on_court" and filter_id:
         query += """
@@ -351,11 +364,6 @@ def get_second_chance_points_query(filter_type=None, filter_id=None, quarter=Non
         query += f"""
         ?action bball:quarterSecondsRemaining ?seconds .
         FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
-        """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
         """
 
     query += """
@@ -453,43 +461,35 @@ def get_foul_drawn_gravity_query(filter_type=None, filter_id=None, quarter=None,
         ?game a bball:Game ;
               bball:hasPlayByPlayAction ?action .
     """
+    
+    # --- ΠΡΟΣΘΗΚΗ: Σωστή σύνδεση Season και Game Code ---
     if season_code:
         query += f"\n        ?game bball:hasSeason ?season .\n        ?season bball:hasCode '{season_code}' ."
     if game_code:
         query += f"\n        ?game bball:hasCode '{game_code}' ."
+    # ----------------------------------------------------
 
     query += """
         ?action rdf:type bball:FoulDrawn ;
                 bball:actionPlayer ?player .
     """
 
-    # 1. Έξυπνο φίλτρο για το ποιος ΚΕΡΔΙΣΕ το φάουλ
     if fouled_id:
-        if fouled_id.isdigit():
-            query += f"\n        FILTER(?player = <https://www.euroleaguebasketball.net/euroleague/players/-/{fouled_id}>)"
-        else:
-            query += f"""
-        ?player rdfs:label ?fouled_name .
-        FILTER(regex(str(?fouled_name), '\\\\b{fouled_id}\\\\b', 'i'))
-        """
+        query += f"\n        FILTER(?player = <https://www.euroleaguebasketball.net/euroleague/players/-/{fouled_id}>)"
 
-    # 2. Έξυπνο φίλτρο για το ποιος ΕΚΑΝΕ το φάουλ
     if fouling_id:
-        query += "\n        ?action bball:occuredByFoul ?foul_action ."
-        if fouling_id.isdigit():
-            query += f"\n        ?foul_action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{fouling_id}> ."
-        else:
-            query += f"""
-        ?foul_action bball:actionPlayer ?fouling_player .
-        ?fouling_player rdfs:label ?fouling_name .
-        FILTER(regex(str(?fouling_name), '\\\\b{fouling_id}\\\\b', 'i'))
+        query += f"""
+        ?action bball:occuredByFoul ?foul_action .
+        ?foul_action bball:actionPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{fouling_id}> .
         """
 
-    # 3. Έξυπνο Extra Filter (on_court)
-    if filter_type == "on_court" and filter_id:
-        query += """
-        OPTIONAL { ?action bball:runningHomeTeamLineup ?home_lineup . }
-        OPTIONAL { ?action bball:runningRoadTeamLineup ?road_lineup . }
+    if filter_type == "referee" and filter_id:
+        query += f"\n        ?game bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> ."
+
+    elif filter_type == "on_court" and filter_id:
+        query += f"""
+        OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
+        OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
         """
         if filter_id.isdigit():
             query += f"""
@@ -513,11 +513,6 @@ def get_foul_drawn_gravity_query(filter_type=None, filter_id=None, quarter=None,
             }}
         )
         """
-    elif filter_type == "referee" and filter_id:
-        query += f"""
-        ?game bball:hasPlayByPlayAction ?action ;
-              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
-        """
 
     if quarter:
         query += f'\n        ?action bball:quarter "{quarter}" .'
@@ -529,11 +524,7 @@ def get_foul_drawn_gravity_query(filter_type=None, filter_id=None, quarter=None,
         ?action bball:quarterSecondsRemaining ?seconds .
         FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
         """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?action .
-        """
+
     query += """
     }
     GROUP BY ?player
@@ -553,6 +544,8 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
         ?game a bball:Game ;
               bball:hasPlayByPlayAction ?block_action .
     """
+    
+    # 1. Βασικά φίλτρα Game & Season
     if season_code:
         query += f"\n        ?game bball:hasSeason ?season .\n        ?season bball:hasCode '{season_code}' ."
     if game_code:
@@ -584,7 +577,7 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
         FILTER(regex(str(?shooter_name), '\\\\b{shooter_id}\\\\b', 'i'))
         """
 
-    # 3. Έξυπνο Extra Filter (on_court)
+    # 3. Έξυπνο Extra Filter (on_court / referee)
     if filter_type == "on_court" and filter_id:
         query += """
         OPTIONAL { ?block_action bball:runningHomeTeamLineup ?home_lineup . }
@@ -598,6 +591,7 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
         )
         """
         else:
+            # Διορθώθηκε το τυπογραφικό '{fofilter_iduled_id}' σε '{filter_id}'
             query += f"""
         FILTER (
             EXISTS {{
@@ -608,16 +602,16 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
             EXISTS {{
                 ?road_lineup bball:includesPlayer ?rPlayer .
                 ?rPlayer rdfs:label ?rName .
-                FILTER(regex(str(?rName), '\\\\b{fofilter_iduled_id}\\\\b', 'i'))
+                FILTER(regex(str(?rName), '\\\\b{filter_id}\\\\b', 'i'))
             }}
         )
         """
     elif filter_type == "referee" and filter_id:
         query += f"""
-        ?game bball:hasPlayByPlayAction ?block_action ;
-              bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
+        ?game bball:hasReferee <http://www.ics.forth.gr/isl/Basketball/entities/{filter_id}> .
         """
 
+    # 4. Φίλτρα Χρόνου
     if quarter:
         query += f'\n        ?block_action bball:quarter "{quarter}" .'
 
@@ -628,11 +622,8 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
         ?block_action bball:quarterSecondsRemaining ?seconds .
         FILTER(xsd:integer(?seconds) <= {sec_start} && xsd:integer(?seconds) >= {sec_end})
         """
-    if game_code:
-        query += f"""
-        ?game bball:hasCode '{game_code}' ;
-              bball:hasPlayByPlayAction ?block_action .
-        """
+
+    # Προσοχή: Αφαιρέθηκε το διπλό 'if game_code:' που υπήρχε εδώ στο τέλος!
 
     query += """
     }
@@ -647,13 +638,21 @@ def get_game_lineups_query(game_code="333", season_code="E2023"):
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?lineup ?teamType (GROUP_CONCAT(DISTINCT ?playerName; separator=", ") AS ?players)
+    SELECT ?lineup ?teamType ?homeScore ?roadScore (GROUP_CONCAT(DISTINCT ?playerInfo; separator="@@") AS ?players)
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
               bball:hasSeason ?season ;
-              bball:hasPlayByPlayAction ?action .
+              bball:hasPlayByPlayAction ?action ;
+              bball:homeTeam ?homeTeam ;
+              bball:roadTeam ?roadTeam .
+              
         ?season bball:hasCode '{season_code}' .
+        
+        OPTIONAL {{
+            ?game bball:hasHomeTeamScore ?homeScore .
+            ?game bball:hasRoadTeamScore ?roadScore .
+        }}
         
         {{ 
             ?action bball:runningHomeTeamLineup ?lineup . 
@@ -667,10 +666,12 @@ def get_game_lineups_query(game_code="333", season_code="E2023"):
         
         ?lineup bball:includesPlayer ?playerNode .
         ?playerNode rdfs:label ?playerName .
+        
+        BIND(CONCAT(REPLACE(STR(?playerNode), ".*-/", ""), "|", ?playerName) AS ?playerInfo)
     }}
-    GROUP BY ?lineup ?teamType
+    GROUP BY ?lineup ?teamType ?homeScore ?roadScore
     """
-
+    
 def get_clutch_time_performers_query():
     return """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>

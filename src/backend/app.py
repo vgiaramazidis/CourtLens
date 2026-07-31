@@ -50,6 +50,16 @@ def time_to_seconds(t_str):
             return float(t_str)
     except ValueError:
         return None
+     
+def get_bool(result, field, default=False):
+    value = result.get(field, {}).get("value")
+
+    print(value)
+
+    if value is None:
+        return default
+
+    return value in ("1", "true", "True")
 
 # ==========================================
 # ENDPOINTS
@@ -57,15 +67,22 @@ def time_to_seconds(t_str):
 
 @app.get("/api/player/{player_id}")
 async def get_player_name(player_id: str):
+    # Εάν μας έρθει ολόκληρο όνομα (έχει κενό) αντί για ID,
+    # δεν ρωτάμε τη βάση γιατί το SPARQL θα σκάσει. Επιστρέφουμε κατευθείαν το όνομα!
+    if " " in player_id:
+        return {"id": player_id, "name": player_id}
+        
     query = get_player_name_query(player_id)
     data = query_sparql_requests(query)
     
-    name = f"Παίκτης {player_id}" 
-    bindings = data.get("results", {}).get("bindings", [])
+    name = player_id 
     
-    if bindings:
-        name = bindings[0].get("name", {}).get("value", name)
-        
+    # Ασφαλής προσπέλαση ΜΟΝΟ αν το data δεν είναι None (ώστε να μην κρασάρει ο server)
+    if data and isinstance(data, dict):
+        bindings = data.get("results", {}).get("bindings", [])
+        if bindings:
+            name = bindings[0].get("name", {}).get("value", name)
+            
     return {"id": player_id, "name": name}
 
 @app.get("/api/shots")
@@ -115,7 +132,9 @@ async def get_shots(
         play_time = result.get("clockTime", {}).get("value", "") 
         quarter_val = result.get("quarter", {}).get("value", "")
         player_name = result.get("playerName", {}).get("value", "Άγνωστος Παίκτης")
-
+        fast_break = get_bool(result, "isFastBreak")
+        second_chance = get_bool(result, "isSecondChance")
+        from_turnover = get_bool(result, "isFromTurnover")
         video_seconds = 0
         target_sec = time_to_seconds(play_time)
 
@@ -137,12 +156,17 @@ async def get_shots(
 
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),
+            "action_type":action_type,
             "x": float(x),
             "y": float(y),
             "isMade": "Made" in action_type,
+            "isFastBreak": fast_break,
+            "isSecondChance": second_chance,
+            "isFromTurnover": from_turnover,
             "runningHomeTeamLineup": home_lineup,   
             "runningRoadTeamLineup": road_lineup,    
-            "playTime": play_time,           
+            "playTime": play_time,
+            "quarter": quarter_val,         
             "videoSeconds": video_seconds,
             "playerName": player_name
         })
@@ -231,9 +255,11 @@ async def get_games(season_code: str = Query("E2023")):
         
     games = []
     for row in data.get("results", {}).get("bindings", []):
+        home_label = row.get("homeLabel", {}).get("value", "")
+        away_label = row.get("awayLabel", {}).get("value", "")
         games.append({
             "gameCode": row.get("gameCode", {}).get("value", ""),
-            "matchup": f"{row.get('homeTeamLabel', {}).get('value', '')} vs {row.get('awayTeamLabel', {}).get('value', '')}"
+            "matchup": f"{home_label} vs {away_label}"
         })
         
     return {"games": games}
@@ -253,14 +279,15 @@ async def get_game_lineups(game_code: str = Query("333"), season_code: str = Que
         lineup_uri = row.get("lineup", {}).get("value", "")
         team_type = row.get("teamType", {}).get("value", "") 
         players_str = row.get("players", {}).get("value", "")
-        
+        homeScore = row.get("homeScore", {}).get("value", "")
+        roadScore = row.get("roadScore", {}).get("value", "")
         lineups.append({
             "uri": lineup_uri,
             "teamType": team_type,
             "players": players_str
         })
         
-    return {"lineups": lineups}
+    return {"homeScore": homeScore,"roadScore": roadScore,"lineups": lineups}
 
 # ==========================================
 # ANALYTICS ENDPOINTS
@@ -302,9 +329,10 @@ async def get_second_chance(
     min_start: str = Query(None),
     min_end: str = Query(None),
     game_code: str = Query(None),
-    season_code: str = Query(None)
+    season_code: str = Query(None),
+    player_id: str = Query(None)
 ):
-    query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code,season_code)
+    query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code, player_id)    
     data = query_sparql_requests(query)
     
     results = []

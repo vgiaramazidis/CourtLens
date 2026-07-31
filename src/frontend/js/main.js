@@ -72,6 +72,8 @@ mainModeSelect.addEventListener("change",async (e) => {
         if (extraFilters) extraFilters.style.display = "block";
         if (timeFilters) timeFilters.style.display = "block";
         if (seasonSelectParent) seasonSelectParent.style.display = "block";
+        if (tryGameBtn) tryGameBtn.style.display = "none";
+        if (integratedSimulator) integratedSimulator.style.display = "none";
     } 
     else {
         shotFiltersForm.style.display = "none";

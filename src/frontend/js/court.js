@@ -305,6 +305,7 @@ function drawTrajectory(startPoint, endPoint) {
 }
 
 function drawShots(shots) {
+    // Καθαρισμός προηγούμενων σουτ...
     shotMeshes.forEach(mesh => scene.remove(mesh));
     shotMeshes = [];
     if (currentTrajectory) {
@@ -316,7 +317,14 @@ function drawShots(shots) {
     const madeMat = new THREE.MeshStandardMaterial({ color: 0x27ae60 }); 
     const missedMat = new THREE.MeshStandardMaterial({ color: 0xc0392b }); 
 
+    // ΝΕΟ: Μεταβλητές για τα στατιστικά
+    let madeCount = 0;
+    let totalCount = shots.length;
+
     shots.forEach(shot => {
+        // Μετράμε τα εύστοχα
+        if (shot.isMade) madeCount++;
+
         const mapX = shot.x / 10;
         const mapZ = -shot.y / 10; 
 
@@ -329,14 +337,29 @@ function drawShots(shots) {
             roadLineup: shot.runningRoadTeamLineup || "",
             videoSeconds: shot.videoSeconds,
             playTime: shot.playTime,
-            playerName: shot.playerName // <-- Αποθηκεύουμε το όνομα του παίκτη!
+            playerName: shot.playerName
         };      
         scene.add(sphere);
         shotMeshes.push(sphere); 
     });
 
-    // Καλούμε την συνάρτηση για να γεμίσει και η λίστα στα δεξιά
-    renderPlayByPlay(shots);
+    // ΝΕΟ: Ενημέρωση του UI με τα Live Στατιστικά
+    const statsContainer = document.getElementById("liveShotStats");
+    if (statsContainer && totalCount > 0) {
+        const percentage = Math.round((madeCount / totalCount) * 100);
+        statsContainer.innerHTML = `
+            <span style="color:#fff;">Σουτ: <span style="color:#27ae60;">${madeCount}</span>/${totalCount}</span> 
+            <span class="stat-divider">|</span> 
+            <span style="color:#ea5314;">${percentage}%</span>
+        `;
+    } else if (statsContainer) {
+        statsContainer.innerHTML = `<span>Σουτ: 0/0</span> <span class="stat-divider">|</span> <span>0%</span>`;
+    }
+
+    // Κλήση της λίστας (αν την έχεις κρατήσει)
+    if (typeof renderPlayByPlay === "function") {
+        renderPlayByPlay(shots);
+    }
 }
 
 // --- ΝΕΟ: ΣΥΝΑΡΤΗΣΗ ΓΙΑ ΤΟ PLAY-BY-PLAY ---

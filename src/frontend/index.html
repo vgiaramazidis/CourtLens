@@ -42,6 +42,33 @@
         
         /* Tooltip */
         #shotTooltip { position: absolute; display: none; background: rgba(0,0,0,0.85); color: #fff; padding: 10px; border-radius: 6px; pointer-events: none; z-index: 9999; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        /* === COACH SIMULATOR STYLES === */
+        .sim-layout { display: flex; gap: 20px; margin-top: 20px; height: 450px; }
+        
+        /* Το 2D Γήπεδο */
+        .sim-court { flex: 0 0 500px; height: 400px; background-color: #d4a373; border: 4px solid #fff; position: relative; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); overflow: hidden; }
+        .sim-paint { position: absolute; bottom: 0; left: 160px; width: 180px; height: 150px; border: 3px solid #fff; border-bottom: none; background: rgba(255,255,255,0.1); }
+        .sim-3pt-line { position: absolute; bottom: 0; left: 25px; width: 450px; height: 350px; border: 3px solid #fff; border-radius: 50% 50% 0 0 / 100% 100% 0 0; border-bottom: none; }
+        
+        /* Τα 5 Κενά (Dropzones) */
+        .slot { width: 75px; height: 95px; border: 2px dashed #1a1a24; background: rgba(255,255,255,0.4); position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; border-radius: 8px; transition: background 0.2s; }
+        .slot.drag-over { background: rgba(39, 174, 96, 0.5); border-color: #fff; }
+        
+        /* Θέσεις στο παρκέ */
+        #slot-pg { top: 30px; left: 212px; }
+        #slot-sg { top: 120px; left: 50px; }
+        #slot-sf { top: 120px; right: 50px; }
+        #slot-pf { bottom: 120px; left: 130px; }
+        #slot-c { bottom: 60px; left: 212px; }
+
+        /* Ο Πάγκος (Roster) */
+        .roster-panel { flex: 1; background: #2b3e50; padding: 15px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; overflow-y: auto; border-left: 4px solid #f39c12; }
+        
+        /* Οι Κάρτες Παικτών */
+        .player-card { width: 75px; height: 95px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: grab; display: flex; flex-direction: column; align-items: center; padding: 5px; user-select: none; }
+        .player-card:active { cursor: grabbing; }
+        .player-card img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc; pointer-events: none; }
+        .player-card span { font-size: 0.7rem; margin-top: 5px; text-align: center; line-height: 1.1; color: #333; font-weight: bold; pointer-events: none; word-break: break-word; }
     </style>
 </head>
 <body>
@@ -65,6 +92,7 @@
                     <option value="top-lineups">- Top Lineups</option>
                     <option value="fouls-drawn">- Fouls Drawn Gravity</option>
                     <option value="defensive-anchors">- Defensive Anchors</option>
+                    
                 </select>
             </div>
             <div class="form-group">
@@ -182,8 +210,8 @@
             </div>
 
             <!-- ΤΟ ΚΕΝΤΡΙΚΟ ΚΟΥΜΠΙ -->
-            <button id="mainActionBtn" class="action-btn" style="background-color: #ea5314;">ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ</button>
-
+            <button id="mainActionBtn" class="action-btn" style="background-color: #ea5314;">ΑΝΑΖΗΤΗΣΗ</button>
+            <button id="tryGameBtn" class="action-btn" style="background-color: #27ae60; display: none; margin-top: 15px; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);">TRY GAME</button>
         </aside>
 
         <!-- ΚΕΝΤΡΟ: Δυναμικό Πάνελ (Γήπεδο & Βίντεο ή Analytics) -->
@@ -212,10 +240,46 @@
 
             <!-- Ο χώρος για τα Analytics Cards (Φαίνεται στα υπόλοιπα) -->
             <div id="analyticsWrapper" style="display: none; width: 100%; height: 100%; background-color: #f4f6f8; padding: 30px; overflow-y: auto;">
+                <div id="integratedSimulator" style="display: none; background-color: #1a1a24; padding: 20px; border-radius: 12px; margin-bottom: 30px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    <!-- 1. ΤΟ ΚΕΙΜΕΝΟ ΟΔΗΓΙΩΝ (Εμφανίζεται πρώτο) -->
+                    <div id="gameInstructions" style="background: #2b3e50; padding: 20px; border-radius: 10px; text-align: center;">
+                        <h3 style="color: #27ae60; margin-bottom: 15px; font-size: 1.5rem;">Πώς να παίξεις τον Simulator 🏀</h3>
+                        <p style="color: #ccc; font-size: 1.05rem; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+                            Επέλεξε τη σεζόν που θέλεις ή άφησέ το γενικό και μόλις πατήσεις <strong>GAME</strong>, θα βρεθείς σε ένα τυχαίο κρίσιμο σημείο (Crunch Time) ενός αγώνα της επιλεγμένης σεζόν.<br><br>
+                            <strong>Ο Στόχος σου:</strong> Φτιάξε την καλύτερη δυνατή πεντάδα για να πάρεις τη νίκη!<br>
+                            💡 <em>Tip:</em> Μπορείς να σύρεις (Drag & Drop) παίκτες  από τον πάγκο σου!
+                        </p>
+                    </div>
+
+                    <!-- 2. ΤΟ ΠΡΑΓΜΑΤΙΚΟ ΠΑΙΧΝΙΔΙ (Αρχικά κρυφό) -->
+                    <div id="actualSimulatorUI" style="display: none;">
+                        <div style="background: #2b3e50; padding: 15px; border-radius: 10px; border-left: 5px solid #e74c3c; margin-bottom: 20px;">
+                            <h3 id="simMatchupTitle" style="color: #e74c3c; margin-bottom: 5px; font-size: 1.2rem;">Coach Simulator</h3>
+                            <p id="simScenarioText" style="font-size: 1rem; color: #ccc;">Φόρτωση...</p>
+                        </div>
+
+                        <div class="sim-layout">
+                            <div class="sim-court">
+                                <div class="sim-3pt-line"></div>
+                                <div class="sim-paint"></div>
+                                <div class="slot" id="slot-pg" data-position="PG">PG</div>
+                                <div class="slot" id="slot-sg" data-position="SG">SG</div>
+                                <div class="slot" id="slot-sf" data-position="SF">SF</div>
+                                <div class="slot" id="slot-pf" data-position="PF">PF</div>
+                                <div class="slot" id="slot-c" data-position="C">C</div>
+                            </div>
+                            <div class="roster-panel" id="rosterPool"></div>
+                        </div>
+
+                        <button id="runSimulatorBtn" style="width: 100%; background-color: #e74c3c; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 1.2rem; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 20px;">
+                            ΕΚΤΕΛΕΣΗ ΠΡΟΣΟΜΟΙΩΣΗΣ
+                        </button>
+                        <div id="simulatorResult" style="margin-top: 20px; text-align: center;"></div>
+                    </div>
+                </div>
                 <h2 id="analyticsTitle" style="color: #2b528a; border-bottom: 3px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 30px; font-size: 1.8rem;">Αποτελέσματα</h2>
                 <div id="analyticsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;"></div>
             </div>
-
         </main>
 
         <!-- ΔΕΞΙΑ: Πεντάδες -->

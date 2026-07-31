@@ -182,27 +182,6 @@ def get_play_context_query(action_uri):
     }}
     """
 
-def get_games_list_query(season_code="E2023"):
-    return f"""
-    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    
-    SELECT ?gameCode (GROUP_CONCAT(?teamLabel; separator=" vs ") AS ?matchup)
-    WHERE {{
-        ?game a bball:Game ;
-              bball:hasCode ?gameCode ;
-              bball:hasSeason ?season ;
-              bball:hasTeamBoxscore ?boxscore .
-              
-        ?season bball:hasCode '{season_code}' .
-        
-        ?boxscore bball:overTeam ?team .
-        ?team rdfs:label ?teamLabel .
-    }}
-    GROUP BY ?gameCode
-    LIMIT 100
-    """
-
 def get_player_name_query(player_id):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
@@ -712,6 +691,7 @@ def get_points_off_turnovers_query():
     """
 
 def get_fast_break_specialists_query():
+
     return """
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -726,3 +706,112 @@ def get_fast_break_specialists_query():
     ORDER BY DESC(?fastBreakPoints)
     LIMIT 10
     """
+
+def get_games_list_query(season_code="E2023"):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    SELECT DISTINCT ?game ?homeLineup ?roadLineup
+    WHERE {{
+        ?game a bball:Game .
+        FILTER(CONTAINS(STR(?game), "{season_code}"))
+        
+        ?game bball:hasPlayByPlayAction ?action .
+        ?action bball:runningHomeTeamLineup ?homeLineup ;
+                bball:runningRoadTeamLineup ?roadLineup .
+    }} LIMIT 1000
+    """
+
+def get_game_roster_query(game_code):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    SELECT DISTINCT ?homeLineup ?roadLineup
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode '{game_code}' ;
+              bball:hasPlayByPlayAction ?action .
+        
+        ?action bball:runningHomeTeamLineup ?homeLineup ;
+                bball:runningRoadTeamLineup ?roadLineup .
+    }}
+    """
+
+def get_simulator_crunch_time_query(game_code, quarter, players_list):
+    filters = ""
+    for pid in players_list:
+        filters += f"FILTER(CONTAINS(STR(?lineup), '{pid}'))\n        "
+
+    query = f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    SELECT ?actionTeamURI ?lineup (SUM(xsd:integer(?points)) AS ?totalPoints)
+    WHERE {{
+        ?game a bball:Game .
+        FILTER(CONTAINS(STR(?game), "/{game_code}"))
+        
+        ?game bball:hasPlayByPlayAction ?action .
+        ?action bball:pointsAwarded ?points ;
+                bball:actionTeam ?actionTeamURI .
+    """
+    if quarter:
+        query += f"\n        ?action bball:quarter '{quarter}' .\n"
+
+    query += f"""
+        {{ ?action bball:runningHomeTeamLineup ?lineup . }}
+        UNION
+        {{ ?action bball:runningRoadTeamLineup ?lineup . }}
+
+        {filters}
+    }}
+    GROUP BY ?actionTeamURI ?lineup
+    """
+    return query
+
+def get_timeouts_query(season_code="E2023"):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    
+    SELECT DISTINCT ?game ?clock ?homeScore ?roadScore ?homeLineup ?roadLineup
+    WHERE {{
+        ?game bball:hasPlayByPlayAction ?action .
+        FILTER(CONTAINS(STR(?game), "{season_code}"))
+
+        ?action a ?actionType .
+        FILTER(?actionType IN (bball:Timeout, bball:TimeoutTV))
+        
+        ?action bball:quarter "4th" ;
+                bball:clock ?clock ;
+                bball:quarterSecondsRemaining ?seconds ;
+                bball:runningHomeTeamScore ?homeScore ;
+                bball:runningRoadTeamScore ?roadScore ;
+                bball:runningHomeTeamLineup ?homeLineup ;
+                bball:runningRoadTeamLineup ?roadLineup .
+                
+        # Η ΜΕΓΑΛΗ ΑΛΛΑΓΗ: Κάτω από 1 λεπτό (60 δευτ.) Ή διαφορά κάτω από 6 πόντους
+        FILTER(xsd:integer(?seconds) <= 60 || ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) <= 6)
+    }} LIMIT 200
+    """
+
+def get_team_roster_query(game_code, team_code):
+    return f"""
+    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    SELECT DISTINCT ?lineup
+    WHERE {{
+        ?game a bball:Game ;
+              bball:hasCode '{game_code}' ;
+              bball:hasPlayByPlayAction ?action .
+
+        # Ψάχνουμε ΑΥΣΤΗΡΑ μόνο τις πεντάδες της συγκεκριμένης ομάδας στον συγκεκριμένο αγώνα
+        {{ 
+            ?action bball:runningHomeTeamLineup ?lineup . 
+            FILTER(CONTAINS(STR(?lineup), "teams/-/{team_code}"))
+        }}
+        UNION
+        {{ 
+            ?action bball:runningRoadTeamLineup ?lineup . 
+            FILTER(CONTAINS(STR(?lineup), "teams/-/{team_code}"))
+        }}
+    }}
+    """
+

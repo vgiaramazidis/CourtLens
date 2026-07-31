@@ -44,8 +44,10 @@ mainModeSelect.addEventListener("change",async (e) => {
         
         return; // Σταματάμε εδώ την εκτέλεση! Δεν θέλουμε να κάνει νέα αναζήτηση.
     }
-    const mode = e.target.value;
     
+    const mode = e.target.value;
+    if (analyticsContent) analyticsContent.innerHTML = "";
+    if (analyticsTitle) analyticsTitle.innerText = "Αποτελέσματα";
     // Εμφάνιση/Απόκρυψη ειδικών φίλτρων
     const shooterFilter = document.getElementById("defensiveFiltersContainer");
     if (shooterFilter) shooterFilter.style.display = (mode === "defensive-anchors") ? "block" : "none";

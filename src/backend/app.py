@@ -135,6 +135,8 @@ async def get_shots(
         fast_break = get_bool(result, "isFastBreak")
         second_chance = get_bool(result, "isSecondChance")
         from_turnover = get_bool(result, "isFromTurnover")
+        home_score = result.get("homeScore", {}).get("value", "0")
+        road_score = result.get("roadScore", {}).get("value", "0")
         video_seconds = 0
         target_sec = time_to_seconds(play_time)
 
@@ -166,7 +168,9 @@ async def get_shots(
             "runningHomeTeamLineup": home_lineup,   
             "runningRoadTeamLineup": road_lineup,    
             "playTime": play_time,
-            "quarter": quarter_val,         
+            "quarter": quarter_val,
+            "homeScore": int(home_score) if home_score.isdigit() else 0,
+            "roadScore": int(road_score) if road_score.isdigit() else 0,      
             "videoSeconds": video_seconds,
             "playerName": player_name
         })

@@ -122,35 +122,91 @@ async function loadGamesForSeason(seasonCode) {
 
 globalSeasonSelect.addEventListener("change", (e) => loadGamesForSeason(e.target.value));
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadGamesForSeason(globalSeasonSelect.value);
 
-    document.querySelectorAll('.quarters-bar .quarter-box input').forEach(cb => {
-        cb.addEventListener('change', applyChartFilters);
-    });
-
-    // === ΝΕΑ EVENT LISTENERS ΓΙΑ Τous ΔΙΑΚΟΠΤΕΣ ΣΟΥΤ ===
-    document.querySelectorAll('.shot-filter-cb').forEach(cb => {
-        cb.addEventListener('change', applyChartFilters);
-    });
-
-    const homeSelectAll = document.querySelector('.euro-roster.home .roster-sub input');
-    if (homeSelectAll) {
-        homeSelectAll.addEventListener('change', (e) => {
-            document.querySelectorAll('#homePlayersContainer .player-cb').forEach(cb => cb.checked = e.target.checked);
-            applyChartFilters();
-        });
-    }
-
-    const roadSelectAll = document.querySelector('.euro-roster.road .roster-sub input');
-    if (roadSelectAll) {
-        roadSelectAll.addEventListener('change', (e) => {
-            document.querySelectorAll('#roadPlayersContainer .player-cb').forEach(cb => cb.checked = e.target.checked);
-            applyChartFilters();
-        });
+// === ΚΕΝΤΡΙΚΟΣ "ΑΤΡΩΤΟΣ" ΕΛΕΓΧΟΣ ΚΛΙΚ ΓΙΑ ΟΛΑ ΤΑ CHECKBOXES (EVENT DELEGATION) ===
+document.addEventListener("change", (e) => {
+    // Αν το κλικ έγινε πάνω σε ΟΠΟΙΟΔΗΠΟΤΕ φίλτρο (Quarters, Παίκτες, Τύποι Σουτ)
+    if (e.target.classList.contains('quarter-cb') || 
+        e.target.classList.contains('player-cb') || 
+        e.target.classList.contains('shot-filter-cb') || 
+        e.target.closest('.roster-sub')) {
+        
+        // Ειδική λογική για τα "Select All"
+        if (e.target.closest('.roster-sub')) {
+            const rosterContainer = e.target.closest('.euro-roster').querySelector('.players-list');
+            if (rosterContainer) {
+                rosterContainer.querySelectorAll('.player-cb').forEach(cb => cb.checked = e.target.checked);
+            }
+        }
+        
+        // Τρέξε αμέσως τη Μηχανή Φιλτραρίσματος
+        if (typeof window.applyChartFilters === "function") {
+            window.applyChartFilters();
+        }
     }
 });
 
+
+// === ΔΥΝΑΜΙΚΗ ΔΗΜΙΟΥΡΓΙΑ QUARTERS ΜΕ ΤΟ ΣΚΟΡ ΤΟΥΣ ===
+function buildDynamicQuarters(shotsData) {
+    const quartersBars = document.querySelectorAll('.quarters-bar');
+    if (quartersBars.length === 0) return;
+
+    const quartersMap = new Map();
+    // Προκατασκευάζουμε πάντα τα 4 βασικά δεκάλεπτα
+    ["1st", "2nd", "3rd", "4th"].forEach(q => quartersMap.set(q, { maxHome: 0, maxRoad: 0 }));
+
+    shotsData.forEach(shot => {
+        console.log("Processing shot:", shot);
+        if (shot.quarter) {
+            if (!quartersMap.has(shot.quarter)) {
+                quartersMap.set(shot.quarter, { maxHome: 0, maxRoad: 0 });
+            }
+            const qData = quartersMap.get(shot.quarter);
+            if (shot.homeScore !== undefined && shot.homeScore > 0) qData.maxHome = Math.max(qData.maxHome, shot.homeScore);
+            if (shot.roadScore !== undefined && shot.roadScore > 0) qData.maxRoad = Math.max(qData.maxRoad, shot.roadScore);
+        }
+    });
+
+    const order = ["1st", "2nd", "3rd", "4th", "OT", "2OT", "3OT", "4OT", "5OT"];
+    console.log("Quarters Map:", quartersMap);
+    const uniqueQuarters = Array.from(quartersMap.keys()).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+    quartersBars.forEach(bar => {
+        // Διατηρούμε την κατάσταση αν ήταν ήδη τσεκαρισμένα
+        const previouslyChecked = new Set();
+        bar.querySelectorAll('.quarter-cb:checked').forEach(cb => previouslyChecked.add(cb.value));
+        const hasPrevious = previouslyChecked.size > 0;
+
+        bar.innerHTML = "";
+        uniqueQuarters.forEach(q => {
+            const qData = quartersMap.get(q);
+            
+            // Το σκορ θα δείχνει "-" μέχρι να κάνεις import τα νέα δεδομένα από το parser.py!
+            let scoreLabel = `<span style="font-size: 0.65rem; color: #777; margin-top:2px;">-</span>`;
+            if (qData && (qData.maxHome > 0 || qData.maxRoad > 0)) {
+                scoreLabel = `<span style="font-size: 0.65rem; color: #777; margin-top:2px; font-weight:bold;">${qData.maxHome} - ${qData.maxRoad}</span>`;
+            }
+
+            const isChecked = hasPrevious ? previouslyChecked.has(q) : true;
+
+            const qBox = document.createElement("div");
+            qBox.className = "quarter-box";
+            qBox.style.cssText = "display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 10px;";
+            
+            qBox.innerHTML = `
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span>${q.toUpperCase()}</span> 
+                    <input type="checkbox" class="euro-checkbox quarter-cb" value="${q}" ${isChecked ? 'checked' : ''}>
+                </div>
+                ${scoreLabel}
+            `;
+            bar.appendChild(qBox);
+        });
+    });
+}
+
+// Η Μηχανή Φιλτραρίσματος
 window.applyChartFilters = function() {
     if (!window.currentShotsData || window.currentShotsData.length === 0) return;
     const mode = mainModeSelect.value;
@@ -160,63 +216,55 @@ window.applyChartFilters = function() {
         return;
     }
 
-    // 1. Quarters Filter
-    const activeQuarters = [];
-    const qCheckboxes = document.querySelectorAll('.quarters-bar .quarter-box input');
-    if (qCheckboxes[0]?.checked) activeQuarters.push("1st");
-    if (qCheckboxes[1]?.checked) activeQuarters.push("2nd");
-    if (qCheckboxes[2]?.checked) activeQuarters.push("3rd");
-    if (qCheckboxes[3]?.checked) {
-        activeQuarters.push("4th");
-        activeQuarters.push("OT"); 
-    }
+    // ΠΟΛΥ ΣΗΜΑΝΤΙΚΟ: Βρίσκουμε την οθόνη που είναι ΑΝΟΙΧΤΗ αυτή τη στιγμή!
+    const activeWrapper = mode === "euro-chart" ? document.getElementById("euroChartWrapper") : document.getElementById("videoSearchWrapper");
+    if (!activeWrapper) return;
 
-    // 2. Players Filter
+    // 1. Quarters Filter (Μόνο από την ανοιχτή οθόνη)
+    const activeQuarters = new Set();
+    activeWrapper.querySelectorAll('.quarter-cb:checked').forEach(cb => activeQuarters.add(cb.value));
+
+    // 2. Players Filter (Μόνο από την ανοιχτή οθόνη)
     const activePlayers = new Set();
-    document.querySelectorAll('.player-cb').forEach(cb => {
-        if (cb.checked) activePlayers.add(cb.value);
-    });
+    activeWrapper.querySelectorAll('.player-cb:checked').forEach(cb => activePlayers.add(cb.value));
 
-    // 3. ΔΙΑΒΑΣΜΑ ΤΩΝ ΝΕΩΝ ΔΙΑΚΟΠΤΩΝ (Τύποι Σουτ ανά Ομάδα)
+    // 3. ΔΙΑΒΑΣΜΑ ΤΩΝ ΔΙΑΚΟΠΤΩΝ (Μόνο από την ανοιχτή οθόνη)
     const homeFilters = {
-        fastbreak: document.querySelector('.home-filter[data-type="fastbreak"]')?.checked ?? true,
-        turnover: document.querySelector('.home-filter[data-type="turnover"]')?.checked ?? true,
-        secondchance: document.querySelector('.home-filter[data-type="secondchance"]')?.checked ?? true,
-        pt2: document.querySelector('.home-filter[data-type="2pt"]')?.checked ?? true,
-        pt3: document.querySelector('.home-filter[data-type="3pt"]')?.checked ?? true,
+        fastbreak: activeWrapper.querySelector('.home-filter[data-type="fastbreak"]')?.checked ?? true,
+        turnover: activeWrapper.querySelector('.home-filter[data-type="turnover"]')?.checked ?? true,
+        secondchance: activeWrapper.querySelector('.home-filter[data-type="secondchance"]')?.checked ?? true,
+        pt2: activeWrapper.querySelector('.home-filter[data-type="2pt"]')?.checked ?? true,
+        pt3: activeWrapper.querySelector('.home-filter[data-type="3pt"]')?.checked ?? true,
     };
 
     const roadFilters = {
-        fastbreak: document.querySelector('.road-filter[data-type="fastbreak"]')?.checked ?? true,
-        turnover: document.querySelector('.road-filter[data-type="turnover"]')?.checked ?? true,
-        secondchance: document.querySelector('.road-filter[data-type="secondchance"]')?.checked ?? true,
-        pt2: document.querySelector('.road-filter[data-type="2pt"]')?.checked ?? true,
-        pt3: document.querySelector('.road-filter[data-type="3pt"]')?.checked ?? true,
+        fastbreak: activeWrapper.querySelector('.road-filter[data-type="fastbreak"]')?.checked ?? true,
+        turnover: activeWrapper.querySelector('.road-filter[data-type="turnover"]')?.checked ?? true,
+        secondchance: activeWrapper.querySelector('.road-filter[data-type="secondchance"]')?.checked ?? true,
+        pt2: activeWrapper.querySelector('.road-filter[data-type="2pt"]')?.checked ?? true,
+        pt3: activeWrapper.querySelector('.road-filter[data-type="3pt"]')?.checked ?? true,
     };
 
-    // 4. ΚΕΝΤΡΙΚΟ ΦΙΛΤΡΑΡΙΣΜΑ ΟΛΩΝ ΤΩΝ ΔΕΔΟΜΕΝΩΝ
+    // 4. ΚΕΝΤΡΙΚΟ ΦΙΛΤΡΑΡΙΣΜΑ
     const filteredShots = window.currentShotsData.filter(shot => {
         const playerMatch = activePlayers.has(shot.playerName);
-        const quarterMatch = !shot.quarter || activeQuarters.some(q => shot.quarter.includes(q));
+        const quarterMatch = !shot.quarter || activeQuarters.has(shot.quarter);
         
         if (!playerMatch || !quarterMatch) return false;
 
-        // Έλεγχος αν ο παίκτης ανήκει στην Home ή Road ομάδα
         let isHome = window.homePlayersSet && window.homePlayersSet.has(shot.playerName);
         const filters = isHome ? homeFilters : roadFilters;
 
-        // Τύπος σουτ (2ποντο ή 3ποντο)
         const is3P = shot.action_type?.includes("ThreePoint") || shot.is3P === true; 
         const is2P = !is3P;
 
-        // Έλεγχος κατηγορίας σουτ με βάση τους διακόπτες
         let passesTypeFilter = true;
-
         if (is3P && !filters.pt3) passesTypeFilter = false;
         if (is2P && !filters.pt2) passesTypeFilter = false;
         if (shot.isFastBreak && !filters.fastbreak) passesTypeFilter = false;
         if (shot.isFromTurnover && !filters.turnover) passesTypeFilter = false;
         if (shot.isSecondChance && !filters.secondchance) passesTypeFilter = false;
+
         return passesTypeFilter;
     });
 
@@ -224,6 +272,10 @@ window.applyChartFilters = function() {
 };
 
 // --- 3. ΚΟΥΜΠΙ: ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ Ή ΑΝΑΛΥΣΗ ---
+document.addEventListener("DOMContentLoaded", () => {
+    loadGamesForSeason(globalSeasonSelect.value);
+});
+
 mainActionBtn.addEventListener("click", async () => {
     const mode = mainModeSelect.value;
     const selectedSeason = globalSeasonSelect.value;
@@ -255,7 +307,10 @@ mainActionBtn.addEventListener("click", async () => {
         const shots = await fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd);
         window.currentShotsData = shots;
 
-        if (mode === "euro-chart" && selectedGame && selectedSeason !== "ALL") {
+        // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα
+        buildDynamicQuarters(shots);
+
+        if (selectedGame && selectedSeason !== "ALL") {
             try {
                 const opt = globalGameSelect.options[globalGameSelect.selectedIndex];
                 if (opt && opt.text.includes("vs")) {
@@ -269,8 +324,12 @@ mainActionBtn.addEventListener("click", async () => {
                     document.querySelectorAll('#txtRoadTeamName, #txtRoadTeamName2, #txtRoadTeamName3, #txtRoadTeamName4, #txtRoadTeamName5').forEach(el => el.innerText = roadTeamName.toUpperCase());
                     document.getElementById("uiHomeTeam").innerText = homeTeamName.substring(0,3).toUpperCase();
                     document.getElementById("uiRoadTeam").innerText = roadTeamName.substring(0,3).toUpperCase();
-                    document.getElementById("homeTeamTitle").innerText = homeTeamName.toUpperCase();
-                    document.getElementById("roadTeamTitle").innerText = roadTeamName.toUpperCase();
+                    
+                    // Αλλαγή των Titles αν υπάρχουν (homeTeamTitle)
+                    const homeTitleEl = document.getElementById("homeTeamTitle");
+                    if (homeTitleEl) homeTitleEl.innerText = homeTeamName.toUpperCase();
+                    const roadTitleEl = document.getElementById("roadTeamTitle");
+                    if (roadTitleEl) roadTitleEl.innerText = roadTeamName.toUpperCase();
                 }
 
                 const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=${selectedGame}&season_code=${selectedSeason}`);
@@ -278,7 +337,6 @@ mainActionBtn.addEventListener("click", async () => {
 
                 window.homePlayersSet.clear();
                 window.roadPlayersSet.clear();
-
                 window.homeRosterDetails = [];
                 window.roadRosterDetails = [];
 
@@ -288,23 +346,29 @@ mainActionBtn.addEventListener("click", async () => {
                         const parts = pInfo.split("|");
                         const pId = parts[0];
                         const pName = parts[1] || parts[0];
+                        // Διαβάζουμε την εικόνα κατευθείαν από το ίδιο πακέτο!
+                        const pImg = (parts[2] && parts[2] !== "NO_IMG") ? parts[2] : null;
                         
-                        // Αν το backend λέει "home", πάει υποχρεωτικά αριστερά. Αν λέει "road", πάει δεξιά.
                         if (lineup.teamType === "home") {
                             window.homePlayersSet.add(pName); 
                             if (!window.homeRosterDetails.some(x => x.id === pId)) {
-                                window.homeRosterDetails.push({id: pId, name: pName});
+                                window.homeRosterDetails.push({id: pId, name: pName, img: pImg});
                             }
                         } else if (lineup.teamType === "road") {
                             window.roadPlayersSet.add(pName);
                             if (!window.roadRosterDetails.some(x => x.id === pId)) {
-                                window.roadRosterDetails.push({id: pId, name: pName});
+                                window.roadRosterDetails.push({id: pId, name: pName, img: pImg});
                             }
                         }
                     });
                 });
-                document.getElementById("uiScoreHome").innerText = data.homeScore
-                document.getElementById("uiScoreRoad").innerText = data.roadScore
+
+                const homeScoreEl = document.getElementById("uiScoreHome");
+                if (homeScoreEl) homeScoreEl.innerText = data.homeScore || 0;
+                
+                const roadScoreEl = document.getElementById("uiScoreRoad");
+                if (roadScoreEl) roadScoreEl.innerText = data.roadScore || 0;
+                
                 buildRoster(window.homeRosterDetails, homePlayersContainer, "home");
                 buildRoster(window.roadRosterDetails, roadPlayersContainer, "road");
                 
@@ -386,24 +450,20 @@ function buildRoster(playersArray, container, side) {
     playersArray.sort((a, b) => a.name.localeCompare(b.name)).forEach((player, index) => {
         const row = document.createElement("div");
         row.className = "player-row";
-        const placeholderImg = "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png";
         
-        // Το Checkbox διατηρεί το ΟΝΟΜΑ για να δουλεύει η Μηχανή Φιλτραρίσματος
+        // Χρησιμοποιούμε την εικόνα που ήρθε από το πρώτο request!
+        const imgUrl = player.img || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png";
+        
         const cbHtml = `<input type="checkbox" class="euro-checkbox player-cb" value="${player.name}" checked>`;
 
         if (side === "home") {
-            row.innerHTML = `<img src="${placeholderImg}" class="player-photo" id="img_${side}_${index}"><div class="player-info"><span class="player-name" id="name_${side}_${index}">...</span></div>${cbHtml}`;
+            row.innerHTML = `<img src="${imgUrl}" class="player-photo"><div class="player-info"><span class="player-name">${player.name}</span></div>${cbHtml}`;
         } else {
-            row.innerHTML = `${cbHtml}<img src="${placeholderImg}" class="player-photo" id="img_${side}_${index}"><div class="player-info" style="align-items: flex-end; text-align: right;"><span class="player-name" id="name_${side}_${index}">...</span></div>`;
+            row.innerHTML = `${cbHtml}<img src="${imgUrl}" class="player-photo"><div class="player-info" style="align-items: flex-end; text-align: right;"><span class="player-name">${player.name}</span></div>`;
         }
         container.appendChild(row);
         
-        // Ζητάμε στοιχεία χρησιμοποιώντας το πραγματικό ID!
-        fetchPlayerDetails(player.id, `name_${side}_${index}`, `img_${side}_${index}`);
-    });
-
-    container.querySelectorAll('.player-cb').forEach(cb => {
-        cb.addEventListener('change', applyChartFilters);
+        // ΔΙΑΓΡΑΦΗΚΕ το fetchPlayerDetails από εδώ. Το load πλέον είναι στιγμιαίο!
     });
 }
 

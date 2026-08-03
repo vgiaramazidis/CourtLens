@@ -27,7 +27,7 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?isFastBreak ?isSecondChance ?isFromTurnover
+    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore
     WHERE {{
         ?game a bball:Game ;
               bball:hasPlayByPlayAction ?action .
@@ -44,12 +44,17 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
         
         ?action bball:shotCoords ?coords .
         
-        OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
-        OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
-        OPTIONAL {{ ?action bball:clock ?clockTime . }}
-        OPTIONAL {{ ?action bball:isFastBreak ?isFastBreak . }}
-        OPTIONAL {{ ?action bball:isSecondChance ?isSecondChance . }}
-        OPTIONAL {{ ?action bball:isFromTurnover ?isFromTurnover . }}        
+        # ΠΡΟΣΘΗΚΗ: Δηλώνουμε τη μεταβλητή ?quarter για να γεμίζει ΠΑΝΤΑ στο SELECT!
+        ?action bball:quarter ?quarter .
+        
+        OPTIONAL { ?action bball:runningHomeTeamLineup ?home_lineup . }
+        OPTIONAL { ?action bball:runningRoadTeamLineup ?road_lineup . }
+        OPTIONAL { ?action bball:clock ?clockTime . }
+        OPTIONAL { ?action bball:isFastBreak ?isFastBreak . }
+        OPTIONAL { ?action bball:isSecondChance ?isSecondChance . }
+        OPTIONAL { ?action bball:isFromTurnover ?isFromTurnover . }        
+        OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore . }
+        OPTIONAL { ?action bball:runningRoadTeamScore ?roadScore . }
         
         ?action bball:actionPlayer ?playerNode .
         ?playerNode rdfs:label ?playerName .
@@ -99,7 +104,8 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
         """
         
     if quarter:
-        query += f'\n        ?action bball:quarter "{quarter}" .'
+        # Εδώ το αλλάζουμε ελαφρώς σε FILTER για να μην "χτυπήσει" με τη δήλωση που βάλαμε παραπάνω
+        query += f'\n        FILTER(str(?quarter) = "{quarter}") .'
 
     if min_start is not None and min_end is not None and min_start != "" and min_end != "":
         sec_start = int(min_start) * 60
@@ -637,15 +643,14 @@ def get_game_lineups_query(game_code="333", season_code="E2023"):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
     
-    SELECT ?lineup ?teamType ?homeScore ?roadScore (GROUP_CONCAT(DISTINCT ?playerInfo; separator="@@") AS ?players)
+    SELECT ?teamType ?homeScore ?roadScore (GROUP_CONCAT(DISTINCT ?playerInfo; separator="@@") AS ?players)
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
               bball:hasSeason ?season ;
-              bball:hasPlayByPlayAction ?action ;
-              bball:homeTeam ?homeTeam ;
-              bball:roadTeam ?roadTeam .
+              bball:hasTeamBoxscore ?boxscore .
               
         ?season bball:hasCode '{season_code}' .
         
@@ -654,22 +659,31 @@ def get_game_lineups_query(game_code="333", season_code="E2023"):
             ?game bball:hasRoadTeamScore ?roadScore .
         }}
         
+        # Αντιστοιχίζουμε το Boxscore στην Home ή Road ομάδα
         {{ 
-            ?action bball:runningHomeTeamLineup ?lineup . 
-            BIND("home" AS ?teamType)
+             ?game bball:homeTeam ?team . 
+             BIND("home" AS ?teamType)
         }}
         UNION
         {{ 
-            ?action bball:runningRoadTeamLineup ?lineup . 
-            BIND("road" AS ?teamType)
+             ?game bball:roadTeam ?team . 
+             BIND("road" AS ?teamType)
         }}
         
-        ?lineup bball:includesPlayer ?playerNode .
+        # Διαβάζουμε ΟΛΟΥΣ τους παίκτες της αποστολής από το Boxscore
+        ?boxscore bball:overTeam ?team ;
+                  bball:hasPlayerParticipation ?participation .
+                  
+        ?participation bball:overPlayer ?playerNode .
         ?playerNode rdfs:label ?playerName .
         
-        BIND(CONCAT(REPLACE(STR(?playerNode), ".*-/", ""), "|", ?playerName) AS ?playerInfo)
+        # Φέρνουμε και την εικόνα αν υπάρχει
+        OPTIONAL {{ ?playerNode foaf:depiction ?img . }}
+        
+        # Πακετάρουμε τα δεδομένα
+        BIND(CONCAT(REPLACE(STR(?playerNode), ".*-/", ""), "|", ?playerName, "|", COALESCE(STR(?img), "NO_IMG")) AS ?playerInfo)
     }}
-    GROUP BY ?lineup ?teamType ?homeScore ?roadScore
+    GROUP BY ?teamType ?homeScore ?roadScore
     """
     
 def get_clutch_time_performers_query():

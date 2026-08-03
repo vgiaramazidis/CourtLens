@@ -8,7 +8,8 @@ from sparql_queries import (
     get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query, 
     get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query, 
     get_points_off_turnovers_query, get_fast_break_specialists_query, 
-    get_foul_drawn_gravity_query, get_defensive_anchors_query
+    get_foul_drawn_gravity_query, get_defensive_anchors_query, get_simulator_crunch_time_query,get_game_roster_query
+    ,get_timeouts_query, get_team_roster_query, get_simulator_crunch_time_query
 )
 import csv
 import os
@@ -493,6 +494,135 @@ async def get_fast_break_specialists():
         })
         
     return {"fast_break_specialists": results}
+
+@app.get("/api/simulator/crunch-time")
+async def run_simulator(
+    p1: str = Query(...), 
+    p2: str = Query(...), 
+    p3: str = Query(...), 
+    p4: str = Query(...), 
+    p5: str = Query(...), 
+    game_code: str = Query(None), 
+    quarter: str = Query(None)
+):
+    query = get_simulator_crunch_time_query(game_code, quarter, [p1, p2, p3, p4, p5])
+    data = query_sparql_requests(query)
+    
+    if not data:
+        return {"error": "Failed to fetch data"}
+        
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    if not bindings:
+        return {"error": "Lineup never played"}
+
+    points_for = 0
+    points_against = 0
+
+    for row in bindings:
+        action_team = row.get("actionTeam", {}).get("value", "")
+        lineup_team = row.get("lineupTeam", {}).get("value", "")
+        points = int(row.get("totalPoints", {}).get("value", 0))
+
+        # Αν η ομάδα που σκόραρε είναι η ομάδα της πεντάδας μας, είναι Υπέρ. Αλλιώς, Κατά.
+        if action_team == lineup_team:
+            points_for += points
+        else:
+            points_against += points
+
+    plus_minus = points_for - points_against
+
+    return {
+        "points_for": points_for,
+        "points_against": points_against,
+        "plus_minus": plus_minus
+    }
+
+@app.get("/api/game/roster")
+async def get_game_roster(game_code: str = Query(...)):
+    query = get_game_roster_query(game_code)
+    data = query_sparql_requests(query)
+    
+    # Προσθήκη ελέγχου για αποφυγή σφαλμάτων (timeout)
+    if not data:
+        return {"roster": []}
+    
+    player_ids = set()
+    bindings = data.get("results", {}).get("bindings", [])
+    
+    for row in bindings:
+        home_uri = row.get("homeLineup", {}).get("value", "")
+        road_uri = row.get("roadLineup", {}).get("value", "")
+        
+        for uri in [home_uri, road_uri]:
+            if "#Lineup_" in uri:
+                parts = uri.split("#Lineup_")[1].split("_")
+                for pid in parts:
+                    if pid:
+                        player_ids.add(pid)
+                        
+    roster = [{"id": pid, "name": "Φόρτωση..."} for pid in player_ids]
+    return {"roster": roster}
+
+@app.get("/api/simulator/scenario")
+async def get_simulator_scenario(season_code: str = Query("E2023")):
+    # 1. Φέρνουμε όλα τα Timeouts του 4ου δεκαλέπτου
+    query = get_timeouts_query(season_code)
+    data = query_sparql_requests(query)
+    
+    bindings = data.get("results", {}).get("bindings", []) if data else []
+    if not bindings:
+        return {"error": "No scenarios found"}
+        
+    # 2. Διαλέγουμε ένα στην ΤΥΧΗ!
+    random_timeout = random.choice(bindings)
+    
+    game_uri = random_timeout.get("game", {}).get("value", "")
+    game_code = game_uri.split("/")[-1]
+    game_season_name = game_uri.split("/")[-4] if len(game_uri.split("/")) > 4 else "Άγνωστη Σεζόν"
+    clock = random_timeout.get("clock", {}).get("value", "00:00")
+    home_score = random_timeout.get("homeScore", {}).get("value", "0")
+    road_score = random_timeout.get("roadScore", {}).get("value", "0")
+    
+    home_lineup = random_timeout.get("homeLineup", {}).get("value", "")
+    road_lineup = random_timeout.get("roadLineup", {}).get("value", "")
+    
+    home_team = home_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in home_lineup else "Home"
+    road_team = road_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in road_lineup else "Road"
+    
+    # 3. Σε κάνουμε τυχαία προπονητή είτε των Γηπεδούχων είτε των Φιλοξενούμενων!
+    is_home = random.choice([True, False])
+    user_team = home_team if is_home else road_team
+    opponent = road_team if is_home else home_team
+    user_score = home_score if is_home else road_score
+    opp_score = road_score if is_home else home_score
+    
+    # 4. Φέρνουμε ΜΟΝΟ τους δικούς σου παίκτες (όσους έπαιξαν σε αυτό το ματς)
+    roster_query = get_team_roster_query(game_code, user_team)
+    roster_data = query_sparql_requests(roster_query)
+    
+    player_ids = set()
+    roster_bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
+    for r in roster_bindings:
+        lineup_uri = r.get("lineup", {}).get("value", "")
+        if "#Lineup_" in lineup_uri:
+            parts = lineup_uri.split("#Lineup_")[1].split("_")
+            for pid in parts:
+                if pid:
+                    player_ids.add(pid)
+                    
+    roster = [{"id": pid} for pid in player_ids]
+    
+    return {
+        "game_code": game_code,
+        "game_season_name": game_season_name,
+        "user_team": user_team,
+        "opponent": opponent,
+        "user_score": user_score,
+        "opp_score": opp_score,
+        "clock": clock,
+        "roster": roster
+    }
 
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":

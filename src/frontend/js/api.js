@@ -116,3 +116,61 @@ async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter
         return data.defensive_anchors;
     } catch (error) { return []; }
 }
+
+/**
+ * SIMULATOR: Υπολογίζει το +/- μιας 5άδας (σε ολόκληρο τον αγώνα)
+ */
+async function fetchSimulatorResult(p1, p2, p3, p4, p5, gameCode) {
+    try {
+        const params = new URLSearchParams();
+        params.append("p1", p1);
+        params.append("p2", p2);
+        params.append("p3", p3);
+        params.append("p4", p4);
+        params.append("p5", p5);
+        if (gameCode) params.append("game_code", gameCode);
+        
+        // Αφαιρέσαμε το quarter για να ελέγχει όλο το ματς!
+
+        const url = `${API_BASE_URL}/api/simulator/crunch-time?${params.toString()}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Σφάλμα στο Simulator:", error);
+        return null;
+    }
+}
+/**
+ * SIMULATOR: Ζητάει όλους τους αγώνες μιας σεζόν για να διαλέξουμε έναν τυχαία.
+ */
+/**
+ * SIMULATOR: Ζητάει ένα πλήρες τυχαίο σενάριο 4ου δεκαλέπτου
+ */
+async function fetchSimulatorScenario(seasonCode = "E2023") {
+    try {
+        const url = `${API_BASE_URL}/api/simulator/scenario?season_code=${seasonCode}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Σφάλμα κατά τη δημιουργία σεναρίου:", error);
+        return null;
+    }
+}
+/**
+ * SIMULATOR: Φέρνει το πραγματικό ρόστερ (τους παίκτες που έπαιξαν) του αγώνα
+ */
+async function fetchGameRoster(gameCode) {
+    try {
+        const url = `${API_BASE_URL}/api/game/roster?game_code=${gameCode}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.roster || [];
+    } catch (error) {
+        console.error("Σφάλμα κατά την ανάκτηση του ρόστερ:", error);
+        return [];
+    }
+}

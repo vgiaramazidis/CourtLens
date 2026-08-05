@@ -603,6 +603,117 @@ async def get_simulator_scenario(season_code: str = Query("E2023")):
         "roster": roster
     }
 
+#tha perei na gini egatastasi pip install google-generativeai pydantic
+import os
+from google import genai
+from google.genai import types
+from pydantic import BaseModel
+# Μην ξεχάσεις να κάνεις import και την query_sparql_requests από το sparql_queries.py σου
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6IGQuR9xpEAb-VBRLRwkN8xeoiR6Ly5DA1cWKYfO20Ohg")
+
+# 1. Αρχικοποίηση του νέου Client της Google
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+# 2. Το System Prompt παραμένει το ίδιο
+euroleague_system_prompt = """
+Είσαι ένας έμπειρος προγραμματιστής SPARQL και ειδικός σε σημασιολογικά μοντέλα δεδομένων για αθλητικά γεγονότα, χρησιμοποιώντας το FORTH Basketball Ontology.
+Στόχος σου είναι να μεταφράζεις τις ερωτήσεις του χρήστη ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ σε έγκυρο κώδικα SPARQL.
+Απαγορεύεται να επιστρέψεις markdown blocks (π.χ. ```sparql), HTML, ή οποιοδήποτε άλλο κείμενο.
+
+Να χρησιμοποιείς ΠΑΝΤΑ αυτά τα Namespaces:
+PREFIX bball: [http://www.ics.forth.gr/isl/Basketball#](http://www.ics.forth.gr/isl/Basketball#)
+PREFIX rdfs: [http://www.w3.org/2000/01/rdf-schema#](http://www.w3.org/2000/01/rdf-schema#)
+PREFIX xsd: [http://www.w3.org/2001/XMLSchema#](http://www.w3.org/2001/XMLSchema#)
+PREFIX rdf: [http://www.w3.org/1999/02/22-rdf-syntax-ns#](http://www.w3.org/1999/02/22-rdf-syntax-ns#)
+
+ΒΑΣΙΚΕΣ ΚΛΑΣΕΙΣ (rdf:type):
+- bball:PeriodStart, bball:JumpBall, bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:Assist, bball:OffensiveRebound, bball:Steal
+
+ΑΥΣΤΗΡΟ ΛΕΞΙΛΟΓΙΟ ΚΑΙ ΚΑΝΟΝΕΣ (ΜΗΝ ΕΦΕΥΡΙΣΚΕΙΣ ΙΔΙΟΤΗΤΕΣ):
+1. Δομή Αγώνα & Σεζόν:
+   ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode "333" .
+   ?season bball:hasCode "E2023" .
+2. Σύνδεση Ενεργειών: 
+   ?game bball:hasPlayByPlayAction ?action .
+   ?action bball:hasPlayByPlaySequence ?order .
+3. Στατιστικά Ενέργειας:
+   - Πόντοι: bball:pointsAwarded ?points . (Για άθροισμα ΠΑΝΤΑ: SUM(xsd:integer(?points)))
+   - Παίκτης (Δράστης): bball:actionPlayer ?player .
+   - Ομάδα (Δράστης): bball:actionTeam ?team .
+   - Ασίστ: ?action bball:hasAssist ?assist . ?assist bball:actionPlayer ?pl .
+   - Ζώνη Σουτ: bball:shotZone "I" .
+4. Πεντάδες στο παρκέ: 
+   Χρησιμοποίησε τα bball:runningHomeTeamLineup ή bball:runningRoadTeamLineup.
+   ?lineup bball:includesPlayer ?player .
+5. Πληροφορίες Παικτών:
+   - Ύψος: bball:hasHeight ?height . (Για μέσο όρο: AVG(xsd:float(?height)))
+   - Ηλικία/Γέννηση: bball:hasBirthDate ?date .
+6. Κατοχές (Possessions):
+   ?game bball:hasPossession ?possession .
+   ?possession bball:hasPossessionSequence ?seq .
+   ?possession bball:startsAfterAction ?action .
+
+
+ΑΝΑΖΗΤΗΣΗ ΟΝΟΜΑΤΩΝ (ΠΑΝΤΑ ΜΕ REGEX):
+?player rdfs:label ?playerName .
+FILTER(regex(str(?playerName), '\\bΟΝΟΜΑ\\b', 'i'))
+ΣΗΜΑΝΤΙΚΟ: Αν ο χρήστης ρωτάει στα Ελληνικά, ΠΡΕΠΕΙ ΠΑΝΤΑ να μεταγράφεις το όνομα του παίκτη σε λατινικούς χαρακτήρες (Αγγλικά) μέσα στο regex (π.χ. "σλουκας" -> "sloukas", "χεζονια" -> "hezonja").
+
+ΠΑΡΑΔΕΙΓΜΑ:
+Ερώτηση: "Βρες ποιος παίκτης έδωσε ασίστ στο πρώτο εύστοχο τρίποντο"
+Απάντηση:
+PREFIX bball: [http://www.ics.forth.gr/isl/Basketball#](http://www.ics.forth.gr/isl/Basketball#)
+PREFIX rdf: [http://www.w3.org/1999/02/22-rdf-syntax-ns#](http://www.w3.org/1999/02/22-rdf-syntax-ns#)
+PREFIX rdfs: [http://www.w3.org/2000/01/rdf-schema#](http://www.w3.org/2000/01/rdf-schema#)
+PREFIX xsd: [http://www.w3.org/2001/XMLSchema#](http://www.w3.org/2001/XMLSchema#)
+SELECT ?assistingPlayerName WHERE {
+  ?game a bball:Game ; bball:hasPlayByPlayAction ?action .
+  ?action rdf:type bball:ThreePointShotMade ; bball:hasPlayByPlaySequence ?order ; bball:hasAssist ?assist .
+  ?assist bball:actionPlayer ?assistingPlayer .
+  ?assistingPlayer rdfs:label ?assistingPlayerName .
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 1
+"""
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/chat")
+async def ai_chat_handler(request: ChatRequest):
+    try:
+        # 3. Νέα σύνταξη για την κλήση του Gemini 3.5
+        response = client.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=request.message,
+            config=types.GenerateContentConfig(
+                system_instruction=euroleague_system_prompt,
+            )
+        )
+        
+        # 4. Καθαρισμός του αποτελέσματος (όπως και πριν)
+        raw_query = response.text.strip()
+        if raw_query.startswith("```sparql"):
+            raw_query = raw_query[9:]
+        elif raw_query.startswith("```"):
+            raw_query = raw_query[3:]
+            
+        if raw_query.endswith("```"):
+            raw_query = raw_query[:-3]
+            
+        clean_sparql_query = raw_query.strip()
+        
+        # 5. Εκτέλεση του έτοιμου query στη βάση σου
+        data = query_sparql_requests(clean_sparql_query)
+        
+        return {
+            "generated_query": clean_sparql_query,
+            "results": data.get("results", {}).get("bindings", []) if data else []
+        }
+        
+    except Exception as e:
+        return {"error": f"Σφάλμα κατά την επεξεργασία του AI: {str(e)}"}
+    
+
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

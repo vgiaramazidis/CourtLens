@@ -259,3 +259,21 @@ async function fetchGameRoster(gameCode) {
         return [];
     }
 }
+/*
+   AI CAHT 
+*/
+async function fetchAiChat(userMessage) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMessage })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Error with AI Chat:", error);
+        return null;
+    }
+}

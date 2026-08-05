@@ -21,11 +21,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Data
-# Ignore JSON & RDF/NTriples
-data/raw/*.json
-data/processed/*.json
-data/processed/*.nt
+# Generated/local data
+data/
 
 debug_frames/*.png
 

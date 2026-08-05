@@ -1,6 +1,10 @@
 # src/backend/app.py
+import asyncio
+import random
+import re
+
 import uvicorn
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sparql_queries import (
     get_filtered_player_query, get_game_lineups_query, get_games_list_query, 
@@ -13,6 +17,9 @@ from sparql_queries import (
 )
 import csv
 import os
+from google import genai
+from google.genai import types
+from pydantic import BaseModel, Field
 
 # --- ΦΟΡΤΩΣΗ ΤΟΥ CSV ΜΕ ΤΟΥΣ ΧΡΟΝΟΥΣ ---
 TIMELINE = []
@@ -54,13 +61,31 @@ def time_to_seconds(t_str):
      
 def get_bool(result, field, default=False):
     value = result.get(field, {}).get("value")
-
-    print(value)
-
     if value is None:
         return default
 
     return value in ("1", "true", "True")
+
+def find_video_seconds(play_time, quarter):
+    target_sec = time_to_seconds(play_time)
+    if target_sec is None or not quarter:
+        return 0
+
+    closest_diff = float("inf")
+    matched_video_seconds = 0
+    for entry in TIMELINE:
+        if entry["quarter"] != quarter:
+            continue
+        ocr_sec = time_to_seconds(entry["clock"])
+        if ocr_sec is None:
+            continue
+        diff = abs(target_sec - ocr_sec)
+        if diff <= 4 and diff < closest_diff:
+            closest_diff = diff
+            matched_video_seconds = entry["video_sec"]
+            if diff == 0:
+                break
+    return matched_video_seconds
 
 # ==========================================
 # ENDPOINTS
@@ -138,24 +163,7 @@ async def get_shots(
         from_turnover = get_bool(result, "isFromTurnover")
         home_score = result.get("homeScore", {}).get("value", "0")
         road_score = result.get("roadScore", {}).get("value", "0")
-        video_seconds = 0
-        target_sec = time_to_seconds(play_time)
-
-        if target_sec is not None and quarter_val:
-            closest_diff = float('inf') 
-
-            for entry in TIMELINE:
-                if entry["quarter"] == quarter_val:
-                    ocr_sec = time_to_seconds(entry["clock"])
-                    
-                    if ocr_sec is not None:
-                        diff = abs(target_sec - ocr_sec)
-                        
-                        if diff <= 4 and diff < closest_diff:
-                            closest_diff = diff
-                            video_seconds = entry["video_sec"]
-                            if diff == 0:
-                                break
+        video_seconds = find_video_seconds(play_time, quarter_val)
 
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),
@@ -173,7 +181,8 @@ async def get_shots(
             "homeScore": int(home_score) if home_score.isdigit() else 0,
             "roadScore": int(road_score) if road_score.isdigit() else 0,      
             "videoSeconds": video_seconds,
-            "playerName": player_name
+            "playerName": player_name,
+            "teamType": result.get("teamType", {}).get("value", "")
         })
         
     return {"shots": shots}
@@ -217,14 +226,26 @@ async def get_match_pbp(game_code: str = Query("170"), season_code: str = Query(
     for row in data.get("results", {}).get("bindings", []):
         action_type_uri = row.get("actionType", {}).get("value", "")
         action_type_name = action_type_uri.split("#")[-1] 
+        play_time = row.get("clock", {}).get("value", "")
+        quarter = row.get("quarter", {}).get("value", "")
+        home_score = row.get("homeScore", {}).get("value", "0")
+        road_score = row.get("roadScore", {}).get("value", "0")
         
         actions.append({
             "uri": row.get("action", {}).get("value", ""),
-            "type": action_type_name,
-            "time": row.get("time", {}).get("value", ""),
-            "description": row.get("description", {}).get("value", ""),
-            "videoUrl": row.get("videoUrl", {}).get("value", None),
-            "player": row.get("playerLabel", {}).get("value", "Unknown")
+            "action_type": action_type_name,
+            "playTime": play_time,
+            "quarter": quarter,
+            "sequence": int(row.get("sequence", {}).get("value", "0") or 0),
+            "teamType": row.get("teamType", {}).get("value", "neutral"),
+            "homeScore": int(home_score) if home_score.isdigit() else 0,
+            "roadScore": int(road_score) if road_score.isdigit() else 0,
+            "playerName": row.get("playerLabel", {}).get("value", ""),
+            "isMade": "Made" in action_type_name,
+            "isFastBreak": get_bool(row, "isFastBreak"),
+            "isSecondChance": get_bool(row, "isSecondChance"),
+            "isFromTurnover": get_bool(row, "isFromTurnover"),
+            "videoSeconds": find_video_seconds(play_time, quarter)
         })
         
     return {"actions": actions}
@@ -623,6 +644,188 @@ async def get_simulator_scenario(season_code: str = Query("E2023")):
         "clock": clock,
         "roster": roster
     }
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# The backend can still start without Gemini configured; /api/chat reports a clear 503 instead.
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+# 2. Το System Prompt παραμένει το ίδιο
+euroleague_system_prompt = """
+Είσαι ένας έμπειρος προγραμματιστής SPARQL και ειδικός σε σημασιολογικά μοντέλα δεδομένων για αθλητικά γεγονότα, χρησιμοποιώντας το FORTH Basketball Ontology.
+Στόχος σου είναι να μεταφράζεις τις ερωτήσεις του χρήστη ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ σε έγκυρο κώδικα SPARQL.
+Απαγορεύεται να επιστρέψεις markdown blocks (π.χ. ```sparql), HTML, ή οποιοδήποτε άλλο κείμενο.
+Να επιστρέφεις μόνο read-only SELECT ή ASK queries. Απαγορεύονται UPDATE operations και SERVICE clauses.
+
+Να χρησιμοποιείς ΠΑΝΤΑ αυτά τα Namespaces:
+PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+ΒΑΣΙΚΕΣ ΚΛΑΣΕΙΣ (rdf:type):
+- bball:PeriodStart, bball:JumpBall, bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:FreeThrowMade, bball:FreeThrowMissed, bball:Assist, bball:OffensiveRebound, bball:Steal
+
+ΑΥΣΤΗΡΟ ΛΕΞΙΛΟΓΙΟ ΚΑΙ ΚΑΝΟΝΕΣ (ΜΗΝ ΕΦΕΥΡΙΣΚΕΙΣ ΙΔΙΟΤΗΤΕΣ):
+1. Δομή Αγώνα & Σεζόν:
+   ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode "333" .
+   ?season bball:hasCode "E2023" .
+2. Σύνδεση Ενεργειών:
+   ?game bball:hasPlayByPlayAction ?action .
+   ?action bball:hasPlayByPlaySequence ?order .
+3. Στατιστικά Ενέργειας:
+   - Πόντοι: bball:pointsAwarded ?points . (Για άθροισμα ΠΑΝΤΑ: SUM(xsd:integer(?points)))
+   - Παίκτης (Δράστης): bball:actionPlayer ?player .
+   - Ομάδα (Δράστης): bball:actionTeam ?team .
+   - Ασίστ: ?action bball:hasAssist ?assist . ?assist bball:actionPlayer ?pl .
+   - Ζώνη Σουτ: bball:shotZone "I" .
+4. Πεντάδες στο παρκέ:
+   Χρησιμοποίησε τα bball:runningHomeTeamLineup ή bball:runningRoadTeamLineup.
+   ?lineup bball:includesPlayer ?player .
+5. Πληροφορίες Παικτών:
+   - Ύψος: bball:hasHeight ?height . (Για μέσο όρο: AVG(xsd:float(?height)))
+   - Ηλικία/Γέννηση: bball:hasBirthDate ?date .
+6. Κατοχές (Possessions):
+   ?game bball:hasPossession ?possession .
+   ?possession bball:hasPossessionSequence ?seq .
+   ?possession bball:startsAfterAction ?action .
+
+ΣΥΝΔΕΣΗ ΜΕ PLAY-BY-PLAY:
+- Όταν η ερώτηση ζητά συγκεκριμένες φάσεις ή ενέργειες (π.χ. "δείξε όλους τους πόντους/σουτ/ασίστ του Sloukas"), το SELECT ΠΡΕΠΕΙ να περιλαμβάνει DISTINCT ?action.
+- Το ?action πρέπει να είναι ακριβώς το URI της ενέργειας που συνδέεται με ?game bball:hasPlayByPlayAction ?action.
+- Για πόντους χρησιμοποίησε bball:pointsAwarded ?points και FILTER(xsd:integer(?points) > 0).
+- Πρόσθεσε χρήσιμα πεδία όπως ?playerName, ?points, ?quarter και ?clock όταν είναι διαθέσιμα.
+- Μόνο όταν ο χρήστης ζητά αποκλειστικά αριθμητικό σύνολο (π.χ. "πόσους πόντους συνολικά") μπορείς να επιστρέψεις aggregate χωρίς ?action.
+
+
+ΑΝΑΖΗΤΗΣΗ ΟΝΟΜΑΤΩΝ (ΠΑΝΤΑ ΜΕ REGEX):
+?player rdfs:label ?playerName .
+FILTER(regex(str(?playerName), '\\bΟΝΟΜΑ\\b', 'i'))
+ΣΗΜΑΝΤΙΚΟ: Αν ο χρήστης ρωτάει στα Ελληνικά, ΠΡΕΠΕΙ ΠΑΝΤΑ να μεταγράφεις το όνομα του παίκτη σε λατινικούς χαρακτήρες (Αγγλικά) μέσα στο regex (π.χ. "σλουκας" -> "sloukas", "χεζονια" -> "hezonja").
+
+ΠΑΡΑΔΕΙΓΜΑ:
+Ερώτηση: "Βρες ποιος παίκτης έδωσε ασίστ στο πρώτο εύστοχο τρίποντο"
+Απάντηση:
+PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?assistingPlayerName WHERE {
+  ?game a bball:Game ; bball:hasPlayByPlayAction ?action .
+  ?action rdf:type bball:ThreePointShotMade ; bball:hasPlayByPlaySequence ?order ; bball:hasAssist ?assist .
+  ?assist bball:actionPlayer ?assistingPlayer .
+  ?assistingPlayer rdfs:label ?assistingPlayerName .
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 1
+"""
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=1000)
+    game_code: str | None = Field(default=None, max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
+    season_code: str | None = Field(default=None, max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+def clean_and_validate_sparql(raw_query: str) -> str:
+    query = (raw_query or "").strip()
+    query = re.sub(r"^```(?:sparql)?\s*", "", query, flags=re.IGNORECASE)
+    query = re.sub(r"\s*```$", "", query).strip()
+
+    query_body = query
+    while True:
+        prefix_match = re.match(
+            r"^(?:PREFIX\s+[A-Za-z][\w-]*:\s*<[^>]+>|BASE\s+<[^>]+>)\s*",
+            query_body,
+            flags=re.IGNORECASE,
+        )
+        if not prefix_match:
+            break
+        query_body = query_body[prefix_match.end():].lstrip()
+
+    if not re.match(r"^(SELECT|ASK)\b", query_body, flags=re.IGNORECASE):
+        raise ValueError("Το AI query πρέπει να είναι read-only SELECT ή ASK.")
+
+    forbidden = re.search(
+        r"\b(LOAD|CLEAR|DROP|CREATE|ADD|MOVE|COPY|INSERT|DELETE|WITH|SERVICE)\b",
+        query,
+        flags=re.IGNORECASE,
+    )
+    if forbidden:
+        raise ValueError(f"Μη επιτρεπτή SPARQL εντολή: {forbidden.group(1).upper()}")
+
+    if re.match(r"^SELECT\b", query_body, flags=re.IGNORECASE) and not re.search(r"\bLIMIT\s+\d+\b", query, flags=re.IGNORECASE):
+        query = f"{query}\nLIMIT 200"
+
+    return query
+
+
+def query_selects_playbyplay_actions(query: str) -> bool:
+    select_match = re.search(r"\bSELECT\b(.*?)\bWHERE\b", query, flags=re.IGNORECASE | re.DOTALL)
+    return bool(select_match and re.search(r"\?action\b", select_match.group(1), flags=re.IGNORECASE))
+
+
+def extract_playbyplay_action_uris(results: list[dict]) -> list[str]:
+    action_uris = []
+    seen = set()
+    for result in results:
+        for key, binding in result.items():
+            normalized_key = re.sub(r"[^a-z0-9]", "", key.lower())
+            if normalized_key not in {"action", "actionuri", "play", "playuri", "event", "eventuri"}:
+                continue
+            value = binding.get("value") if isinstance(binding, dict) else None
+            if value and value not in seen:
+                seen.add(value)
+                action_uris.append(value)
+    return action_uris
+
+@app.post("/api/chat")
+async def ai_chat_handler(request: ChatRequest):
+    if client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY στο backend environment.",
+        )
+
+    try:
+        context = []
+        if request.season_code:
+            context.append(f'Περιορίσε το query στη σεζόν με bball:hasCode "{request.season_code}".')
+        if request.game_code:
+            context.append(f'Περιορίσε το query στον αγώνα με bball:hasCode "{request.game_code}".')
+
+        contextual_message = request.message
+        if context:
+            contextual_message += "\n\nΥποχρεωτικό context:\n- " + "\n- ".join(context)
+
+        response = await client.aio.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=contextual_message,
+            config=types.GenerateContentConfig(
+                system_instruction=euroleague_system_prompt,
+            )
+        )
+
+        clean_sparql_query = clean_and_validate_sparql(response.text)
+        data = await asyncio.to_thread(query_sparql_requests, clean_sparql_query)
+
+        if data is None:
+            raise HTTPException(status_code=502, detail="Η βάση SPARQL δεν απάντησε.")
+
+        results = data.get("results", {}).get("bindings", [])
+        playbyplay_filter = query_selects_playbyplay_actions(clean_sparql_query)
+
+        return {
+            "generated_query": clean_sparql_query,
+            "results": results,
+            "boolean": data.get("boolean"),
+            "playbyplay_filter": playbyplay_filter,
+            "action_uris": extract_playbyplay_action_uris(results) if playbyplay_filter else []
+        }
+    except HTTPException:
+        raise
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as e:
+        print(f"AI Search failed: {e}")
+        raise HTTPException(status_code=502, detail="Αποτυχία επεξεργασίας του AI Search.") from e
 
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":

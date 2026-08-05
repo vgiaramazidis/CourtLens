@@ -33,6 +33,22 @@ async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCo
     } catch (error) { console.error("Σφάλμα στα σουτ:", error); return []; }
 }
 
+async function fetchMatchPlayByPlay(gameCode, seasonCode) {
+    try {
+        const params = new URLSearchParams({
+            game_code: gameCode,
+            season_code: seasonCode
+        });
+        const response = await fetch(`${API_BASE_URL}/api/match/playbyplay?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.actions || [];
+    } catch (error) {
+        console.error("Σφάλμα στο play-by-play:", error);
+        return [];
+    }
+}
+
 async function fetchFilteredPlayer(playerId){
     try {
         const url = `${API_BASE_URL}/api/player?player=${playerId}`;
@@ -172,5 +188,28 @@ async function fetchGameRoster(gameCode) {
     } catch (error) {
         console.error("Σφάλμα κατά την ανάκτηση του ρόστερ:", error);
         return [];
+    }
+}
+
+async function fetchAiChat(userMessage, gameCode = null, seasonCode = null) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: userMessage,
+                game_code: gameCode || null,
+                season_code: seasonCode || null
+            })
+        });
+
+        if (!response.ok) {
+            const errorPayload = await response.json().catch(() => ({}));
+            throw new Error(errorPayload.detail || `HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error with AI Chat:", error);
+        return { error: error.message || "AI Search request failed." };
     }
 }

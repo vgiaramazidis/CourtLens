@@ -29,9 +29,17 @@ window.resizeCourt = function() {
 window.addEventListener('resize', window.resizeCourt);
 
 // --- 2. ΠΑΡΚΕ ---
-const S = 0.92; 
-const courtLength = 280 * S; 
-const courtWidth = 150 * S;  
+// EuroLeague coordinates are centimetres with the centre of the rim at (0, 0).
+// The Three.js scene uses decimetres, then applies one uniform display scale.
+const SHOT_COORDS_PER_SCENE_UNIT = 10;
+const S = 0.92;
+const FIBA_COURT = Object.freeze({
+    halfLength: 140,
+    halfWidth: 75,
+    basketFromBaseline: 15.75
+});
+const courtLength = FIBA_COURT.halfLength * 2 * S;
+const courtWidth = FIBA_COURT.halfWidth * 2 * S;
 
 const courtGeometry = new THREE.PlaneGeometry(courtLength, courtWidth);
 const courtMaterial = new THREE.MeshStandardMaterial({ color: 0xcba073, side: THREE.DoubleSide, roughness: 0.8 });
@@ -50,8 +58,8 @@ function drawCourtLines() {
         return new THREE.Line(geometry, lineMaterial);
     }
 
-    const L = 140 * S; 
-    const W = 75 * S;  
+    const L = FIBA_COURT.halfLength * S;
+    const W = FIBA_COURT.halfWidth * S;
 
     linesGroup.add(createLine([
         new THREE.Vector3(-L, 0, -W), new THREE.Vector3(L, 0, -W),
@@ -64,7 +72,7 @@ function drawCourtLines() {
 
     [-1, 1].forEach(sign => {
         const baselineX = L * sign;
-        const hoopX = (L - 15.75 * S) * sign;
+        const hoopX = (L - FIBA_COURT.basketFromBaseline * S) * sign;
         const paintEndX = (L - 58 * S) * sign;
 
         linesGroup.add(createLine([
@@ -118,6 +126,39 @@ const matRoad = new THREE.MeshStandardMaterial({ color: 0x9b59b6 });
 const matMade = new THREE.MeshStandardMaterial({ color: 0x27ae60 }); 
 const matMiss = new THREE.MeshStandardMaterial({ color: 0xc0392b }); 
 
+function mapShotCoordinatesToCourt(shot, isHome) {
+    const rawX = Number(shot.x);
+    const rawY = Number(shot.y);
+    if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return null;
+
+    // The parser uses (-1, -1) when no coordinate exists.
+    if (rawX === -1 && rawY === -1) return null;
+
+    const lateralFromRim = THREE.MathUtils.clamp(
+        rawX / SHOT_COORDS_PER_SCENE_UNIT,
+        -FIBA_COURT.halfWidth,
+        FIBA_COURT.halfWidth
+    );
+    const longitudinalFromRim = THREE.MathUtils.clamp(
+        rawY / SHOT_COORDS_PER_SCENE_UNIT,
+        -FIBA_COURT.basketFromBaseline,
+        FIBA_COURT.halfLength - FIBA_COURT.basketFromBaseline
+    );
+
+    const basketX = (isHome ? -1 : 1)
+        * (FIBA_COURT.halfLength - FIBA_COURT.basketFromBaseline)
+        * S;
+    const towardCenter = isHome ? 1 : -1;
+
+    return {
+        x: basketX + towardCenter * longitudinalFromRim * S,
+        z: (isHome ? lateralFromRim : -lateralFromRim) * S
+    };
+}
+
+// Exposed for deterministic coordinate checks without depending on rendering.
+window.mapShotCoordinatesToCourt = mapShotCoordinatesToCourt;
+
 // --- 4. ΣΟΥΤ & ΛΟΓΙΚΗ ΓΙΑ TA MODES ---
 window.drawShots = function(shots) {
     shotMeshes.forEach(mesh => scene.remove(mesh));
@@ -126,35 +167,38 @@ window.drawShots = function(shots) {
     const mode = document.getElementById("mainModeSelect").value;
     
     shots.forEach(shot => {
-        let isHome = window.homePlayersSet && window.homePlayersSet.has(shot.playerName);
-        let finalMat, finalX, finalZ, colorHex;
+        let isHome = shot.teamType === "home" || (
+            !shot.teamType && window.homePlayersSet && window.homePlayersSet.has(shot.playerName)
+        );
+        let finalMat, colorHex;
 
         if (mode === "euro-chart") {
             finalMat = isHome ? matHome : matRoad;
             colorHex = isHome ? 0xea5314 : 0x9b59b6;
-            if (isHome) {
-                finalX = -140 * S + (shot.y / 10) * S; 
-                finalZ = (shot.x / 10) * S;
-            } else {
-                finalX = 140 * S - (shot.y / 10) * S;  
-                finalZ = -(shot.x / 10) * S; 
-            }
         } else {
             finalMat = shot.isMade ? matMade : matMiss;
             colorHex = shot.isMade ? 0x27ae60 : 0xc0392b;
-            finalX = -140 * S + (shot.y / 10) * S;
-            finalZ = (shot.x / 10) * S;
         }
+
+        const courtPosition = mapShotCoordinatesToCourt(shot, isHome);
+        if (!courtPosition) return;
         
         let mesh = shot.isMade ? new THREE.Mesh(sphereGeo, finalMat) : new THREE.Mesh(torusGeo, finalMat);
         if (!shot.isMade) mesh.rotation.x = Math.PI / 2;
 
-        mesh.position.set(finalX, 1.5, finalZ);
+        mesh.position.set(courtPosition.x, 1.5, courtPosition.z);
         
         mesh.userData = {
             isMade: shot.isMade,
             playerName: shot.playerName,
             playTime: shot.playTime,
+            quarter: shot.quarter,
+            actionType: shot.action_type,
+            teamType: shot.teamType,
+            homeScore: shot.homeScore,
+            roadScore: shot.roadScore,
+            rawX: shot.x,
+            rawY: shot.y,
             videoSeconds: shot.videoSeconds,
             homeLineup: shot.runningHomeTeamLineup,
             roadLineup: shot.runningRoadTeamLineup,
@@ -165,7 +209,6 @@ window.drawShots = function(shots) {
         shotMeshes.push(mesh); 
     });
 
-    renderPlayByPlay(shots);
 };
 
 // --- 5. ΚΛΙΚ & HOVER ΣΤΑ ΣΟΥΤ ---
@@ -180,13 +223,11 @@ container.addEventListener('click', (event) => {
     if (intersects.length > 0) {
         const shot = intersects[0].object.userData;
         const mode = document.getElementById("mainModeSelect").value;
-        if (mode === "video-shots" && window.updateVideoLineups) {
-            window.updateVideoLineups(shot.homeLineup, shot.roadLineup);
+        if (mode === "euro-chart" && window.updateCurrentLineups) {
+            window.updateCurrentLineups(shot.homeLineup, shot.roadLineup);
         }
-        if (shot.videoSeconds && shot.videoSeconds > 0 && typeof player !== 'undefined' && player.seekTo) {
-            let jumpTime = shot.videoSeconds - 5;
-            player.seekTo(jumpTime < 0 ? 0 : jumpTime, true);
-            player.playVideo();
+        if (mode === "video-shots" && shot.videoSeconds && typeof window.playVideoAt === "function") {
+            window.playVideoAt(shot.videoSeconds);
         }
     }
 });
@@ -205,6 +246,7 @@ container.addEventListener('mousemove', (event) => {
         const shot = intersects[0].object.userData;
         const status = shot.isMade ? "Εύστοχο" : "Άστοχο";
         const time = shot.playTime || "--:--";
+        const quarter = (shot.quarter || "-").toUpperCase();
         const pName = shot.playerName || "Άγνωστος Παίκτης";
         const tColor = "#" + shot.colorHex.toString(16).padStart(6, '0');
         
@@ -213,7 +255,8 @@ container.addEventListener('mousemove', (event) => {
         tooltip.style.top = (event.pageY + 15) + "px";
         tooltip.innerHTML = `
             <div style="font-weight: 900; margin-bottom: 5px; color: ${tColor}; font-size: 14px;">${pName}</div>
-            Χρόνος: ${time}<br>Κατάσταση: <b>${status}</b>`;
+            Περίοδος: ${quarter} · Χρόνος: ${time}<br>
+            Κατάσταση: <b>${status}</b> · Σκορ: ${shot.homeScore ?? 0}-${shot.roadScore ?? 0}`;
         document.body.style.cursor = "pointer";
     } else {
         tooltip.style.display = "none";
@@ -228,34 +271,252 @@ function animate() {
 }
 animate();
 
-function renderPlayByPlay(shots) {
+const ACTION_CATEGORIES = [
+    { id: "shots", label: "Shots", matches: type => /PointShot/.test(type) },
+    { id: "free-throws", label: "Free Throws", matches: type => /FreeThrow/.test(type) },
+    { id: "rebounds", label: "Rebounds", matches: type => /Rebound/.test(type) },
+    { id: "assists", label: "Assists", matches: type => /Assist/.test(type) },
+    { id: "turnovers", label: "Turnovers", matches: type => /Turnover/.test(type) },
+    { id: "fouls", label: "Fouls", matches: type => /Foul/.test(type) },
+    { id: "steals", label: "Steals", matches: type => /Steal/.test(type) },
+    { id: "blocks", label: "Blocks", matches: type => /Block|ShotRejected/.test(type) },
+    { id: "substitutions", label: "Substitutions", matches: type => /Substitution|PlayerIn|PlayerOut/.test(type) },
+    { id: "timeouts", label: "Timeouts", matches: type => /Timeout/.test(type) },
+    { id: "jump-balls", label: "Jump Balls", matches: type => /JumpBall/.test(type) },
+    { id: "periods", label: "Periods", matches: type => /BeginPeriod|EndPeriod|PeriodStart|PeriodEnd|GameEnd|EndGame/.test(type) },
+    { id: "other", label: "Other", matches: () => true }
+];
+
+window.currentPlayByPlayData = [];
+window.activePbpCategories = new Set();
+window.aiPbpActionUris = null;
+window.aiPbpFilterLabel = "";
+
+function getActionCategory(action) {
+    const type = String(action.action_type || "");
+    return ACTION_CATEGORIES.find(category => category.matches(type));
+}
+
+function getAiFilteredActions(actions) {
+    if (!(window.aiPbpActionUris instanceof Set)) return actions;
+    return actions.filter(action => window.aiPbpActionUris.has(action.uri));
+}
+
+function renderAiPlayByPlayControl(container, matchCount) {
+    if (!(window.aiPbpActionUris instanceof Set)) return;
+
+    const control = document.createElement("div");
+    control.className = "pbp-ai-filter-control";
+    const label = document.createElement("span");
+    const searchLabel = window.aiPbpFilterLabel ? ` · ${window.aiPbpFilterLabel}` : "";
+    label.textContent = `✦ AI FILTER: ${matchCount} actions${searchLabel}`;
+
+    const clearButton = document.createElement("button");
+    clearButton.type = "button";
+    clearButton.textContent = "CLEAR AI FILTER";
+    clearButton.addEventListener("click", window.clearAiPlayByPlayFilter);
+
+    control.append(label, clearButton);
+    container.appendChild(control);
+}
+
+function renderActionTypeFilters(actions) {
+    const container = document.getElementById("pbpActionFilters");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const availableActions = getAiFilteredActions(actions);
+    const counts = new Map();
+    availableActions.forEach(action => {
+        const category = getActionCategory(action);
+        counts.set(category.id, (counts.get(category.id) || 0) + 1);
+    });
+
+    renderAiPlayByPlayControl(container, availableActions.length);
+
+    ACTION_CATEGORIES.filter(category => counts.has(category.id)).forEach(category => {
+        const label = document.createElement("label");
+        label.className = "pbp-filter-chip";
+        label.innerHTML = `
+            <input type="checkbox" value="${category.id}" ${window.activePbpCategories.has(category.id) ? "checked" : ""}>
+            <span>${category.label} (${counts.get(category.id)})</span>`;
+        label.querySelector("input").addEventListener("change", event => {
+            if (event.target.checked) window.activePbpCategories.add(category.id);
+            else window.activePbpCategories.delete(category.id);
+            renderPlayByPlay(window.currentPlayByPlayData);
+        });
+        container.appendChild(label);
+    });
+
+    const createCommand = (text, selectAll) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "pbp-filter-command";
+        button.textContent = text;
+        button.addEventListener("click", () => {
+            window.activePbpCategories = selectAll ? new Set(counts.keys()) : new Set();
+            container.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
+                checkbox.checked = selectAll;
+            });
+            renderPlayByPlay(window.currentPlayByPlayData);
+        });
+        container.appendChild(button);
+    };
+    if (counts.size > 1) {
+        createCommand("All", true);
+        createCommand("Clear", false);
+    }
+}
+
+window.setPlayByPlayActions = function(actions) {
+    window.currentPlayByPlayData = Array.isArray(actions) ? actions : [];
+    window.aiPbpActionUris = null;
+    window.aiPbpFilterLabel = "";
+    window.activePbpCategories = new Set(
+        window.currentPlayByPlayData.map(action => getActionCategory(action).id)
+    );
+    renderActionTypeFilters(window.currentPlayByPlayData);
+    renderPlayByPlay(window.currentPlayByPlayData);
+};
+
+window.applyAiPlayByPlayFilter = function(actionUris, label = "") {
+    const requestedUris = new Set((Array.isArray(actionUris) ? actionUris : []).filter(Boolean));
+    const matchingActions = window.currentPlayByPlayData.filter(action => requestedUris.has(action.uri));
+    window.aiPbpActionUris = new Set(matchingActions.map(action => action.uri));
+    window.aiPbpFilterLabel = label;
+    matchingActions.forEach(action => window.activePbpCategories.add(getActionCategory(action).id));
+    renderActionTypeFilters(window.currentPlayByPlayData);
+    renderPlayByPlay(window.currentPlayByPlayData);
+    document.getElementById("pbpContainer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return matchingActions.length;
+};
+
+window.clearAiPlayByPlayFilter = function() {
+    window.aiPbpActionUris = null;
+    window.aiPbpFilterLabel = "";
+    window.activePbpCategories = new Set(
+        window.currentPlayByPlayData.map(action => getActionCategory(action).id)
+    );
+    renderActionTypeFilters(window.currentPlayByPlayData);
+    renderPlayByPlay(window.currentPlayByPlayData);
+};
+
+function renderPlayByPlay(actions) {
     const list = document.getElementById("pbpList");
     if (!list) return;
     list.innerHTML = ""; 
 
-    if (shots.length === 0) {
-        list.innerHTML = "<li style='color: #777; text-align: center;'>Δεν βρέθηκαν σουτ.</li>";
+    if (actions.length === 0) {
+        list.innerHTML = "<li class='pbp-filter-empty'>Δεν βρέθηκαν ενέργειες.</li>";
         return;
     }
 
-    shots.forEach(shot => {
+    const quarterOrder = (quarter) => {
+        const normalized = String(quarter || "").trim().toLowerCase();
+        const baseOrder = { "1st": 0, "2nd": 1, "3rd": 2, "4th": 3, "ot": 4 };
+        if (normalized in baseOrder) return baseOrder[normalized];
+        const overtimeMatch = normalized.match(/^(\d+)ot$/);
+        return overtimeMatch ? 3 + Number(overtimeMatch[1]) : 99;
+    };
+    const clockSeconds = (clock) => {
+        const parts = String(clock || "").split(":").map(Number);
+        return parts.length === 2 && parts.every(Number.isFinite) ? parts[0] * 60 + parts[1] : -1;
+    };
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;"
+    })[char]);
+    const readableAction = (actionType) => String(actionType || "Action")
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/Three Point/g, "3-Point")
+        .replace(/Two Point/g, "2-Point");
+
+    const aiFilteredActions = getAiFilteredActions(actions);
+    const filteredActions = aiFilteredActions.filter(action =>
+        window.activePbpCategories.has(getActionCategory(action).id)
+    );
+    if (filteredActions.length === 0) {
+        list.innerHTML = window.aiPbpActionUris instanceof Set
+            ? "<li class='pbp-filter-empty'>Δεν βρέθηκαν Play-by-Play ενέργειες για το AI Search.</li>"
+            : "<li class='pbp-filter-empty'>Επίλεξε τουλάχιστον έναν τύπο ενέργειας.</li>";
+        return;
+    }
+
+    const sortedActions = [...filteredActions].sort((a, b) => {
+        const quarterDifference = quarterOrder(a.quarter) - quarterOrder(b.quarter);
+        const timeDifference = clockSeconds(b.playTime) - clockSeconds(a.playTime);
+        return quarterDifference || timeDifference || Number(a.sequence || 0) - Number(b.sequence || 0);
+    });
+    const homeTeamName = document.getElementById("homeTeamTitle")?.textContent?.trim() || "HOME TEAM";
+    const roadTeamName = document.getElementById("roadTeamTitle")?.textContent?.trim() || "ROAD TEAM";
+
+    const headings = document.createElement("li");
+    headings.className = "pbp-team-headings";
+    headings.innerHTML = `
+        <span class="home-heading">${escapeHtml(homeTeamName)}</span>
+        <span class="clock-heading">Quarter / Time</span>
+        <span class="road-heading">${escapeHtml(roadTeamName)}</span>`;
+    list.appendChild(headings);
+
+    let renderedQuarter = null;
+    sortedActions.forEach(action => {
+        const quarter = String(action.quarter || "-").toUpperCase();
+        if (quarter !== renderedQuarter) {
+            renderedQuarter = quarter;
+            const divider = document.createElement("li");
+            divider.className = "pbp-quarter-divider";
+            divider.textContent = `${quarter} QUARTER`;
+            list.appendChild(divider);
+        }
+
+        const isNeutral = action.teamType === "neutral" || !action.teamType;
+        const isHome = action.teamType === "home" || (
+            !action.teamType && window.homePlayersSet && window.homePlayersSet.has(action.playerName)
+        );
+        const side = isNeutral ? "neutral" : (isHome ? "home" : "road");
+        const actionType = String(action.action_type || "Action");
+        const isShot = /PointShot/.test(actionType);
+        const isFreeThrow = /FreeThrow/.test(actionType);
+        const isScoringAttempt = isShot || isFreeThrow;
+        const isMade = /Made/.test(actionType) || action.isMade === true;
+        const attemptType = isFreeThrow ? "FT" : (actionType.includes("ThreePoint") ? "3PT" : "2PT");
+        const resultLabel = isScoringAttempt
+            ? `${isMade ? "MADE" : "MISSED"} ${attemptType}`
+            : getActionCategory(action).label.toUpperCase();
+        const meta = [`SCORE ${action.homeScore ?? 0}-${action.roadScore ?? 0}`];
+        if (action.isFastBreak) meta.push("FAST BREAK");
+        if (action.isSecondChance) meta.push("2ND CHANCE");
+        if (action.isFromTurnover) meta.push("OFF TURNOVER");
+        const metaHtml = meta.map(item => `<span>${escapeHtml(item)}</span>`).join("");
+
         const li = document.createElement("li");
-        li.style.padding = "8px";
-        li.style.borderBottom = "1px solid #eee";
-        li.style.cursor = "pointer";
-        li.style.fontSize = "13px";
-        const statusIcon = shot.isMade ? "🟢" : "🔴";
-        const playerName = shot.playerName || "Άγνωστος";
-        const time = shot.playTime || "00:00";
-        
-        li.innerHTML = `<strong>${time}</strong> - ${statusIcon} <b>${playerName}</b>`;
-        li.onclick = () => {
-            if (shot.videoSeconds && shot.videoSeconds > 0 && typeof player !== 'undefined' && player.seekTo) {
-                let jumpTime = shot.videoSeconds - 5;
-                player.seekTo(jumpTime < 0 ? 0 : jumpTime, true);
-                player.playVideo();
+        li.className = `pbp-event-row${isNeutral ? " neutral" : ""}`;
+        const playerName = action.playerName || "";
+        const time = action.playTime || "00:00";
+
+        const actionCard = `
+            <article class="pbp-action-card ${side}${action.videoSeconds > 0 ? " clickable" : ""}">
+                ${playerName ? `<strong class="pbp-player">${escapeHtml(playerName)}</strong>` : ""}
+                <div class="pbp-action-name">${escapeHtml(readableAction(actionType))}</div>
+                <span class="pbp-result ${isScoringAttempt ? (isMade ? "made" : "missed") : "neutral"}">${resultLabel}</span>
+                <div class="pbp-meta">${metaHtml}</div>
+            </article>`;
+        const emptySide = `<div aria-hidden="true"></div>`;
+        li.innerHTML = isNeutral ? actionCard : `
+                ${isHome ? actionCard : emptySide}
+                <div class="pbp-clock"><span>${escapeHtml(quarter)}</span><strong>${escapeHtml(time)}</strong></div>
+                ${isHome ? emptySide : actionCard}`;
+
+        if (isNeutral) {
+            const neutralMeta = li.querySelector(".pbp-meta");
+            neutralMeta.insertAdjacentHTML("afterbegin", `<span>${escapeHtml(quarter)} · ${escapeHtml(time)}</span>`);
+        }
+
+        const card = li.querySelector(".pbp-action-card");
+        card.addEventListener("click", () => {
+            if (action.videoSeconds && typeof window.playVideoAt === "function") {
+                window.playVideoAt(action.videoSeconds);
             }
-        };
+        });
         list.appendChild(li);
     });
 }

@@ -13,7 +13,7 @@ def query_sparql_requests(sparql_query):
     }
 
     try:
-        response = requests.get(endpoint_url, params=params)
+        response = requests.get(endpoint_url, params=params, timeout=30)
         response.raise_for_status() 
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -27,10 +27,12 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore
+    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?teamType ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore
     WHERE {{
         ?game a bball:Game ;
-              bball:hasPlayByPlayAction ?action .
+              bball:hasPlayByPlayAction ?action ;
+              bball:homeTeam ?homeTeam ;
+              bball:roadTeam ?roadTeam .
     """
     if season_code:
         query += f"""
@@ -42,7 +44,10 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
         ?action rdf:type ?action_type .
         FILTER(?action_type IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))
         
-        ?action bball:shotCoords ?coords .
+        ?action bball:shotCoords ?coords ;
+                bball:actionTeam ?actionTeam .
+
+        BIND(IF(?actionTeam = ?homeTeam, "home", "road") AS ?teamType)
         
         # ΠΡΟΣΘΗΚΗ: Δηλώνουμε τη μεταβλητή ?quarter για να γεμίζει ΠΑΝΤΑ στο SELECT!
         ?action bball:quarter ?quarter .
@@ -123,30 +128,44 @@ def get_match_playbyplay_query(game_code="170", season_code="E2023"):
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     
-    SELECT ?action ?actionType ?time ?description ?videoUrl ?playerLabel
+    SELECT ?action ?actionType ?clock ?quarter ?sequence ?teamType
+           ?homeScore ?roadScore ?playerLabel ?isFastBreak ?isSecondChance ?isFromTurnover
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
               bball:hasSeason ?season ;
-              bball:hasPlayByPlayAction ?action .
+              bball:hasPlayByPlayAction ?action ;
+              bball:homeTeam ?homeTeam ;
+              bball:roadTeam ?roadTeam .
               
         ?season bball:hasCode '{season_code}' .
         
-        ?action rdf:type ?actionType .
-        
-        OPTIONAL {{ ?action bball:hasTime ?time . }}
-        OPTIONAL {{ ?action bball:hasDescription ?description . }}
-        OPTIONAL {{ ?action bball:hasVideoUrl ?videoUrl . }}
+        ?action rdf:type ?actionType ;
+                bball:clock ?clock ;
+                bball:quarter ?quarter .
+
+        OPTIONAL {{ ?action bball:hasPlayByPlaySequence ?sequence . }}
+        OPTIONAL {{ ?action bball:runningHomeTeamScore ?homeScore . }}
+        OPTIONAL {{ ?action bball:runningRoadTeamScore ?roadScore . }}
+        OPTIONAL {{ ?action bball:isFastBreak ?isFastBreak . }}
+        OPTIONAL {{ ?action bball:isSecondChance ?isSecondChance . }}
+        OPTIONAL {{ ?action bball:isFromTurnover ?isFromTurnover . }}
+        OPTIONAL {{ ?action bball:actionTeam ?actionTeam . }}
         OPTIONAL {{ 
             ?action bball:actionPlayer ?player .
             ?player rdfs:label ?playerLabel .
         }}
-        
-        FILTER(BOUND(?time))
+
+        BIND(IF(
+            BOUND(?actionTeam),
+            IF(?actionTeam = ?homeTeam, "home", IF(?actionTeam = ?roadTeam, "road", "neutral")),
+            "neutral"
+        ) AS ?teamType)
     }}
-    ORDER BY ?time
-    LIMIT 500
+    ORDER BY xsd:integer(COALESCE(?sequence, "9999"))
+    LIMIT 1000
     """
 
 def get_filtered_player_query(player_id=None):
@@ -837,4 +856,3 @@ def get_team_roster_query(game_code, team_code):
         }}
     }}
     """
-

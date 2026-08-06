@@ -4,43 +4,188 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Euroleague Analytics Dashboard</title>
-    <!-- Διορθώνει το σφάλμα favicon.ico 404 που έβλεπες -->
     <link rel="icon" href="data:,"> 
     
-    <!-- Βιβλιοθήκες 3D -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <style>
-        /* === ΒΑΣΙΚΕΣ ΡΥΘΜΙΣΕΙΣ (Reset) === */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f0f2f5; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* === HEADER === */
         header { background-color: #1a1a24; color: #ffffff; padding: 15px 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-bottom: 4px solid #ea5314; z-index: 10; }
         header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: 1px; }
 
-        /* === ΚΥΡΙΩΣ ΠΕΡΙΒΑΛΛΟΝ (Dashboard Layout) === */
         .dashboard-container { display: flex; flex: 1; padding: 20px; gap: 20px; height: calc(100vh - 70px); }
-        .panel { background: #ffffff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 20px; display: flex; flex-direction: column; }
+        .panel { background: #ffffff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
 
-        /* ΑΡΙΣΤΕΡΗ ΜΠΑΡΑ (Filters) */
-        .filters-panel { width: 340px; min-width: 340px; overflow-y: auto; }
-        .filters-panel h2, .filters-panel h3 { font-size: 1.1rem; margin-bottom: 15px; color: #1a1a24; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        .filters-panel { width: 340px; min-width: 340px; overflow-y: auto; padding: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #555; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; transition: border-color 0.2s; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #ea5314; box-shadow: 0 0 0 2px rgba(234, 83, 20, 0.1); }
         .action-btn { width: 100%; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s, transform 0.1s; margin-top: 10px; }
-        .action-btn:active { transform: translateY(1px); }
+        .action-btn:disabled { background-color: #ccc !important; cursor: not-allowed; }
 
-        /* ΔΕΞΙΑ ΜΠΑΡΑ (Lineups) */
-        .lineups-panel { width: 300px; min-width: 300px; overflow-y: auto; display: flex; flex-direction: column; }
-        .lineups-panel h3 { font-size: 1.1rem; margin-bottom: 15px; color: #1a1a24; text-align: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; width: 100%; }
-        .team-box h4 { font-size: 0.95rem; color: #ea5314; margin-bottom: 10px; }
-        .players-list { display: flex; flex-direction: column; gap: 8px; }
-        
-        /* Tooltip */
+        .center-panel { flex: 1; padding: 0; overflow: hidden; border: 2px solid #e0e0e0; position: relative; }
+
+        /* SHARED 3D SHOT VIEW */
+        #shotSearchWrapper { display: flex; width: 100%; height: 100%; background-color: #fafafa; }
+        .euro-chart-only { display: flex; }
+        .video-shots-only { display: none !important; }
+        #shotSearchWrapper.video-mode .euro-chart-only { display: none !important; }
+        #shotSearchWrapper.video-mode .video-shots-only { display: flex !important; }
+        .euro-roster { width: 250px; background: #fff; display: flex; flex-direction: column; z-index: 2; }
+        .euro-roster.home { border-right: 1px solid #ddd; }
+        .euro-roster.road { border-left: 1px solid #ddd; }
+        .roster-header { padding: 10px; font-size: 0.85rem; font-weight: bold; color: #fff; text-align: center; }
+        .roster-header.home-bg { background-color: #ea5314; }
+        .roster-header.road-bg { background-color: #9b59b6; }
+        .roster-sub { padding: 8px 10px; background: #f9f9f9; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #555; }
+        .players-list { flex: 1; overflow-y: auto; padding: 5px 10px; }
+        .player-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; }
+        .player-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; margin: 0 8px; background: #fff; }
+        .player-info { flex: 1; display: flex; flex-direction: column; }
+        .player-name { font-size: 0.8rem; font-weight: bold; color: #222; text-transform: uppercase; }
+        .euro-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #ea5314; }
+
+        .euro-center-area { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 15px; position: relative; }
+        .score-board { display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 15px; }
+        .team-name { font-size: 1.3rem; font-weight: 900; }
+        .score-box { background-color: #333; padding: 8px 25px; font-size: 1.8rem; font-weight: bold; color: white; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .quarters-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .quarter-box { border: 1px solid #ccc; background: #fff; padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: #333; display: flex; align-items: center; gap: 8px; }
+        .court-container-inner { flex-shrink: 0; height: 420px; border: 2px solid #ccc; border-radius: 6px; background: #1a1a24; overflow: hidden; position: relative; }
+        .legend { text-align: center; margin-top: 10px; font-size: 0.8rem; font-weight: bold; color: #555; }
+
+                /* --- UI SWITCHERS / TOGGLES STYLING --- */
+        .shot-type-filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        .team-filters-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .filter-toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+        .filter-label-text {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #333;
+            line-height: 1.2;
+        }
+        .filter-label-text small {
+            font-size: 0.65rem;
+            color: #777;
+            font-weight: 600;
+        }
+
+        /* Switch UI */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 22px;
+        }
+        .slider:before {
+            position: absolute; content: "";
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .home-slider { background-color: #ea5314; } /* Πορτοκαλί για Home */
+        input:checked + .road-slider { background-color: #9b59b6; } /* Μωβ για Road */
+        input:checked + .slider:before { transform: translateX(22px); }
+        /* VIDEO VIEW */
+        .current-lineup-panel { width: 220px; background: #fff; padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #ddd; border-left: 1px solid #ddd; }
+        .video-player-section { width: 100%; min-height: 300px; aspect-ratio: 16 / 9; margin-bottom: 15px; background: #000; border-radius: 6px; overflow: hidden; flex-direction: column; flex-shrink: 0; }
+        #videoContainer, #player, #videoContainer iframe { width: 100%; height: 100%; }
+        #pbpContainer { width: 100%; min-height: 260px; max-height: 460px; margin-top: 15px; background: #fff; border: 1px solid #d8dde5; border-radius: 10px; padding: 12px; overflow-y: auto; flex-direction: column; flex-shrink: 0; }
+        .pbp-filter-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 10px; border-bottom: 1px solid #e7eaf0; }
+        .pbp-filter-chip { cursor: pointer; }
+        .pbp-filter-chip input { position: absolute; opacity: 0; pointer-events: none; }
+        .pbp-filter-chip span, .pbp-filter-command { display: inline-flex; align-items: center; min-height: 28px; padding: 5px 9px; border: 1px solid #d7dce5; border-radius: 999px; background: #f7f8fa; color: #606b7b; font-size: 0.62rem; font-weight: 850; transition: 0.15s; }
+        .pbp-filter-chip input:checked + span { border-color: #2b528a; background: #2b528a; color: #fff; box-shadow: 0 2px 6px rgba(43, 82, 138, 0.20); }
+        .pbp-filter-command { border-style: dashed; cursor: pointer; }
+        .pbp-filter-command:hover { border-color: #ea5314; color: #d94b12; }
+        .pbp-ai-filter-control { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 8px 10px; border: 1px solid #aaa5ff; border-radius: 8px; background: #f1f0ff; color: #5148c8; font-size: 0.63rem; font-weight: 900; }
+        .pbp-ai-filter-control span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pbp-ai-filter-control button { flex: 0 0 auto; padding: 4px 7px; border: 1px solid #6c63ff; border-radius: 999px; background: #fff; color: #554ce0; font-size: 0.57rem; font-weight: 900; cursor: pointer; }
+        .pbp-ai-filter-control button:hover { background: #6c63ff; color: #fff; }
+        .pbp-filter-empty { padding: 28px 10px; color: #7b8494; text-align: center; font-size: 0.78rem; }
+        .pbp-team-headings { position: sticky; top: -12px; z-index: 3; display: grid; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 4px; background: #fff; border-bottom: 1px solid #e7eaf0; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+        .pbp-team-headings .home-heading { color: #d94b12; text-align: left; }
+        .pbp-team-headings .clock-heading { color: #7b8494; text-align: center; font-size: 0.58rem; }
+        .pbp-team-headings .road-heading { color: #8150a6; text-align: right; }
+        .pbp-quarter-divider { display: flex; align-items: center; gap: 9px; margin: 13px 0 8px; color: #2b528a; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.08em; }
+        .pbp-quarter-divider::before, .pbp-quarter-divider::after { content: ""; height: 1px; flex: 1; background: #dfe5ee; }
+        .pbp-event-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr); gap: 8px; align-items: center; margin-bottom: 8px; }
+        .pbp-action-card { min-width: 0; padding: 9px 10px; border-radius: 8px; background: #f8f9fb; border: 1px solid #e4e8ef; transition: transform 0.15s, box-shadow 0.15s; }
+        .pbp-action-card.clickable { cursor: pointer; }
+        .pbp-action-card.clickable:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(31, 43, 61, 0.10); }
+        .pbp-action-card.home { border-left: 4px solid #ea5314; }
+        .pbp-action-card.road { border-right: 4px solid #9b59b6; text-align: right; }
+        .pbp-event-row.neutral { display: block; }
+        .pbp-action-card.neutral { max-width: 75%; margin: 0 auto; border-top: 3px solid #7b8494; text-align: center; }
+        .pbp-action-card.neutral .pbp-meta { justify-content: center; }
+        .pbp-player { display: block; color: #222b38; font-size: 0.76rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pbp-action-name { margin-top: 3px; color: #5d6674; font-size: 0.68rem; font-weight: 700; }
+        .pbp-result { display: inline-block; margin-top: 5px; padding: 2px 6px; border-radius: 999px; color: #fff; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.04em; }
+        .pbp-result.made { background: #229954; }
+        .pbp-result.missed { background: #c0392b; }
+        .pbp-result.neutral { background: #657083; }
+        .pbp-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+        .pbp-action-card.road .pbp-meta { justify-content: flex-end; }
+        .pbp-meta span { padding: 2px 5px; border-radius: 4px; background: #eef1f5; color: #606a78; font-size: 0.56rem; font-weight: 700; }
+        .pbp-clock { text-align: center; color: #2b528a; }
+        .pbp-clock strong { display: block; font-size: 0.76rem; }
+        .pbp-clock span { display: block; margin-bottom: 2px; color: #8a93a0; font-size: 0.56rem; font-weight: 800; }
+        .ai-search-panel { width: 100%; margin-top: 14px; padding: 14px; flex-direction: column; gap: 8px; border: 1px solid #d9deea; border-radius: 10px; background: linear-gradient(135deg, #f7f8ff 0%, #fff8f4 100%); flex-shrink: 0; }
+        .ai-search-label { display: flex; align-items: center; gap: 7px; color: #2b528a; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.05em; }
+        .ai-search-row { display: flex; gap: 8px; }
+        #aiPlaySearchInput { flex: 1; min-width: 0; padding: 11px 13px; border: 1px solid #cdd4e2; border-radius: 7px; background: #fff; color: #263244; font-size: 0.82rem; }
+        #aiPlaySearchInput:focus { outline: none; border-color: #6c63ff; box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12); }
+        #aiPlaySearchButton { padding: 0 15px; border: 0; border-radius: 7px; background: #6c63ff; color: #fff; font-size: 0.74rem; font-weight: 900; cursor: pointer; transition: background 0.2s ease, opacity 0.2s ease; }
+        #aiPlaySearchButton:hover { background: #554ce0; }
+        #aiPlaySearchButton:disabled { opacity: 0.55; cursor: wait; }
+        .ai-search-note { color: #7d8694; font-size: 0.64rem; }
+        .ai-search-result { display: none; padding: 10px; border: 1px solid #dfe3ef; border-radius: 8px; background: rgba(255,255,255,0.88); color: #39465a; font-size: 0.7rem; overflow-x: auto; }
+        .ai-search-result.visible { display: block; }
+        .ai-search-result.error { border-color: #f0b8b2; background: #fff4f2; color: #a93226; }
+        .ai-search-result.loading { color: #6c63ff; font-weight: 800; }
+        .ai-result-table { width: 100%; border-collapse: collapse; margin-top: 7px; font-size: 0.66rem; }
+        .ai-result-table th, .ai-result-table td { padding: 6px; border-bottom: 1px solid #e7e9f1; text-align: left; vertical-align: top; word-break: break-word; }
+        .ai-result-table th { color: #2b528a; background: #f4f6fc; }
+        .ai-query-details { margin-top: 8px; color: #6b7380; }
+        .ai-query-details pre { max-height: 180px; margin: 6px 0 0; padding: 8px; border-radius: 6px; background: #202735; color: #e8edf7; overflow: auto; white-space: pre-wrap; font-size: 0.61rem; }
+
+        /* ANALYTICS VIEW */
+        #analyticsWrapper { display: none; width: 100%; height: 100%; background-color: #f4f6f8; padding: 30px; overflow-y: auto; }
+        .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+
         #shotTooltip { position: absolute; display: none; background: rgba(0,0,0,0.85); color: #fff; padding: 10px; border-radius: 6px; pointer-events: none; z-index: 9999; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         /* === COACH SIMULATOR STYLES === */
         .sim-layout { display: flex; gap: 20px; margin-top: 20px; height: 450px; }
@@ -79,70 +224,58 @@
 
     <div class="dashboard-container">
         
-        <!-- ΑΡΙΣΤΕΡΑ: Πάνελ Ελέγχου -->
+        <!-- ΑΡΙΣΤΕΡΗ ΜΠΑΡΑ ΦΙΛΤΡΩΝ -->
         <aside class="panel filters-panel">
-            
-            <!-- ΤΟ ΚΕΝΤΡΙΚΟ MENU (Dropdown) -->
-            <h2>Επιλογή Λειτουργίας</h2>
             <div class="form-group">
-                <select id="mainModeSelect" style="border: 2px solid #2b528a; font-weight: bold; padding: 12px; background-color: #f8f9fa;">
-                    <option value="shots">- 3D Shot Search</option>
+                <label style="color: #2b528a;">Επιλογή Λειτουργίας:</label>
+                <select id="mainModeSelect" style="color: #2b528a; font-weight: bold; border: 2px solid #2b528a;">
+                    <option value="euro-chart">- 3D Game Shot Search</option>
+                    <option value="video-shots">- 3D Shot Search (Video)</option>
                     <option value="assist-duos">- Top Assist Duos</option>
                     <option value="second-chance">- Second Chance Points</option>
                     <option value="top-lineups">- Top Lineups</option>
                     <option value="fouls-drawn">- Fouls Drawn Gravity</option>
                     <option value="defensive-anchors">- Defensive Anchors</option>
-                    
                 </select>
             </div>
+
             <div class="form-group">
-                <label style="color: #ea5314; font-weight: bold;">Season:</label>
-                <select id="seasonSelect" style="border: 2px solid #ea5314;">
-                    <option value="">Όλες οι Σεζόν</option>
-                    <option value="E2023">2023-24</option>
-                    <option value="E2024">2024-25</option>
-                    <option value="E2025">2025-26</option>
+                <label style="color: #ea5314;">Season:</label>
+                <select id="globalSeasonSelect" style="border: 1px solid #ea5314;">
+                    <option value="" id="optSelectSeason">-- Select Season --</option>
+                    <option value="ALL" id="optAllSeasons">ALL SEASONS</option>
+                    <option value="E2023">2023-24 Season</option>
+                    <option value="E2024">2024-25 Season</option>
+                    <option value="E2025">2025-26 Season</option>
                 </select>
             </div>
 
-            <hr style="margin: 15px 0; border: 1px solid #e0e0e0;">
+            <div class="form-group">
+                <label>Game:</label>
+                <select id="globalGameSelect">
+                    <option value="">-- Επίλεξε Αγώνα --</option>
+                </select>
+            </div>
 
-            <!-- ΦΙΛΤΡΑ ΓΙΑ ΤΑ ΣΟΥΤ -->
+            <!-- ΠΑΙΚΤΗΣ ΟΡΑΤΟΣ ΠΑΝΤΟΥ -->
+            <div class="form-group" id="playerFilterGroup">
+                <label style="color: #27ae60;">Player (Name / ID):</label>
+                <input type="text" id="playerSelect" placeholder="π.χ. Nunn ή 012774" style="border: 1px solid #27ae60;">
+            </div>
+
+            <hr id="shotFiltersDivider" style="margin: 15px 0; border: 1px solid #e0e0e0;">
+
+            <!-- ΦΙΛΤΡΑ: SHOT SEARCH -->
             <div id="shotFiltersForm">
-                <div class="form-group">
-                    <label>Player (Name/ID):</label>
-                    <input type="text" id="playerSelect" placeholder="π.χ. Nunn ή 012774">
-                </div>
                 <div class="form-group">
                     <label>Assist by (Name/ID):</label>
                     <input type="text" id="assistSelect" placeholder="π.χ. Sloukas ή 001926">
                 </div>
-                <div class="form-group">
-                    <label>Game (Code):</label>
-                    <input type="text" id="gameSelect" placeholder="π.χ. 333">
-                </div>
-                
-                
-                <!-- ΑΝΑΛΥΣΗ ΠΕΝΤΑΔΩΝ (Ενσωματώθηκε στα φίλτρα του Shot Search) -->
-                <div style="background: #f8f9fa; border-radius: 6px; padding: 10px; margin-top: 15px; border: 1px solid #e0e0e0;">
-                    <h3 style="margin-bottom: 10px; color: #2b528a; font-size: 1rem;">Φίλτρο Πεντάδας:</h3>
-                    <div class="form-group">
-                        <label>Γηπεδούχος:</label>
-                        <select id="homeLineupSelect"><option value="">-- Όλες --</option></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Φιλοξενούμενος:</label>
-                        <select id="roadLineupSelect"><option value="">-- Όλες --</option></select>
-                    </div>
-                    <div id="lineupPlayersDiv" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
-                </div>
             </div>
 
-            <hr style="margin: 15px 0; border: 1px dashed #ccc;">
-
-            <!-- EXTRA FILTERS -->
+            <!-- ΕΙΔΙΚΑ ΦΙΛΤΡΑ ΑΝΑΛΥΣΗΣ -->
             <div id="extraFiltersContainer">
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 15px;">
                     <label style="color: #ea5314;">Extra Filter (Optional):</label>
                     <select id="extraFilterType">
                         <option value="">None</option>
@@ -151,41 +284,22 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <input type="text" id="extraFilterId" placeholder="Enter Filter Name/ID (π.χ. Sloukas)">
+                    <input type="text" id="extraFilterId" placeholder="Enter Filter Name/ID">
                 </div>
                 
                 <div id="foulsFiltersContainer" style="display: none;">
-                    <div class="form-group">
-                        <label style="color: #e74c3c;">Κέρδισε Φάουλ :</label>
-                        <input type="text" id="fouledIdInput" placeholder="π.χ. Nunn">
-                    </div>
-                    <div class="form-group">
-                        <label style="color: #e74c3c;">Έκανε Φάουλ :</label>
-                        <input type="text" id="foulingIdInput" placeholder="π.χ. Fournier">
-                    </div>
+                    <div class="form-group"><label style="color: #e74c3c;">Κέρδισε Φάουλ (ID):</label><input type="text" id="fouledIdInput" placeholder="π.χ. Nunn"></div>
+                    <div class="form-group"><label style="color: #e74c3c;">Έκανε Φάουλ (ID):</label><input type="text" id="foulingIdInput" placeholder="π.χ. Fournier"></div>
                 </div>
 
                 <div id="defensiveFiltersContainer" style="display: none;">
-                    <div class="form-group">
-                        <label style="color: #34495e;">Αμυντικός :</label>
-                        <input type="text" id="blockerIdInput" placeholder="π.χ. Lessort">
-                    </div>
-                    <div class="form-group">
-                        <label style="color: #34495e;">Σουτέρ :</label>
-                        <input type="text" id="shooterIdInput" placeholder="π.χ. Tavares">
-                    </div>
-                </div>
-            </div>
-
-            <div id="analyticsGameFilterContainer" style="margin-bottom: 20px; display: none;">
-                <div class="form-group">
-                    <label style="color: #2b528a;">Κωδικός Αγώνα (Game Code):</label>
-                    <input type="text" id="analyticsGameCodeInput" placeholder="π.χ. 333">
+                    <div class="form-group"><label style="color: #34495e;">Αμυντικός (Blocker ID):</label><input type="text" id="blockerIdInput" placeholder="π.χ. Lessort"></div>
+                    <div class="form-group"><label style="color: #34495e;">Σουτέρ (Shooter ID):</label><input type="text" id="shooterIdInput" placeholder="π.χ. Tavares"></div>
                 </div>
             </div>
 
             <!-- ΦΙΛΤΡΑ ΧΡΟΝΟΥ -->
-            <div id="timeFiltersContainer">
+            <div id="timeFiltersContainer" style="margin-top: 15px;">
                 <div class="form-group">
                     <label style="color: #2b528a;">Δεκάλεπτο:</label>
                     <select id="quarterSelectAnalytics">
@@ -196,50 +310,150 @@
                         <option value="4th">4th Quarter</option>
                     </select>
                 </div>
-                
                 <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Από λεπτό:</label>
-                        <input type="number" id="minStart" placeholder="π.χ. 9" max="10" min="0">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Έως λεπτό:</label>
-                        <input type="number" id="minEnd" placeholder="π.χ. 5" max="10" min="0">
-                    </div>
+                    <div class="form-group" style="flex: 1;"><label>Από λεπτό:</label><input type="number" id="minStart" max="10" min="0"></div>
+                    <div class="form-group" style="flex: 1;"><label>Έως λεπτό:</label><input type="number" id="minEnd" max="10" min="0"></div>
                 </div>
             </div>
 
-            <!-- ΤΟ ΚΕΝΤΡΙΚΟ ΚΟΥΜΠΙ -->
-            <button id="mainActionBtn" class="action-btn" style="background-color: #ea5314;">ΑΝΑΖΗΤΗΣΗ</button>
-            <button id="tryGameBtn" class="action-btn" style="background-color: #27ae60; display: none; margin-top: 15px; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);">TRY GAME</button>
+            <button id="mainActionBtn" class="action-btn" style="background-color: #ea5314;">ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ</button>
+            <button id="tryGameBtn" class="action-btn" style="background-color: #27ae60; display: none; margin-top: 15px; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);">TRY GAME</button>        
         </aside>
 
-        <!-- ΚΕΝΤΡΟ: Δυναμικό Πάνελ (Γήπεδο & Βίντεο ή Analytics) -->
-        <main class="panel" style="flex: 1; padding: 0; overflow: hidden; border: 2px solid #e0e0e0; display: flex; flex-direction: column;">
+        <!-- ΚΕΝΤΡΟ: Δυναμικό Πάνελ -->
+        <main class="panel center-panel">
             
-            <!-- Το 3D Γήπεδο, το YouTube και το Play-By-Play (Φαίνεται μόνο στο "shots") -->
-            <div id="courtWrapper" style="width: 100%; height: 100%; background-color: #1a1a24; display: flex; gap: 20px; justify-content: center; align-items: center; padding: 20px;">
-                
-                <!-- 1. Το Γήπεδο -->
-                <div id="courtContainer" style="width: 500px; height: 450px;"></div>
-                
-                <!-- 2. Το Βίντεο & η Λίστα Play-By-Play Δεξιά -->
-                <div style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
-                    <div id="videoContainer" style="box-shadow: 0 5px 15px rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; background: #000; width: 480px; height: 270px; flex-shrink: 0;">
-                        <div id="player"></div>
+            <!-- ΚΟΙΝΟ 3D SHOT VIEW: το mode αλλάζει τα sidebars και το video panel -->
+            <div id="shotSearchWrapper">
+                <div class="euro-roster home video-shots-only">
+                    <div class="roster-header home-bg" id="homeTeamTitle">HOME TEAM</div>
+                    <div class="roster-sub">
+                        <span>SELECT ALL</span> <input type="checkbox" class="euro-checkbox" checked>
                     </div>
-                    
-                    <div id="pbpContainer" style="width: 480px; flex: 1; overflow-y: auto; background: #fff; border-radius: 8px; padding: 10px; color: #333;">
-                        <h3 style="margin-top: 0; position: sticky; top: -10px; background: #fff; padding-bottom: 10px; border-bottom: 2px solid #ea5314; color: #2b528a; padding-top: 10px;">Play-by-Play</h3>
-                        <ul id="pbpList" style="list-style: none; padding: 0; margin: 0;">
-                            <li style="color: #777; font-style: italic; text-align: center; margin-top: 20px;">Επίλεξε φίλτρα για να δεις τα σουτ...</li>
-                        </ul>
+                    <div class="players-list" id="homePlayersContainer">
+                        <div style="padding: 20px; text-align: center; color: #999;">Επίλεξε Game...</div>
                     </div>
+                </div>
+
+                <div class="current-lineup-panel euro-chart-only">
+                    <h4 style="text-align: center; margin-bottom: 10px; color: #ea5314;">Current Home Lineup</h4>
+                    <div class="players-list" id="currentHomeLineup"><div style="text-align:center; color:#999; font-size: 0.8rem;">Click a shot...</div></div>
+                </div>
+
+                <div class="euro-center-area" id="shotCenterArea">
+                    <div class="score-board video-shots-only">
+                        <span class="team-name" style="color: #ea5314;" id="uiHomeTeam">HOME</span>
+                        <div class="score-box">
+                            <span id="uiScoreHome">0</span> <span style="color: #ea5314; font-size: 1rem;">🏀</span> <span id="uiScoreRoad">0</span>
+                        </div>
+                        <span class="team-name" style="color: #9b59b6;" id="uiRoadTeam">ROAD</span>
+                    </div>
+
+                    <div class="quarters-bar video-shots-only">
+                        <div class="quarter-box"><span>1ST QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
+                        <div class="quarter-box"><span>2ND QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
+                        <div class="quarter-box"><span>3RD QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
+                        <div class="quarter-box"><span>4TH QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
+                    </div>
+
+                    <div class="video-player-section video-shots-only">
+                        <div id="videoContainer">
+                            <div id="player"></div>
+                        </div>
+                    </div>
+
+                    <div class="court-container-inner" id="courtContainer"></div>
+
+                    <div class="legend" id="legendContainer">
+                        <span id="missLegendMarker" style="display:inline-block; width:12px; height:12px; border:2px solid #ea5314; border-radius:50%; margin-right: 5px; vertical-align: middle;"></span> MISSED SHOT
+                        <span id="madeLegendMarker" style="display:inline-block; width:12px; height:12px; background:#ea5314; border-radius:50%; margin-left:20px; margin-right: 5px; vertical-align: middle;"></span> MADE SHOT
+                    </div>
+                    <div id="pbpContainer" class="video-shots-only">
+                        <h4 style="border-bottom: 2px solid #ea5314; padding-bottom: 5px; margin-bottom: 10px; color: #2b528a;">Play-by-Play</h4>
+                        <div id="pbpActionFilters" class="pbp-filter-bar"></div>
+                        <ul id="pbpList" style="list-style: none;"></ul>
+                    </div>
+
+                    <div id="aiSearchPanel" class="ai-search-panel video-shots-only">
+                        <label class="ai-search-label" for="aiPlaySearchInput"><span>✦</span> AI PLAY SEARCH</label>
+                        <div class="ai-search-row">
+                            <input id="aiPlaySearchInput" type="search" maxlength="1000" placeholder="Ask about a play, player, quarter, or shot..." autocomplete="off" aria-describedby="aiSearchNote">
+                            <button id="aiPlaySearchButton" type="button">AI SEARCH</button>
+                        </div>
+                        <small id="aiSearchNote" class="ai-search-note">Uses the selected season and game as search context.</small>
+                        <div id="aiPlaySearchResult" class="ai-search-result" role="status" aria-live="polite"></div>
+                    </div>
+
+                    <div class="shot-type-filters-grid" id="shotfiltersContainer">
+                        <!-- Home Toggles (Πορτοκαλί) -->
+                        <div class="team-filters-column">
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblHomeFastBreak">FAST BREAK POINTS</span><br><small id="txtHomeTeamName">HOME TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="fastbreak" checked><span class="slider home-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblHomeTurnover">POINTS OFF TURNOVER</span><br><small id="txtHomeTeamName2">HOME TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="turnover" checked><span class="slider home-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblHomeSecondChance">SECOND CHANCE POINTS</span><br><small id="txtHomeTeamName3">HOME TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="secondchance" checked><span class="slider home-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span>2-POINT SHOTS</span><br><small id="txtHomeTeamName4">HOME TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="2pt" checked><span class="slider home-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span>3-POINT SHOTS</span><br><small id="txtHomeTeamName5">HOME TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="3pt" checked><span class="slider home-slider"></span></label>
+                            </div>
+                        </div>
+
+                        <!-- Road Toggles (Μωβ) -->
+                        <div class="team-filters-column">
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblRoadFastBreak">FAST BREAK POINTS</span><br><small id="txtRoadTeamName">ROAD TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="fastbreak" checked><span class="slider road-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblRoadTurnover">POINTS OFF TURNOVER</span><br><small id="txtRoadTeamName2">ROAD TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="turnover" checked><span class="slider road-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span id="lblRoadSecondChance">SECOND CHANCE POINTS</span><br><small id="txtRoadTeamName3">ROAD TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="secondchance" checked><span class="slider road-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span>2-POINT SHOTS</span><br><small id="txtRoadTeamName4">ROAD TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="2pt" checked><span class="slider road-slider"></span></label>
+                            </div>
+                            <div class="filter-toggle-row">
+                                <div class="filter-label-text"><span>3-POINT SHOTS</span><br><small id="txtRoadTeamName5">ROAD TEAM</small></div>
+                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="3pt" checked><span class="slider road-slider"></span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="euro-roster road video-shots-only">
+                    <div class="roster-header road-bg" id="roadTeamTitle">ROAD TEAM</div>
+                    <div class="roster-sub">
+                        <input type="checkbox" class="euro-checkbox" checked> <span>SELECT ALL</span>
+                    </div>
+                    <div class="players-list" id="roadPlayersContainer">
+                        <div style="padding: 20px; text-align: center; color: #999;">Επίλεξε Game...</div>
+                    </div>
+                </div>
+
+                <div class="current-lineup-panel euro-chart-only">
+                    <h4 style="text-align: center; margin-bottom: 10px; color: #9b59b6;">Current Road Lineup</h4>
+                    <div class="players-list" id="currentRoadLineup"><div style="text-align:center; color:#999; font-size: 0.8rem;">Click a shot...</div></div>
                 </div>
             </div>
 
-            <!-- Ο χώρος για τα Analytics Cards (Φαίνεται στα υπόλοιπα) -->
-            <div id="analyticsWrapper" style="display: none; width: 100%; height: 100%; background-color: #f4f6f8; padding: 30px; overflow-y: auto;">
+            <!-- ΛΕΙΤΟΥΡΓΙΑ 3: ΑΝΑΛΥΣΕΙΣ -->
+            <div id="analyticsWrapper">
                 <div id="integratedSimulator" style="display: none; background-color: #1a1a24; padding: 20px; border-radius: 12px; margin-bottom: 30px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                     <!-- 1. ΤΟ ΚΕΙΜΕΝΟ ΟΔΗΓΙΩΝ (Εμφανίζεται πρώτο) -->
                     <div id="gameInstructions" style="background: #2b3e50; padding: 20px; border-radius: 10px; text-align: center;">
@@ -277,56 +491,60 @@
                         <div id="simulatorResult" style="margin-top: 20px; text-align: center;"></div>
                     </div>
                 </div>
-                <h2 id="analyticsTitle" style="color: #2b528a; border-bottom: 3px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 30px; font-size: 1.8rem;">Αποτελέσματα</h2>
-                <div id="analyticsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;"></div>
+                <h2 id="analyticsTitle" style="color: #2b528a; border-bottom: 3px solid #e0e0e0; padding-bottom: 15px; margin-bottom: 30px;">Αποτελέσματα Ανάλυσης</h2>
+                <div id="analyticsContent" class="analytics-grid"></div>
             </div>
+
         </main>
-
-        <!-- ΔΕΞΙΑ: Πεντάδες -->
-        <aside id="rightPanel" class="panel lineups-panel">
-            <div style="width: 100%;">
-                <h3>Fives (at the moment of shot)</h3>
-                <div class="teams-container">
-                    <div class="team-box">
-                        <h4>Home Team Lineup</h4>
-                        <div id="homePlayersList" class="players-list">- Click on a shot -</div>
-                    </div>
-                    <div class="team-box">
-                        <h4 style="margin-top: 20px;">Road Team Lineup</h4>
-                        <div id="roadPlayersList" class="players-list">- Click on a shot -</div>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
     </div>
 
-    <!-- Το κρυφό Tooltip για τα σουτ -->
     <div id="shotTooltip"></div>
 
-    <!-- Φόρτωση του YouTube API -->
     <script>
+        const YOUTUBE_VIDEO_ID = 'xRuH1qSD2dE';
         var player;
+        var youtubePlayerReady = false;
+        var pendingVideoStart = null;
+
+        function startYouTubeAt(seconds) {
+            const startSeconds = Math.max(0, Number(seconds) - 5);
+            if (!Number.isFinite(startSeconds)) return;
+            pendingVideoStart = startSeconds;
+
+            if (!youtubePlayerReady || !player || typeof player.getPlayerState !== 'function') return;
+
+            const state = player.getPlayerState();
+            if (state === YT.PlayerState.UNSTARTED || state === YT.PlayerState.CUED) {
+                // loadVideoById is reliable before the first playback; seekTo alone is often ignored here.
+                player.loadVideoById({ videoId: YOUTUBE_VIDEO_ID, startSeconds });
+            } else {
+                player.seekTo(startSeconds, true);
+                player.playVideo();
+            }
+            pendingVideoStart = null;
+        }
+
+        window.playVideoAt = startYouTubeAt;
+
+        function onYouTubePlayerReady() {
+            youtubePlayerReady = true;
+            if (pendingVideoStart !== null) startYouTubeAt(pendingVideoStart + 5);
+        }
+
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
-                videoId: 'xRuH1qSD2dE', 
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 1,
-                    'rel': 0,
-                    'origin': window.location.origin
-                }
+                videoId: YOUTUBE_VIDEO_ID,
+                playerVars: { 'playsinline': 1, 'controls': 1, 'rel': 0 },
+                events: { 'onReady': onYouTubePlayerReady }
             });
         }
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
 
-    <!-- Τα αρχεία JavaScript -->
-    <script src="js/api.js"></script>
-    <script src="js/court.js"></script>
-    <script src="js/main.js"></script>
-
+    <script src="js/api.js?v=3"></script>
+    <script src="js/court.js?v=10"></script>
+    <script src="js/main.js?v=12"></script>
 </body>
 </html>

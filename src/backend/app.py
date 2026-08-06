@@ -611,8 +611,17 @@ async def get_simulator_scenario(season_code: str = Query("E2023")):
     home_team = home_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in home_lineup else "Home"
     road_team = road_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in road_lineup else "Road"
     
-    # 3. Σε κάνουμε τυχαία προπονητή είτε των Γηπεδούχων είτε των Φιλοξενούμενων!
-    is_home = random.choice([True, False])
+    # 3. Σε κάνουμε προπονητή ΜΟΝΟ της ομάδας που ΧΑΝΕΙ (ή στην τύχη αν έχουμε ισοπαλία)!
+    h_score_int = int(home_score)
+    r_score_int = int(road_score)
+    
+    if h_score_int < r_score_int:
+        is_home = True
+    elif r_score_int < h_score_int:
+        is_home = False
+    else:
+        is_home = random.choice([True, False])
+        
     user_team = home_team if is_home else road_team
     opponent = road_team if is_home else home_team
     user_score = home_score if is_home else road_score
@@ -645,7 +654,7 @@ async def get_simulator_scenario(season_code: str = Query("E2023")):
         "roster": roster
     }
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = "AQ.Ab8RN6I3sw0TGF-AfJByolLAc-7AW_XDLHQbaPeI_BqdDvWEmw"
 
 # The backend can still start without Gemini configured; /api/chat reports a clear 503 instead.
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -826,6 +835,434 @@ async def ai_chat_handler(request: ChatRequest):
     except Exception as e:
         print(f"AI Search failed: {e}")
         raise HTTPException(status_code=502, detail="Αποτυχία επεξεργασίας του AI Search.") from e
+
+
+@app.get("/api/quiz/who-am-i")
+async def generate_who_am_i(difficulty: str = Query("medium")):
+    if client is None:
+        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.")
+
+    # 1. Βρίσκουμε ένα τυχαίο παιχνίδι (π.χ. από το 1 έως το 300) για να τραβήξουμε ένα ρόστερ
+    import random
+    player_ids = set()
+    
+    # Δοκιμάζουμε μέχρι 5 φορές να βρούμε ένα ματς με έγκυρο ρόστερ στη βάση
+    for _ in range(5):
+        random_game = str(random.randint(1, 300))
+        roster_query = get_game_roster_query(random_game)
+        roster_data = query_sparql_requests(roster_query)
+        
+        bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
+        for row in bindings:
+            home_uri = row.get("homeLineup", {}).get("value", "")
+            road_uri = row.get("roadLineup", {}).get("value", "")
+            for uri in [home_uri, road_uri]:
+                if "#Lineup_" in uri:
+                    parts = uri.split("#Lineup_")[1].split("_")
+                    for pid in parts:
+                        if pid:
+                            player_ids.add(pid)
+        
+        # Αν βρήκαμε παίκτες, σπάμε τη λούπα και προχωράμε!
+        if player_ids:
+            break
+            
+    if not player_ids:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν παίκτες στη βάση δεδομένων αυτή τη στιγμή.")
+        
+    # 2. Επιλέγουμε τυχαίο παίκτη και τραβάμε το βιογραφικό του
+    secret_player_id = random.choice(list(player_ids))
+    player_bio_query = get_filtered_player_query(secret_player_id)
+    player_bio = query_sparql_requests(player_bio_query)
+    
+    # 3. Prompt στο Gemini (ενσωματώνουμε τη ΔΥΣΚΟΛΙΑ!)
+    prompt = f"""
+    Παίζουμε το παιχνίδι 'Ποιος Είμαι;'. Ο μυστικός παίκτης μπάσκετ έχει αυτά τα στοιχεία από τη βάση:
+    {player_bio}
+    
+    Ο χρήστης επέλεξε επίπεδο δυσκολίας: {difficulty.upper()}.
+    Φτιάξε 3 στοιχεία (hints) για να τον μαντέψει ο χρήστης. Προσάρμοσε τα στοιχεία ανάλογα με τη δυσκολία:
+    - Αν είναι EASY: Δώσε πολύ γνωστά στοιχεία (π.χ. τωρινή ομάδα, Εθνικότητα, γνωστό ρεκόρ).
+    - Αν είναι MEDIUM: Μέτρια στοιχεία (π.χ. θέση, προηγούμενες ομάδες).
+    - Αν είναι HARD: Πολύ ψαγμένα στατιστικά, ακριβές ύψος ή άγνωστες λεπτομέρειες.
+    
+    Επίστρεψε ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ ένα έγκυρο JSON (χωρίς markdown, χωρίς ```json), με την εξής ακριβώς δομή:
+    {{
+        "secret_player_name": "Ονοματεπώνυμο Παίκτη (όπως προκύπτει από τα δεδομένα)",
+        "hints": ["Εδώ το πρώτο στοιχείο", "Εδώ το δεύτερο στοιχείο", "Εδώ το τρίτο στοιχείο"]
+    }}
+    """
+    
+    try:
+        import json
+        response = await client.aio.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=prompt
+        )
+        # Καθαρίζουμε τυχόν markdown formatting (```json ... ```)
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean_json)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Αποτυχία δημιουργίας κουίζ: {str(e)}")
+
+@app.get("/api/quiz/who-is-missing")
+async def generate_who_is_missing(difficulty: str = Query("medium")):
+    if client is None:
+        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.")
+
+    import random
+    lineup_players = []
+    matchup_text = "Άγνωστος Αγώνας"
+    season_text = ""
+
+    # 1. Διαλέγουμε τυχαία σεζόν
+    seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
+    random_season_code, season_text = random.choice(seasons)
+
+    # 2. Τραβάμε τα παιχνίδια της συγκεκριμένης σεζόν
+    games_query = get_games_list_query(random_season_code)
+    games_data = query_sparql_requests(games_query)
+    games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
+
+    # 3. Βρίσκουμε μια πραγματική 5άδα
+    for _ in range(5):
+        if not games_bindings:
+            break
+            
+        random_game_row = random.choice(games_bindings)
+        game_code = random_game_row.get("gameCode", {}).get("value", "")
+        home_team = random_game_row.get("homeLabel", {}).get("value", "Home Team")
+        away_team = random_game_row.get("awayLabel", {}).get("value", "Road Team")
+
+        roster_query = get_game_roster_query(game_code)
+        roster_data = query_sparql_requests(roster_query)
+
+        bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
+        if not bindings: 
+            continue
+
+        # Διαλέγουμε μια τυχαία φάση και παίρνουμε την πεντάδα
+        random_row = random.choice(bindings)
+        lineup_uri = random_row.get("homeLineup", {}).get("value", "")
+        if random.choice([True, False]):  # 50% πιθανότητα να πάρουμε τους φιλοξενούμενους
+            lineup_uri = random_row.get("roadLineup", {}).get("value", "")
+
+        if "#Lineup_" in lineup_uri:
+            parts = lineup_uri.split("#Lineup_")[1].split("_")
+            parts = [p for p in parts if p]
+            if len(parts) == 5:
+                lineup_players = parts
+                matchup_text = f"{home_team} - {away_team}"
+                break
+
+    if len(lineup_players) != 5:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε έγκυρη πεντάδα στη βάση.")
+
+    # 4. Τραβάμε τα ονόματα των 5 παικτών από τη βάση
+    player_names = []
+    for pid in lineup_players:
+        q = get_player_name_query(pid)
+        res = query_sparql_requests(q)
+        name = pid
+        if res and res.get("results", {}).get("bindings"):
+            name = res["results"]["bindings"][0].get("name", {}).get("value", pid)
+        player_names.append(name)
+
+    # 5. Κρύβουμε 1 παίκτη τυχαία
+    secret_index = random.randint(0, 4)
+    secret_player = player_names[secret_index]
+    known_players = [name for i, name in enumerate(player_names) if i != secret_index]
+
+    # 6. Prompt στο Gemini
+    import json
+    prompt = f"""
+    Παίζουμε το παιχνίδι 'Ποιος Λείπει;'. Έχουμε μια πραγματική πεντάδα από αγώνα Euroleague.
+    Οι 4 γνωστοί παίκτες στο παρκέ είναι οι: {', '.join(known_players)}.
+    Ο 5ος παίκτης που λείπει (μυστικός) είναι ο: {secret_player}.
+
+    Ο χρήστης επέλεξε επίπεδο δυσκολίας: {difficulty.upper()}.
+    Δώσε ΜΟΝΟ ΕΝΑ στοιχείο (hint) για να τον βοηθήσεις, προσαρμοσμένο στη δυσκολία:
+    - Αν είναι EASY: Πες την ομάδα του, τη θέση του ή κάτι πασίγνωστο (π.χ. 'Είναι ο βασικός Point Guard του Παναθηναϊκού').
+    - Αν είναι MEDIUM: Δώσε την εθνικότητά του ή μια πρώην ομάδα του.
+    - Αν είναι HARD: Κάνε το πολύ αινιγματικό (π.χ. κάποιο στατιστικό ρεκόρ ή κάτι δευτερεύον).
+
+    Επίστρεψε ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ ένα έγκυρο JSON:
+    {{
+        "secret_player_name": "{secret_player}",
+        "known_players": {json.dumps(known_players, ensure_ascii=False)},
+        "hint": "Εδώ το κείμενο της βοήθειας (1-2 προτάσεις)"
+    }}
+    """
+    
+    try:
+        response = await client.aio.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=prompt
+        )
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        result_data = json.loads(clean_json)
+        
+        # Προσθέτουμε τα metadata του αγώνα στο τελικό JSON
+        result_data["matchup"] = matchup_text
+        result_data["season"] = f"Euroleague Season {season_text}"
+        
+        return result_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Αποτυχία: {str(e)}")
+
+@app.get("/api/quiz/higher-or-lower")
+async def generate_higher_or_lower(difficulty: str = Query("medium")):
+    if client is None:
+        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+
+    import random
+    import itertools
+    
+    categories = [
+        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
+        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
+        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"}
+    ]
+    selected_category = random.choice(categories)
+    
+    seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
+    
+    player_a = player_b = None
+    matchup_text = season_text = ""
+    quarter_text = ""
+    
+    # --- ΒΕΛΤΙΩΜΕΝΗ ΛΟΓΙΚΗ ΔΙΑΦΟΡΑΣ ---
+    def is_valid_gap(stat1, stat2, diff_level, is_quarter):
+        gap = abs(stat1 - stat2)
+        if gap == 0: return False # Ποτέ ισοπαλία!
+        
+        # Αν είναι δεκάλεπτο, τα νούμερα είναι μικρά, άρα μικραίνουμε τις απαιτήσεις
+        if is_quarter:
+            if diff_level == "easy": return gap >= 2
+            if diff_level == "medium": return gap == 1
+            if diff_level == "hard": return gap == 1
+        else:
+            if diff_level == "easy": return gap >= 3
+            if diff_level == "medium": return gap in [1, 2]
+            if diff_level == "hard": return gap == 1
+        return True
+
+    # Αυξάνουμε τις προσπάθειες σε 30
+    for _ in range(30):
+        random_season_code, season_text = random.choice(seasons)
+        games_query = get_games_list_query(random_season_code)
+        games_data = query_sparql_requests(games_query)
+        games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
+        
+        if not games_bindings: continue
+        
+        random_game_row = random.choice(games_bindings)
+        game_code = random_game_row.get("gameCode", {}).get("value", "")
+        home_team = random_game_row.get("homeLabel", {}).get("value", "Home")
+        away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
+        
+        target_quarter = None
+        quarter_text = "συνολικά στο ματς"
+        is_quarter = False
+        
+        if random.random() < 0.40:
+            target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
+            quarter_text = f"μόνο κατά τη διάρκεια του {target_quarter} δεκαλέπτου"
+            is_quarter = True
+        
+        stat_query = selected_category["func"](
+            game_code=game_code, 
+            season_code=random_season_code,
+            quarter=target_quarter
+        )
+        
+        stat_data = query_sparql_requests(stat_query)
+        bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
+        
+        if len(bindings) >= 2:
+            valid_pairs = []
+            backup_pairs = [] # Σχέδιο Β: Οποιοδήποτε ζευγάρι χωρίς ισοπαλία
+            
+            for b1, b2 in itertools.combinations(bindings, 2):
+                s1 = int(b1.get(selected_category["stat_key"], {}).get("value", 0))
+                s2 = int(b2.get(selected_category["stat_key"], {}).get("value", 0))
+                
+                if s1 != s2:
+                    backup_pairs.append((b1, b2))
+                    if is_valid_gap(s1, s2, difficulty.lower(), is_quarter):
+                        valid_pairs.append((b1, b2))
+            
+            # Αν δεν βρει τέλειο ζευγάρι, παίρνει το Backup για να μην βγάλει 404!
+            if valid_pairs:
+                sampled = random.choice(valid_pairs)
+            elif backup_pairs:
+                sampled = random.choice(backup_pairs)
+            else:
+                continue 
+                
+            def get_name(row):
+                pid = row.get("player", {}).get("value", "").split("/")[-1]
+                res = query_sparql_requests(get_player_name_query(pid))
+                if res and res.get("results", {}).get("bindings"):
+                    return res["results"]["bindings"][0].get("name", {}).get("value", pid)
+                return pid
+
+            name_a = get_name(sampled[0])
+            name_b = get_name(sampled[1])
+            stat_a = int(sampled[0].get(selected_category["stat_key"], {}).get("value", 0))
+            stat_b = int(sampled[1].get(selected_category["stat_key"], {}).get("value", 0))
+            
+            if name_a != name_b:
+                if random.choice([True, False]):
+                    player_a = {"name": name_a, "stat": stat_a}
+                    player_b = {"name": name_b, "stat": stat_b}
+                else:
+                    player_a = {"name": name_b, "stat": stat_b}
+                    player_b = {"name": name_a, "stat": stat_a}
+                    
+                matchup_text = f"{home_team} - {away_team}"
+                break
+
+    if not player_a or not player_b:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν στατιστικά. Δοκίμασε ξανά!")
+
+    import json
+    prompt = f"""
+    Φτιάξε μια ατμοσφαιρική περιγραφή αγώνα Euroleague σε στυλ σπορτκάστερ.
+    Το στατιστικό που εξετάζουμε είναι: '{selected_category['name']}'.
+    Το χρονικό πλαίσιο είναι: {quarter_text}.
+    
+    Ο παίκτης {player_a['name']} είχε {player_a['stat']} {selected_category['name']} {quarter_text}.
+    Ο παίκτης {player_b['name']} είχε {player_b['stat']} {selected_category['name']} {quarter_text} (ΜΗΝ αποκαλύψεις το νούμερο του {player_b['name']}).
+    Ο αγώνας ήταν {matchup_text}.
+    
+    Η δυσκολία της ερώτησης είναι {difficulty.upper()}. Δώσε έμφαση στη δράση (play-by-play αίσθηση) και ρώτα στο τέλος αν ο {player_b['name']} είχε ΠΕΡΙΣΣΟΤΕΡΑ ή ΛΙΓΟΤΕΡΑ από τον {player_a['name']} ΣΤΟ ΣΥΓΚΕΚΡΙΜΕΝΟ ΧΡΟΝΙΚΟ ΠΛΑΙΣΙΟ.
+    
+    Επίστρεψε ΑΥΣΤΗΡΑ ΕΝΑ JSON:
+    {{
+        "question_text": "Η περιγραφή του σπορτκάστερ (μέχρι 2-3 προτάσεις)...",
+        "player_a": {{"name": "{player_a['name']}", "stat": {player_a['stat']}}},
+        "player_b": {{"name": "{player_b['name']}", "stat": {player_b['stat']}}},
+        "category_name": "{selected_category['name']} ({quarter_text})",
+        "matchup": "{matchup_text}",
+        "season": "Euroleague Season {season_text}"
+    }}
+    """
+    
+    try:
+        response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(clean_json)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Αποτυχία: {str(e)}")
+
+@app.get("/api/quiz/top-5")
+async def generate_top_5(difficulty: str = Query("medium")):
+    if client is None:
+        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+
+    import random
+    
+    categories = [
+        {"id": "assist_duos", "name": "Κορυφαία Δίδυμα (Ασίστ - Σκόρερ)", "func": get_top_assist_duos_query, "stat_key": "totalAssists", "stat_label": "Ασίστ"},
+        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks", "stat_label": "Μπλοκ"},
+        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn", "stat_label": "Φάουλ"},
+        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints", "stat_label": "Πόντοι"},
+        {"id": "fast_break", "name": "Πόντοι Αιφνιδιασμού", "func": get_fast_break_specialists_query, "stat_key": "fastBreakPoints", "stat_label": "Πόντοι"}
+    ]
+    
+    seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
+    
+    top_5_results = []
+    question_context = ""
+    selected_category = None
+    
+    for _ in range(30):
+        selected_category = random.choice(categories)
+        random_season_code, season_text = random.choice(seasons)
+        
+        game_code = None
+        target_quarter = None
+        
+        # Λογική Δυσκολίας
+        if difficulty == "easy":
+            # Ολόκληρη η σεζόν
+            question_context = f"στη σεζόν {season_text}"
+        elif difficulty == "medium" or difficulty == "hard":
+            # Πρέπει να βρούμε ένα τυχαίο ματς
+            games_query = get_games_list_query(random_season_code)
+            games_data = query_sparql_requests(games_query)
+            games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
+            if not games_bindings: continue
+            
+            random_game_row = random.choice(games_bindings)
+            game_code = random_game_row.get("gameCode", {}).get("value", "")
+            home_team = random_game_row.get("homeLabel", {}).get("value", "Home")
+            away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
+            
+            if difficulty == "medium":
+                question_context = f"στον αγώνα {home_team} - {away_team} ({season_text})"
+            else:
+                target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
+                question_context = f"στο {target_quarter} δεκάλεπτο του αγώνα {home_team} - {away_team} ({season_text})"
+
+        # Εκτέλεση του query
+        if selected_category["id"] == "fast_break":
+            # Επειδή το fast break δεν παίρνει game_code στις τρέχουσες παραμέτρους, το τρέχουμε γενικά αν κληρωθεί, 
+            # ή το αποφεύγουμε. Για σιγουριά το αντικαθιστούμε με fouls αν έχει game_code.
+            if game_code: selected_category = categories[2]
+            stat_query = selected_category["func"]() if not game_code else selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
+        elif selected_category["id"] == "assist_duos":
+            stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
+        else:
+            stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
+            
+        stat_data = query_sparql_requests(stat_query)
+        bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
+        
+        if len(bindings) >= 5:
+            top_5_results = []
+            # Βοηθητική συνάρτηση για τα ονόματα
+            def get_name(pid):
+                if not pid: return ""
+                res = query_sparql_requests(get_player_name_query(pid))
+                if res and res.get("results", {}).get("bindings"):
+                    return res["results"]["bindings"][0].get("name", {}).get("value", pid)
+                return pid
+
+            # Διαβάζουμε τους 5 πρώτους
+            for b in bindings[:5]:
+                stat_val = int(b.get(selected_category["stat_key"], {}).get("value", 0))
+                
+                if selected_category["id"] == "assist_duos":
+                    scorer_pid = b.get("scorer", {}).get("value", "").split("/")[-1]
+                    passer_pid = b.get("passer", {}).get("value", "").split("/")[-1]
+                    name_str = f"{get_name(passer_pid)} & {get_name(scorer_pid)}"
+                else:
+                    pid = b.get("player", {}).get("value", "").split("/")[-1]
+                    name_str = get_name(pid)
+                    
+                top_5_results.append({
+                    "name": name_str,
+                    "stat": f"{stat_val} {selected_category['stat_label']}"
+                })
+            break
+
+    if len(top_5_results) < 5:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν 5 αποτελέσματα με αυτά τα κριτήρια.")
+
+    # Προετοιμασία της ερώτησης
+    if selected_category["id"] == "assist_duos":
+        question_text = f"Ποια είναι τα Top 5 δίδυμα (Πασέρ & Σκόρερ) {question_context};"
+    else:
+        question_text = f"Ποιοι είναι οι Top 5 παίκτες σε {selected_category['name']} {question_context};"
+
+    return {
+        "question_text": question_text,
+        "answers": top_5_results,
+        "category_name": selected_category["name"],
+        "difficulty": difficulty
+    }
 
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":

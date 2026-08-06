@@ -1,207 +1,138 @@
 // api.js
 
-const API_BASE_URL = "http://localhost:8000"; // Η διεύθυνση του Python server σου
+const API_BASE_URL = "http://localhost:8000"; 
 
-/**
- * Ζητάει τα σουτ από το backend βάσει φίλτρων.
- */
-async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = "E2023", filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, lineupUri = null) {
+function appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId) {
+    if (seasonCode && seasonCode !== "ALL") params.append("season_code", seasonCode);
+    if (gameCode) params.append("game_code", gameCode);
+    if (quarter) params.append("quarter", quarter);
+    if (minStart) params.append("min_start", minStart);
+    if (minEnd) params.append("min_end", minEnd);
+    if (filterType && filterId) {
+        params.append("filter_type", filterType);
+        params.append("filter_id", filterId);
+    }
+}
+
+async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = null, filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, lineupUri = null) {
     try {
         const params = new URLSearchParams();
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
+        
         if (playerId) params.append("player", playerId);
         if (assistPlayerId) params.append("assist_by", assistPlayerId);
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode);
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
-        if (lineupUri) params.append("lineup_uri", lineupUri); // <-- ΠΡΟΣΘΗΚΗ!
+        if (lineupUri) params.append("lineup_uri", lineupUri); 
         
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-
         const url = `${API_BASE_URL}/api/shots?${params.toString()}`;
-        console.log("Fetching from:", url);
+        console.log("Fetching shots from:", url);
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
+        
         const data = await response.json();
         return data.shots; 
+    } catch (error) { console.error("Σφάλμα στα σουτ:", error); return []; }
+}
 
+async function fetchMatchPlayByPlay(gameCode, seasonCode) {
+    try {
+        const params = new URLSearchParams({
+            game_code: gameCode,
+            season_code: seasonCode
+        });
+        const response = await fetch(`${API_BASE_URL}/api/match/playbyplay?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.actions || [];
     } catch (error) {
-        console.error("Σφάλμα κατά την ανάκτηση των δεδομένων:", error);
+        console.error("Σφάλμα στο play-by-play:", error);
         return [];
     }
 }
 
-/**
- * Ζητάει τα στοιχεία ενός παίκτη (Κάρτα Παίκτη).
- */
 async function fetchFilteredPlayer(playerId){
     try {
-        const params = new URLSearchParams();
-        if (playerId) params.append("player", playerId);
-        
-        const url = `${API_BASE_URL}/api/player?${params.toString()}`;
+        const url = `${API_BASE_URL}/api/player?player=${playerId}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
         const data = await response.json();
-        return data.player; // Διορθώθηκε από data.shots σε data.player
-
-    } catch (error) {
-        console.error("Σφάλμα κατά την ανάκτηση δεδομένων παίκτη:", error);
-        return null;
-    }
+        return data.player; 
+    } catch (error) { return null; }
 }
 
-/**
- * Ζητάει τα κορυφαία δίδυμα (Assist Duos).
- */
 async function fetchTopAssistDuos(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null, seasonCode = null) {    
     try {
         const params = new URLSearchParams();
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode);
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
+        
         const url = `${API_BASE_URL}/api/analytics/assist-duos?${params.toString()}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
         return data.assist_duos;
-    } catch (error) {
-        console.error("Σφάλμα κατά την ανάκτηση των Top Assist Duos:", error);
-        return [];
-    }
+    } catch (error) { return []; }
 }
 
-/**
- * Ζητάει τις Καλύτερες Πεντάδες (Top Lineups).
- */
 async function fetchTopLineups(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null, seasonCode = null) {
     try {
         const params = new URLSearchParams();
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode); // ΠΡΟΣΘΗΚΗ
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
         
         const url = `${API_BASE_URL}/api/analytics/lineups?${params.toString()}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
         return data.top_lineups;
-    } catch (error) {
-        console.error("Σφάλμα κατά την ανάκτηση των Top Lineups:", error);
-        return [];
-    }
+    } catch (error) { return []; }
 }
 
-/**
- * Ζητάει τους Second Chance Points.
- */
-async function fetchSecondChancePoints(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null,seasonCode=null) {
+async function fetchSecondChancePoints(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, gameCode = null, seasonCode = null, playerId = null) {
     try {
         const params = new URLSearchParams();
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode);
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
+        
+        // Προσθήκη του παίκτη (αν υπάρχει)
+        if (playerId) params.append("player_id", playerId);
+        
         const url = `${API_BASE_URL}/api/analytics/second-chance?${params.toString()}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
         return data.second_chance_points;
-    } catch (error) {
-        console.error("Σφάλμα κατά την ανάκτηση των Second Chance Points:", error);
-        return [];
-    }
+    } catch (error) { return []; }
 }
 
-/**
- * Ζητάει τα Κερδισμένα Φάουλ (Fouls Drawn).
- */
-async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, fouledId = null, foulingId = null, gameCode = null,seasonCode=null) {
+async function fetchFoulsDrawn(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, fouledId = null, foulingId = null, gameCode = null, seasonCode = null) {
     try {
         const params = new URLSearchParams();
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
+        
         if (fouledId) params.append("fouled_id", fouledId);
         if (foulingId) params.append("fouling_id", foulingId);
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode);
+        
         const url = `${API_BASE_URL}/api/analytics/fouls-drawn?${params.toString()}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         return data.fouls_drawn;
-    } catch (error) {
-        console.error("Σφάλμα Fouls Drawn:", error);
-        return [];
-    }
+    } catch (error) { return []; }
 }
 
-/**
- * Ζητάει τους Αμυντικούς Ογκόλιθους (Defensive Anchors - Blocks).
- */
-async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, shooterId = null, blockerId = null, gameCode = null,seasonCode=null) {
+async function fetchDefensiveAnchors(filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, shooterId = null, blockerId = null, gameCode = null, seasonCode = null) {
     try {
         const params = new URLSearchParams();
-        if (filterType && filterId) {
-            params.append("filter_type", filterType);
-            params.append("filter_id", filterId);
-        }
-        if (quarter) params.append("quarter", quarter);
-        if (minStart) params.append("min_start", minStart);
-        if (minEnd) params.append("min_end", minEnd);
+        appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
+        
         if (shooterId) params.append("shooter_id", shooterId);
         if (blockerId) params.append("blocker_id", blockerId); 
-        if (gameCode) params.append("game_code", gameCode);
-        if (seasonCode) params.append("season_code", seasonCode);
+        
         const url = `${API_BASE_URL}/api/analytics/defensive-anchors?${params.toString()}`;
         const response = await fetch(url);
-        
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         return data.defensive_anchors;
-    } catch (error) {
-        console.error("Σφάλμα Defensive Anchors:", error);
-        return [];
-    }
+    } catch (error) { return []; }
 }
+
 /**
  * SIMULATOR: Υπολογίζει το +/- μιας 5άδας (σε ολόκληρο τον αγώνα)
  */
@@ -259,21 +190,26 @@ async function fetchGameRoster(gameCode) {
         return [];
     }
 }
-/*
-   AI CAHT 
-*/
-async function fetchAiChat(userMessage) {
+
+async function fetchAiChat(userMessage, gameCode = null, seasonCode = null) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMessage })
+            body: JSON.stringify({
+                message: userMessage,
+                game_code: gameCode || null,
+                season_code: seasonCode || null
+            })
         });
-        
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        if (!response.ok) {
+            const errorPayload = await response.json().catch(() => ({}));
+            throw new Error(errorPayload.detail || `HTTP error! status: ${response.status}`);
+        }
         return await response.json();
     } catch (error) {
         console.error("Error with AI Chat:", error);
-        return null;
+        return { error: error.message || "AI Search request failed." };
     }
 }

@@ -49,6 +49,40 @@ async function fetchMatchPlayByPlay(gameCode, seasonCode) {
     }
 }
 
+async function fetchVideoConfig(gameCode, seasonCode) {
+    try {
+        const params = new URLSearchParams({
+            game_code: gameCode,
+            season_code: seasonCode
+        });
+        const response = await fetch(`${API_BASE_URL}/api/video/config?${params.toString()}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Σφάλμα στη ρύθμιση του βίντεο:", error);
+        return {
+            available: false,
+            timeline_available: false,
+            game_code: gameCode,
+            season_code: seasonCode
+        };
+    }
+}
+
+async function fetchAvailableVideoGames(seasonCode = null) {
+    try {
+        const params = new URLSearchParams();
+        if (seasonCode) params.set("season_code", seasonCode);
+        const suffix = params.toString() ? `?${params.toString()}` : "";
+        const response = await fetch(`${API_BASE_URL}/api/video/games${suffix}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Σφάλμα στη λίστα video games:", error);
+        return { seasons: [], games: [] };
+    }
+}
+
 async function fetchFilteredPlayer(playerId){
     try {
         const url = `${API_BASE_URL}/api/player?player=${playerId}`;

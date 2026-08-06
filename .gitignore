@@ -24,7 +24,7 @@ Thumbs.db
 # Generated/local data
 data/
 
-debug_frames/*.png
+debug_frames/
 
 # Secrets / Environment Variables
 .env

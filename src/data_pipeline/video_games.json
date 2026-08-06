@@ -1,0 +1,287 @@
+{
+  "version": 1,
+  "games": [
+    {
+      "season_code": "E2023",
+      "game_code": "7",
+      "youtube_id": "Bf5UMNTVn0s",
+      "youtube_url": "https://www.youtube.com/watch?v=Bf5UMNTVn0s",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1560,
+      "timeline_file": "video_timelines/E2023_7.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "39",
+      "youtube_id": "Y7x9FvzfmiU",
+      "youtube_url": "https://www.youtube.com/watch?v=Y7x9FvzfmiU",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1620,
+      "timeline_file": "video_timelines/E2023_39.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "60",
+      "youtube_id": "m_SlP4n6BOY",
+      "youtube_url": "https://www.youtube.com/watch?v=m_SlP4n6BOY",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 900,
+      "timeline_file": "video_timelines/E2023_60.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "68",
+      "youtube_id": "z12ARk9n45s",
+      "youtube_url": "https://www.youtube.com/watch?v=z12ARk9n45s",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 900,
+      "timeline_file": "video_timelines/E2023_68.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "82",
+      "youtube_id": "CKeM7TR71TI",
+      "youtube_url": "https://www.youtube.com/watch?v=CKeM7TR71TI",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2023_82.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "159",
+      "youtube_id": "tCpBCdX4AJ0",
+      "youtube_url": "https://www.youtube.com/watch?v=tCpBCdX4AJ0",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 900,
+      "timeline_file": "video_timelines/E2023_159.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "160",
+      "youtube_id": "CQ8pB0ObF04",
+      "youtube_url": "https://www.youtube.com/watch?v=CQ8pB0ObF04",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1440,
+      "timeline_file": "video_timelines/E2023_160.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "170",
+      "youtube_id": "3EqTgy8A7QQ",
+      "youtube_url": "https://www.youtube.com/watch?v=3EqTgy8A7QQ",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 920,
+      "timeline_file": "video_timelines/E2023_170.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "296",
+      "youtube_id": "Ax56v6QidGI",
+      "youtube_url": "https://www.youtube.com/watch?v=Ax56v6QidGI",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2023_296.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "308",
+      "youtube_id": "gvPRn4_jTmk",
+      "youtube_url": "https://www.youtube.com/watch?v=gvPRn4_jTmk",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2023_308.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "327",
+      "youtube_id": "zCJNv7caXTQ",
+      "youtube_url": "https://www.youtube.com/watch?v=zCJNv7caXTQ",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 900,
+      "timeline_file": "video_timelines/E2023_327.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "328",
+      "youtube_id": "MYOev00Q4S4",
+      "youtube_url": "https://www.youtube.com/watch?v=MYOev00Q4S4",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "playback_lead_seconds": 7,
+      "timeline_file": "video_timelines/E2023_328.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "329",
+      "youtube_id": "uuEogjHnXDY",
+      "youtube_url": "https://www.youtube.com/watch?v=uuEogjHnXDY",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 920,
+      "timeline_file": "video_timelines/E2023_329.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "331",
+      "youtube_id": "8ue528gaVyY",
+      "youtube_url": "https://www.youtube.com/watch?v=8ue528gaVyY",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 60,
+      "timeline_file": "video_timelines/E2023_331.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2023",
+      "game_code": "333",
+      "youtube_id": "xRuH1qSD2dE",
+      "youtube_url": "https://www.youtube.com/watch?v=xRuH1qSD2dE",
+      "ocr_profile": "euroleague_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "playback_lead_seconds": 5,
+      "timeline_file": "video_timelines/E2023_333.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "48",
+      "youtube_id": "s7FYmMgF7j0",
+      "youtube_url": "https://www.youtube.com/watch?v=s7FYmMgF7j0",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1000,
+      "timeline_file": "video_timelines/E2024_48.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "70",
+      "youtube_id": "6sJXOThOUEY",
+      "youtube_url": "https://www.youtube.com/watch?v=6sJXOThOUEY",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 2820,
+      "timeline_file": "video_timelines/E2024_70.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "124",
+      "youtube_id": "mXTDT3_sQbk",
+      "youtube_url": "https://www.youtube.com/watch?v=mXTDT3_sQbk",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2024_124.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "189",
+      "youtube_id": "lvHM0sKDvYo",
+      "youtube_url": "https://www.youtube.com/watch?v=lvHM0sKDvYo",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1080,
+      "timeline_file": "video_timelines/E2024_189.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "209",
+      "youtube_id": "1JN2w7nPn9k",
+      "youtube_url": "https://www.youtube.com/watch?v=1JN2w7nPn9k",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1800,
+      "timeline_file": "video_timelines/E2024_209.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "220",
+      "youtube_id": "FFTTnwrFzwQ",
+      "youtube_url": "https://www.youtube.com/watch?v=FFTTnwrFzwQ",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1860,
+      "timeline_file": "video_timelines/E2024_220.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "271",
+      "youtube_id": "31BodlgQOvg",
+      "youtube_url": "https://www.youtube.com/watch?v=31BodlgQOvg",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1860,
+      "timeline_file": "video_timelines/E2024_271.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "273",
+      "youtube_id": "nwGs5Gp5l2Q",
+      "youtube_url": "https://www.youtube.com/watch?v=nwGs5Gp5l2Q",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 900,
+      "timeline_file": "video_timelines/E2024_273.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "301",
+      "youtube_id": "apsx4VQKE4s",
+      "youtube_url": "https://www.youtube.com/watch?v=apsx4VQKE4s",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2024_301.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "327",
+      "youtube_id": "CKh4oSjKnbQ",
+      "youtube_url": "https://www.youtube.com/watch?v=CKh4oSjKnbQ",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1020,
+      "timeline_file": "video_timelines/E2024_327.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "328",
+      "youtube_id": "2sbib3tt90c",
+      "youtube_url": "https://www.youtube.com/watch?v=2sbib3tt90c",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2024_328.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2024",
+      "game_code": "330",
+      "youtube_id": "QmoPpJI7OCI",
+      "youtube_url": "https://www.youtube.com/watch?v=QmoPpJI7OCI",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 960,
+      "timeline_file": "video_timelines/E2024_330.csv",
+      "enabled": true
+    },
+    {
+      "season_code": "E2025",
+      "game_code": "406",
+      "youtube_id": "u55vdPRGwSY",
+      "youtube_url": "https://www.youtube.com/watch?v=u55vdPRGwSY",
+      "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
+      "start_hint_seconds": 1020,
+      "timeline_file": "video_timelines/E2025_406.csv",
+      "enabled": true
+    }
+  ]
+}

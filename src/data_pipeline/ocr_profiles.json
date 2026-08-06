@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "profiles": {
+    "euroleague_left_scorebug_16_9": {
+      "description": "EuroLeague 16:9 broadcast layout with the game clock in the lower-left scorebug. Calibrated from E2023 game 333.",
+      "roi": {
+        "x": 0.0078125,
+        "y": 0.4166667,
+        "width": 0.078125,
+        "height": 0.0694444
+      },
+      "preprocess": {
+        "scale": 3.0,
+        "threshold": "otsu",
+        "invert": false
+      },
+      "ocr": {
+        "languages": ["en"],
+        "allowlist": "0123456789:.",
+        "confidence_threshold": 0.4
+      },
+      "sampling": {
+        "interval_seconds": 1.0
+      },
+      "clock_tracking": {
+        "periods": ["1st", "2nd", "3rd", "4th", "OT", "2OT", "3OT", "4OT"],
+        "regular_period_seconds": 600,
+        "overtime_period_seconds": 300,
+        "period_end_max_seconds": 15,
+        "period_start_min_ratio": 0.9,
+        "max_upward_jump_seconds": 3,
+        "max_downward_jump_seconds": 15
+      }
+    },
+    "euroleague_bottom_left_scorebug_16_9": {
+      "description": "EuroLeague 16:9 broadcast layout with the clock in the bottom-left scorebug. Calibrated from E2023 game 328.",
+      "roi": {
+        "x": 0.084375,
+        "y": 0.8972222,
+        "width": 0.0640625,
+        "height": 0.0805556
+      },
+      "preprocess": {
+        "scale": 4.0,
+        "threshold": "otsu",
+        "invert": false
+      },
+      "ocr": {
+        "languages": ["en"],
+        "allowlist": "0123456789:.",
+        "confidence_threshold": 0.4
+      },
+      "sampling": {
+        "interval_seconds": 1.0
+      },
+      "clock_tracking": {
+        "periods": ["1st", "2nd", "3rd", "4th", "OT", "2OT", "3OT", "4OT"],
+        "regular_period_seconds": 600,
+        "overtime_period_seconds": 300,
+        "period_end_max_seconds": 15,
+        "period_start_min_ratio": 0.9,
+        "max_upward_jump_seconds": 3,
+        "max_downward_jump_seconds": 90
+      }
+    }
+  }
+}

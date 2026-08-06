@@ -106,9 +106,7 @@ function resetShotQueryState() {
         aiPlaySearchButton.textContent = "AI SEARCH";
     }
 
-    if (typeof player !== "undefined" && player && typeof player.stopVideo === "function") {
-        player.stopVideo();
-    }
+    if (typeof window.setYouTubeVideo === "function") window.setYouTubeVideo(null);
 }
 
 function showAiSearchMessage(message, type = "") {
@@ -308,6 +306,32 @@ function setSidebarFiltersForMode(mode) {
     if (optSelectSeason) optSelectSeason.hidden = false;
 }
 
+async function setSeasonOptionsForMode(mode) {
+    if (!globalSeasonSelect) return;
+    const seasonOptions = Array.from(globalSeasonSelect.options)
+        .filter(option => /^E\d{4}$/.test(option.value));
+
+    if (mode !== "video-shots") {
+        seasonOptions.forEach(option => {
+            option.hidden = false;
+            option.disabled = false;
+        });
+        globalSeasonSelect.disabled = false;
+        return;
+    }
+
+    globalSeasonSelect.disabled = true;
+    const videoCatalog = await fetchAvailableVideoGames();
+    if (mainModeSelect.value !== "video-shots") return;
+    const availableSeasons = new Set(videoCatalog.seasons || []);
+    seasonOptions.forEach(option => {
+        const available = availableSeasons.has(option.value);
+        option.hidden = !available;
+        option.disabled = !available;
+    });
+    globalSeasonSelect.disabled = availableSeasons.size === 0;
+}
+
 // --- 1. ΕΝΑΛΛΑΓΗ ΛΕΙΤΟΥΡΓΙΑΣ (MENU) ---
 mainModeSelect.addEventListener("change", (e) => {
     if (mainActionBtn.innerText === "ΕΞΟΔΟΣ ΑΠΟ GAME") {
@@ -349,6 +373,7 @@ mainModeSelect.addEventListener("change", (e) => {
     resetShotQueryState();
     resetGameSelection();
     setSidebarFiltersForMode(mode);
+    setSeasonOptionsForMode(mode);
 
     analyticsWrapper.style.display = "none";
     
@@ -411,18 +436,30 @@ async function loadGamesForSeason(seasonCode) {
     globalGameSelect.disabled = true;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/games?season_code=${seasonCode}`);
+        const isVideoMode = mainModeSelect.value === "video-shots";
+        const [response, videoCatalog] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/games?season_code=${seasonCode}`),
+            isVideoMode ? fetchAvailableVideoGames(seasonCode) : Promise.resolve(null)
+        ]);
         const data = await response.json();
+        const availableGameCodes = isVideoMode
+            ? new Set((videoCatalog?.games || []).map(game => String(game.game_code)))
+            : null;
+        const games = (data.games || []).filter(game =>
+            !availableGameCodes || availableGameCodes.has(String(game.gameCode))
+        );
         
         globalGameSelect.innerHTML = "<option value=''>-- Επίλεξε Αγώνα --</option>";
-        if (data.games && data.games.length > 0) {
-            data.games.forEach(game => {
+        if (games.length > 0) {
+            games.forEach(game => {
                 const option = document.createElement("option");
                 option.value = game.gameCode;
                 option.textContent = `[${game.gameCode}] ${game.matchup}`;
                 globalGameSelect.appendChild(option);
             });
             globalGameSelect.disabled = false;
+        } else if (isVideoMode) {
+            globalGameSelect.innerHTML = "<option value=''>Δεν υπάρχουν έτοιμα video games</option>";
         }
     } catch (error) {
         globalGameSelect.innerHTML = "<option value=''>Σφάλμα φόρτωσης</option>";
@@ -587,6 +624,7 @@ window.applyChartFilters = function() {
 document.addEventListener("DOMContentLoaded", () => {
     setShotViewMode(mainModeSelect.value);
     setSidebarFiltersForMode(mainModeSelect.value);
+    setSeasonOptionsForMode(mainModeSelect.value);
     resetGameSelection();
 });
 
@@ -665,11 +703,19 @@ mainActionBtn.addEventListener("click", async () => {
 
     if (mode === "euro-chart" || mode === "video-shots") {
         const activeQueryGeneration = queryGeneration;
-        const [shots, playByPlayActions] = await Promise.all([
+        const [shots, playByPlayActions, videoConfig] = await Promise.all([
             fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd),
-            isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason) : Promise.resolve([])
+            isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason) : Promise.resolve([]),
+            isVideoShotMode ? fetchVideoConfig(selectedGame, selectedSeason) : Promise.resolve(null)
         ]);
         if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
+
+        if (isVideoShotMode && typeof window.setYouTubeVideo === "function") {
+            window.setYouTubeVideo(
+                videoConfig?.available ? videoConfig.youtube_id : null,
+                videoConfig?.playback_lead_seconds ?? 5
+            );
+        }
         window.currentShotsData = shots;
 
         // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα

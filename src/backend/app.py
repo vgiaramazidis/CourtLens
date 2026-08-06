@@ -1,7 +1,12 @@
 # src/backend/app.py
 import asyncio
+import csv
+import json
+import os
 import random
 import re
+from functools import lru_cache
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
@@ -15,27 +20,89 @@ from sparql_queries import (
     get_foul_drawn_gravity_query, get_defensive_anchors_query, get_simulator_crunch_time_query,get_game_roster_query
     ,get_timeouts_query, get_team_roster_query, get_simulator_crunch_time_query
 )
-import csv
-import os
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-# --- ΦΟΡΤΩΣΗ ΤΟΥ CSV ΜΕ ΤΟΥΣ ΧΡΟΝΟΥΣ ---
-TIMELINE = []
-csv_path = "game_clock_map.csv"
-if os.path.exists(csv_path):
-    with open(csv_path, mode='r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            TIMELINE.append({
-                "video_sec": float(row["video_time_sec"]),
-                "clock": row["game_clock"].strip(),
-                "quarter": row["quarter"].strip()
-            })
-    print(f"Success: The file found {csv_path}")
-else:
-    print(f"Attention: The file not found {csv_path}")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+VIDEO_CATALOG_PATH = REPO_ROOT / "src" / "data_pipeline" / "video_games.json"
+
+
+@lru_cache(maxsize=8)
+def _load_video_catalog(catalog_mtime_ns):
+    try:
+        with VIDEO_CATALOG_PATH.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+        games = payload.get("games", []) if isinstance(payload, dict) else []
+    except (FileNotFoundError, json.JSONDecodeError, OSError) as exc:
+        print(f"Attention: Could not load video catalog {VIDEO_CATALOG_PATH}: {exc}")
+        return {}
+
+    catalog = {}
+    for game in games:
+        if not isinstance(game, dict):
+            continue
+        season_code = str(game.get("season_code", "")).strip()
+        game_code = str(game.get("game_code", "")).strip()
+        if season_code and game_code and game.get("enabled", True):
+            catalog[(season_code, game_code)] = game
+    return catalog
+
+
+def load_video_catalog():
+    try:
+        catalog_mtime_ns = VIDEO_CATALOG_PATH.stat().st_mtime_ns
+    except OSError:
+        catalog_mtime_ns = 0
+    return _load_video_catalog(catalog_mtime_ns)
+
+
+def get_video_game_config(season_code, game_code):
+    if not season_code or not game_code:
+        return None
+    return load_video_catalog().get((str(season_code).strip(), str(game_code).strip()))
+
+
+def resolve_timeline_path(timeline_file):
+    if not timeline_file:
+        return None
+    path = Path(str(timeline_file)).expanduser()
+    path = path if path.is_absolute() else REPO_ROOT / path
+    try:
+        resolved = path.resolve()
+        resolved.relative_to(REPO_ROOT)
+    except (OSError, ValueError):
+        return None
+    return resolved
+
+
+@lru_cache(maxsize=64)
+def _load_video_timeline(path_string, timeline_mtime_ns):
+    path = Path(path_string)
+    timeline = []
+    try:
+        with path.open(mode="r", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                timeline.append({
+                    "video_sec": float(row["video_time_sec"]),
+                    "clock": row["game_clock"].strip(),
+                    "quarter": row["quarter"].strip(),
+                })
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        print(f"Attention: Could not load video timeline {path}: {exc}")
+        return ()
+    return tuple(timeline)
+
+
+def load_video_timeline(timeline_file):
+    path = resolve_timeline_path(timeline_file)
+    if path is None or not path.exists():
+        return ()
+    try:
+        timeline_mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        return ()
+    return _load_video_timeline(str(path), timeline_mtime_ns)
 
 app = FastAPI(title="Euroleague API")
 
@@ -46,6 +113,57 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/api/video/config")
+async def get_video_config(
+    season_code: str = Query(...),
+    game_code: str = Query(...),
+):
+    game_config = get_video_game_config(season_code, game_code)
+    if not game_config:
+        return {
+            "available": False,
+            "timeline_available": False,
+            "season_code": season_code,
+            "game_code": game_code,
+        }
+
+    timeline = load_video_timeline(str(game_config.get("timeline_file", "")))
+    return {
+        "available": bool(game_config.get("youtube_id")),
+        "timeline_available": bool(timeline),
+        "season_code": season_code,
+        "game_code": game_code,
+        "youtube_id": game_config.get("youtube_id"),
+        "ocr_profile": game_config.get("ocr_profile"),
+        "playback_lead_seconds": max(
+            0, min(15, float(game_config.get("playback_lead_seconds", 5)))
+        ),
+    }
+
+
+@app.get("/api/video/games")
+async def get_available_video_games(season_code: str = Query(None)):
+    games = []
+    for (catalog_season, catalog_game), game_config in load_video_catalog().items():
+        if season_code and catalog_season != season_code:
+            continue
+        timeline = load_video_timeline(str(game_config.get("timeline_file", "")))
+        if not game_config.get("youtube_id") or not timeline:
+            continue
+        games.append({
+            "season_code": catalog_season,
+            "game_code": catalog_game,
+            "youtube_id": game_config.get("youtube_id"),
+            "ocr_profile": game_config.get("ocr_profile"),
+        })
+
+    games.sort(key=lambda game: (game["season_code"], int(game["game_code"])))
+    return {
+        "seasons": sorted({game["season_code"] for game in games}),
+        "games": games,
+    }
 
 # Βοηθητική συνάρτηση για τα δευτερόλεπτα
 def time_to_seconds(t_str):
@@ -66,14 +184,19 @@ def get_bool(result, field, default=False):
 
     return value in ("1", "true", "True")
 
-def find_video_seconds(play_time, quarter):
+def find_video_seconds(play_time, quarter, season_code="E2023", game_code="333"):
     target_sec = time_to_seconds(play_time)
     if target_sec is None or not quarter:
         return 0
 
+    game_config = get_video_game_config(season_code, game_code)
+    if not game_config:
+        return 0
+    timeline = load_video_timeline(str(game_config.get("timeline_file", "")))
+
     closest_diff = float("inf")
     matched_video_seconds = 0
-    for entry in TIMELINE:
+    for entry in timeline:
         if entry["quarter"] != quarter:
             continue
         ocr_sec = time_to_seconds(entry["clock"])
@@ -163,7 +286,7 @@ async def get_shots(
         from_turnover = get_bool(result, "isFromTurnover")
         home_score = result.get("homeScore", {}).get("value", "0")
         road_score = result.get("roadScore", {}).get("value", "0")
-        video_seconds = find_video_seconds(play_time, quarter_val)
+        video_seconds = find_video_seconds(play_time, quarter_val, season_code, game_code)
 
         shots.append({
             "action_uri": result.get("action", {}).get("value", ""),
@@ -245,7 +368,7 @@ async def get_match_pbp(game_code: str = Query("170"), season_code: str = Query(
             "isFastBreak": get_bool(row, "isFastBreak"),
             "isSecondChance": get_bool(row, "isSecondChance"),
             "isFromTurnover": get_bool(row, "isFromTurnover"),
-            "videoSeconds": find_video_seconds(play_time, quarter)
+            "videoSeconds": find_video_seconds(play_time, quarter, season_code, game_code)
         })
         
     return {"actions": actions}

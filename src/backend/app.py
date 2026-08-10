@@ -1264,6 +1264,148 @@ async def generate_top_5(difficulty: str = Query("medium")):
         "difficulty": difficulty
     }
 
+@app.get("/api/quiz/fifty-fifty")
+async def generate_fifty_fifty(difficulty: str = Query("medium")):
+    if client is None:
+        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+
+    import random
+
+    # --- ΠΡΟΣΘΗΚΗ: Top Assist Duos και Top Lineups ---
+    categories = [
+        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
+        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
+        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"},
+        {"id": "assist_duos", "name": "Συνεργασίες (Ασίστ & Σκόρερ)", "func": get_top_assist_duos_query, "stat_key": "totalAssists"},
+        {"id": "top_lineups", "name": "Πόντοι Πεντάδας", "func": get_top_lineups_query, "stat_key": "totalPoints"}
+    ]
+    
+    seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
+    
+    for _ in range(30):
+        selected_category = random.choice(categories)
+        random_season_code, season_text = random.choice(seasons)
+        
+        games_query = get_games_list_query(random_season_code)
+        games_data = query_sparql_requests(games_query)
+        games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
+        if not games_bindings: continue
+        
+        random_game_row = random.choice(games_bindings)
+        game_code = random_game_row.get("gameCode", {}).get("value", "")
+        home_team = random_game_row.get("homeLabel", {}).get("value", "Home")
+        away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
+        
+        target_quarter = None
+        filter_type = None
+        filter_id = None
+        context_text = f"στον αγώνα {home_team} - {away_team}"
+        
+        if difficulty in ["medium", "hard"]:
+            target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
+            context_text += f", στο {target_quarter} δεκάλεπτο"
+            
+        # Το on_court filter δεν έχει νόημα όταν ψάχνουμε ολόκληρες πεντάδες ή δίδυμα
+        if difficulty == "hard" and selected_category["id"] not in ["assist_duos", "top_lineups"]:
+            roster_query = get_game_roster_query(game_code)
+            roster_data = query_sparql_requests(roster_query)
+            r_bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
+            p_ids = set()
+            for r in r_bindings:
+                for uri in [r.get("homeLineup", {}).get("value", ""), r.get("roadLineup", {}).get("value", "")]:
+                    if "#Lineup_" in uri:
+                        for pid in uri.split("#Lineup_")[1].split("_"):
+                            if pid: p_ids.add(pid)
+            if p_ids:
+                filter_id = random.choice(list(p_ids))
+                filter_type = "on_court"
+                res = query_sparql_requests(get_player_name_query(filter_id))
+                on_court_name = filter_id
+                if res and res.get("results", {}).get("bindings"):
+                    on_court_name = res["results"]["bindings"][0].get("name", {}).get("value", filter_id)
+                context_text += f", όσο βρισκόταν στο παρκέ ο {on_court_name}"
+
+        stat_query = selected_category["func"](
+            game_code=game_code, 
+            season_code=random_season_code,
+            quarter=target_quarter,
+            filter_type=filter_type,
+            filter_id=filter_id
+        )
+        
+        stat_data = query_sparql_requests(stat_query)
+        bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
+        
+        valid_bindings = [b for b in bindings if int(b.get(selected_category["stat_key"], {}).get("value", 0)) > 0]
+        if not valid_bindings:
+            continue
+            
+        selected_stat_row = random.choice(valid_bindings)
+        stat_val = int(selected_stat_row.get(selected_category["stat_key"], {}).get("value", 0))
+        
+        def get_name(pid):
+            if not pid: return ""
+            res = query_sparql_requests(get_player_name_query(pid))
+            if res and res.get("results", {}).get("bindings"):
+                return res["results"]["bindings"][0].get("name", {}).get("value", pid)
+            return pid
+
+        # --- ΠΡΟΣΘΗΚΗ: Έξυπνη διαχείριση Ονομάτων (Δίδυμα & Πεντάδες) ---
+        player_name = ""
+        if selected_category["id"] == "assist_duos":
+            scorer_pid = selected_stat_row.get("scorer", {}).get("value", "").split("/")[-1]
+            passer_pid = selected_stat_row.get("passer", {}).get("value", "").split("/")[-1]
+            player_name = f"το δίδυμο {get_name(passer_pid)} (Πασέρ) & {get_name(scorer_pid)} (Σκόρερ)"
+        elif selected_category["id"] == "top_lineups":
+            lineup_uri = selected_stat_row.get("lineup", {}).get("value", "")
+            if "#Lineup_" in lineup_uri:
+                pids = [p for p in lineup_uri.split("#Lineup_")[1].split("_") if p]
+                names = [get_name(p) for p in pids]
+                player_name = f"η πεντάδα ({', '.join(names)})"
+            else:
+                player_name = "η συγκεκριμένη πεντάδα"
+        else:
+            pid = selected_stat_row.get("player", {}).get("value", "").split("/")[-1]
+            player_name = f"ο παίκτης {get_name(pid)}"
+            
+        correct_val = stat_val
+        # Στις πεντάδες, τα νούμερα πόντων μπορεί να είναι μεγάλα, άρα βάζουμε +/- 1 ή 2 πόντους διαφορά
+        offset = 1 if correct_val <= 5 else random.choice([1, 2])
+        wrong_val = correct_val + offset if random.choice([True, False]) else correct_val - offset
+        if wrong_val < 0: wrong_val = correct_val + offset
+        
+        options = [correct_val, wrong_val]
+        random.shuffle(options)
+        correct_index = options.index(correct_val)
+        
+        import json
+        prompt = f"""
+        Γράψε ΜΙΑ ΜΟΝΟ σύντομη και ενθουσιώδη ερώτηση παρουσιαστή για το παιχνίδι "50/50".
+        Το υποκείμενο είναι: {player_name}.
+        Η στατιστική κατηγορία είναι: {selected_category['name']}.
+        Το πλαίσιο του αγώνα είναι: {context_text}.
+        
+        Η ερώτηση πρέπει να είναι άμεση (π.χ. Πόσα κοψίματα έκανε ο Τάδε στον αγώνα Δείνα στο 2ο δεκάλεπτο;)
+        Επίστρεψε ΑΥΣΤΗΡΑ ΕΝΑ JSON:
+        {{
+            "question_text": "Η ερώτηση..."
+        }}
+        """
+        try:
+            response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
+            clean_json = response.text.replace("```json", "").replace("```", "").strip()
+            result_data = json.loads(clean_json)
+            
+            result_data["options"] = options
+            result_data["correct_index"] = correct_index
+            result_data["matchup"] = f"{home_team} - {away_team}"
+            result_data["season"] = f"Euroleague Season {season_text}"
+            return result_data
+        except Exception:
+            continue 
+
+    raise HTTPException(status_code=404, detail="Δεν βρέθηκαν κατάλληλα δεδομένα. Δοκίμασε ξανά!")
+
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

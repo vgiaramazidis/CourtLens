@@ -43,11 +43,19 @@ const analyticsTitle = document.getElementById("analyticsTitle");
 const aiPlaySearchInput = document.getElementById("aiPlaySearchInput");
 const aiPlaySearchButton = document.getElementById("aiPlaySearchButton");
 const aiPlaySearchResult = document.getElementById("aiPlaySearchResult");
+const videoStatusMessage = document.getElementById("videoStatusMessage");
 
 window.homePlayersSet = new Set();
 window.roadPlayersSet = new Set();
 window.currentShotsData = [];
 let queryGeneration = 0;
+let activeShotRequestController = null;
+
+function showVideoStatus(message = "", type = "") {
+    if (!videoStatusMessage) return;
+    videoStatusMessage.textContent = message;
+    videoStatusMessage.className = `video-status-message video-shots-only${message ? " visible" : ""}${type ? ` ${type}` : ""}`;
+}
 
 function resetGameSelection() {
     globalSeasonSelect.value = "";
@@ -56,6 +64,10 @@ function resetGameSelection() {
 }
 
 function resetShotQueryState() {
+    if (activeShotRequestController) {
+        activeShotRequestController.abort();
+        activeShotRequestController = null;
+    }
     queryGeneration += 1;
     window.currentShotsData = [];
     window.homePlayersSet.clear();
@@ -66,6 +78,7 @@ function resetShotQueryState() {
     window.activePbpCategories = new Set();
     window.aiPbpActionUris = null;
     window.aiPbpFilterLabel = "";
+    window.lastAiPbpMatches = [];
     window.currentPlayByPlayGameKey = "";
 
     if (typeof window.drawShots === "function") window.drawShots([]);
@@ -114,8 +127,10 @@ function resetShotQueryState() {
         aiPlaySearchButton.disabled = false;
         aiPlaySearchButton.textContent = "AI SEARCH";
     }
+    if (mainActionBtn) mainActionBtn.disabled = false;
 
     if (typeof window.setYouTubeVideo === "function") window.setYouTubeVideo(null);
+    showVideoStatus();
 }
 
 function showAiSearchMessage(message, type = "") {
@@ -126,90 +141,276 @@ function showAiSearchMessage(message, type = "") {
 
 function getAiResultValue(value) {
     if (value === null || value === undefined) return "—";
-    if (typeof value === "object" && "value" in value) return String(value.value);
-    return String(value);
+    const rawValue = typeof value === "object" && "value" in value ? String(value.value) : String(value);
+    if (/^https?:\/\//i.test(rawValue)) {
+        const compactValue = rawValue.split(/[\/#]/).filter(Boolean).pop() || rawValue;
+        try {
+            return decodeURIComponent(compactValue).replace(/[_-]+/g, " ");
+        } catch (_error) {
+            return compactValue.replace(/[_-]+/g, " ");
+        }
+    }
+    return rawValue;
 }
 
-function renderAiSearchResponse(data, playByPlayMatchCount = null) {
+function getAiResultLabel(column) {
+    const normalized = String(column).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const labels = {
+        player: "Player", playername: "Player", assistingplayer: "Assisting player",
+        assistingplayername: "Assisting player", receiver: "Receiver", receivername: "Receiver",
+        team: "Team", teamname: "Team", points: "Points", totalpoints: "Total points",
+        assists: "Assists", totalassists: "Total assists", count: "Total", quarter: "Quarter",
+        clock: "Game clock", playtime: "Game clock", actiontype: "Action", order: "Sequence",
+        sequence: "Sequence", score: "Score", homescore: "Home score", roadscore: "Road score"
+    };
+    if (labels[normalized]) return labels[normalized];
+    return String(column)
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/^./, character => character.toUpperCase());
+}
+
+function getBindingValue(result, candidateKeys) {
+    const normalizedCandidates = new Set(candidateKeys.map(key => key.toLowerCase().replace(/[^a-z0-9]/g, "")));
+    const matchingKey = Object.keys(result || {}).find(key => normalizedCandidates.has(key.toLowerCase().replace(/[^a-z0-9]/g, "")));
+    return matchingKey ? getAiResultValue(result[matchingKey]) : "";
+}
+
+function getFriendlyActionExplanation(action) {
+    const actionType = String(action.action_type || "Action");
+    const player = action.playerName || "A player";
+    const relatedMadeShot = (window.currentPlayByPlayData || [])
+        .filter(candidate => /PointShotMade/.test(candidate.action_type || "")
+            && candidate.quarter === action.quarter
+            && (candidate.playTime === action.playTime
+                || Math.abs(Number(candidate.sequence || 0) - Number(action.sequence || 0)) <= 3))
+        .sort((a, b) => {
+            const sameClockA = a.playTime === action.playTime ? 0 : 1;
+            const sameClockB = b.playTime === action.playTime ? 0 : 1;
+            return sameClockA - sameClockB
+                || Math.abs(Number(a.sequence || 0) - Number(action.sequence || 0))
+                - Math.abs(Number(b.sequence || 0) - Number(action.sequence || 0));
+        })[0];
+
+    if (/Assist/.test(actionType)) {
+        const receiver = relatedMadeShot?.playerName;
+        const shotValue = relatedMadeShot?.action_type?.includes("ThreePoint") ? "three-point basket" : "basket";
+        return receiver
+            ? `${player} created the ${shotValue} scored by ${receiver}.`
+            : `${player} created a scoring chance that a teammate finished.`;
+    }
+    if (/ThreePointShotMade/.test(actionType)) return `${player} made a three-point shot and added 3 points.`;
+    if (/TwoPointShotMade/.test(actionType)) return `${player} made a two-point shot and added 2 points.`;
+    if (/FreeThrowMade/.test(actionType)) return `${player} made a free throw and added 1 point.`;
+    if (/ThreePointShotMissed/.test(actionType)) return `${player} attempted a three-point shot but missed.`;
+    if (/TwoPointShotMissed/.test(actionType)) return `${player} attempted a two-point shot but missed.`;
+    if (/FreeThrowMissed/.test(actionType)) return `${player} attempted a free throw but missed.`;
+    if (/OffensiveRebound/.test(actionType)) return `${player} collected the offensive rebound and kept the attack alive.`;
+    if (/DefensiveRebound/.test(actionType)) return `${player} collected the defensive rebound and ended the opponent's attack.`;
+    if (/Turnover/.test(actionType)) return `${player} lost possession of the ball.`;
+    if (/FoulDrawn/.test(actionType)) return `${player} forced an opponent to commit a foul.`;
+    if (/Foul/.test(actionType)) return `${player} committed a foul.`;
+    if (/Steal/.test(actionType)) return `${player} won possession with a steal.`;
+    if (/Block|ShotRejected/.test(actionType)) return `${player} stopped an opponent's shot with a block.`;
+    return `${player} was involved in this play.`;
+}
+
+function renderFriendlyPlayByPlayResults(actions) {
+    const section = document.createElement("section");
+    section.className = "ai-friendly-actions";
+    const heading = document.createElement("strong");
+    heading.className = "ai-friendly-heading";
+    heading.textContent = "What happened in the game";
+    const explanation = document.createElement("p");
+    explanation.textContent = "Each card below is linked to the matching moment in the Play-by-Play.";
+    section.append(heading, explanation);
+
+    const grid = document.createElement("div");
+    grid.className = "ai-friendly-action-grid";
+    actions.forEach(action => {
+        const card = document.createElement("article");
+        card.className = "ai-friendly-action-card";
+        const description = document.createElement("strong");
+        description.textContent = getFriendlyActionExplanation(action);
+        const details = document.createElement("div");
+        details.className = "ai-friendly-action-meta";
+        const quarter = String(action.quarter || "period").toUpperCase();
+        const clock = action.playTime || "--:--";
+        details.textContent = `${quarter} quarter · ${clock} remaining · Score ${action.homeScore ?? 0}–${action.roadScore ?? 0}`;
+        const badge = document.createElement("span");
+        badge.className = "ai-friendly-action-badge";
+        badge.textContent = getAiResultLabel(String(action.action_type || "Action").replace(/Made|Missed/g, ""));
+        card.append(description, details, badge);
+        grid.appendChild(card);
+    });
+    section.appendChild(grid);
+    return section;
+}
+
+function buildFriendlyDataSummary(results, booleanAnswer) {
+    if (typeof booleanAnswer === "boolean") {
+        return booleanAnswer
+            ? "Yes — the game data confirms that this happened."
+            : "No — the game data does not contain a matching event.";
+    }
+    if (results.length === 0) return "";
+
+    const result = results[0];
+    const player = getBindingValue(result, ["playerName", "player", "scorer", "passer", "assistingPlayerName"]);
+    const percentage = getBindingValue(result, ["percentage", "shotPercentage", "fieldGoalPercentage"]);
+    if (percentage) {
+        const made = getBindingValue(result, ["made", "shotsMade", "madeShots"]);
+        const attempts = getBindingValue(result, ["attempts", "shotAttempts", "totalAttempts"]);
+        const numericPercentage = Number(String(percentage).replace("%", ""));
+        const displayPercentage = Number.isFinite(numericPercentage)
+            ? (Number.isInteger(numericPercentage) ? String(numericPercentage) : numericPercentage.toFixed(1))
+            : String(percentage).replace("%", "");
+        if (made && attempts) {
+            return `${player || "The selected player"} made ${made} of ${attempts} attempts — ${displayPercentage}% shooting.`;
+        }
+        return `${player || "The selected player"} shot ${displayPercentage}% for the requested shot type.`;
+    }
+    const metrics = [
+        { keys: ["totalPoints", "points"], unit: "points", verb: "scored" },
+        { keys: ["totalMissedFreeThrows"], unit: "free throws", verb: "missed" },
+        { keys: ["totalMissedThreePointShots"], unit: "three-point shots", verb: "missed" },
+        { keys: ["totalMissedTwoPointShots"], unit: "two-point shots", verb: "missed" },
+        { keys: ["totalMissedShots"], unit: "shot attempts", verb: "missed" },
+        { keys: ["totalMadeFreeThrows"], unit: "free throws", verb: "made" },
+        { keys: ["totalMadeThreePointShots"], unit: "three-point shots", verb: "made" },
+        { keys: ["totalMadeTwoPointShots"], unit: "two-point shots", verb: "made" },
+        { keys: ["totalMadeShots"], unit: "shots", verb: "made" },
+        { keys: ["totalFreeThrows"], unit: "free-throw attempts", verb: "took" },
+        { keys: ["totalThreePointShots"], unit: "three-point attempts", verb: "took" },
+        { keys: ["totalTwoPointShots"], unit: "two-point attempts", verb: "took" },
+        { keys: ["totalShots"], unit: "shot attempts", verb: "took" },
+        { keys: ["totalAssists", "assists"], unit: "assists", verb: "recorded" },
+        { keys: ["totalRebounds", "rebounds"], unit: "rebounds", verb: "collected" },
+        { keys: ["totalTurnovers", "turnovers"], unit: "turnovers", verb: "recorded" },
+        { keys: ["totalFouls", "fouls"], unit: "fouls", verb: "recorded" },
+        { keys: ["count", "total", "actionCount"], unit: "matching actions", verb: "recorded" }
+    ];
+    for (const metric of metrics) {
+        const value = getBindingValue(result, metric.keys);
+        if (value) {
+            const singularUnits = {
+                "points": "point", "free throws": "free throw", "three-point shots": "three-point shot",
+                "two-point shots": "two-point shot", "shot attempts": "shot attempt", "shots": "shot",
+                "free-throw attempts": "free-throw attempt", "three-point attempts": "three-point attempt",
+                "two-point attempts": "two-point attempt", "assists": "assist", "rebounds": "rebound",
+                "turnovers": "turnover", "fouls": "foul", "matching actions": "matching action"
+            };
+            const displayUnit = Number(value) === 1 ? (singularUnits[metric.unit] || metric.unit) : metric.unit;
+            return player
+                ? `${player} ${metric.verb} ${value} ${displayUnit} in the selected game.`
+                : `The answer is ${value} ${displayUnit} in the selected game.`;
+        }
+    }
+    return "";
+}
+
+function renderAiSearchResponse(data, playByPlayMatchCount = null, question = "") {
     if (!aiPlaySearchResult) return;
     aiPlaySearchResult.className = "ai-search-result visible";
     aiPlaySearchResult.replaceChildren();
 
     const results = Array.isArray(data.results) ? data.results : [];
-    const summary = document.createElement("strong");
-    if (typeof data.boolean === "boolean") {
-        summary.textContent = `Απάντηση: ${data.boolean ? "Ναι" : "Όχι"}`;
-    } else {
-        summary.textContent = results.length === 1 ? "Βρέθηκε 1 αποτέλεσμα" : `Βρέθηκαν ${results.length} αποτελέσματα`;
+    const matchedPlayByPlayActions = Array.isArray(window.lastAiPbpMatches) ? window.lastAiPbpMatches : [];
+    const header = document.createElement("div");
+    header.className = "ai-answer-header";
+    const headingText = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = "AI game answer";
+    headingText.appendChild(title);
+    if (question) {
+        const questionText = document.createElement("span");
+        questionText.className = "ai-answer-question";
+        questionText.textContent = question;
+        headingText.appendChild(questionText);
     }
-    aiPlaySearchResult.appendChild(summary);
+    const countBadge = document.createElement("span");
+    countBadge.className = "ai-answer-count";
+    if (typeof data.boolean === "boolean") {
+        countBadge.textContent = data.boolean ? "YES" : "NO";
+    } else if (playByPlayMatchCount !== null) {
+        countBadge.textContent = playByPlayMatchCount === 1 ? "1 PLAY" : `${playByPlayMatchCount} PLAYS`;
+    } else {
+        countBadge.textContent = results.length === 1 ? "1 RESULT" : `${results.length} RESULTS`;
+    }
+    header.append(headingText, countBadge);
+    aiPlaySearchResult.appendChild(header);
+
+    const selectedGameLabel = globalGameSelect.options[globalGameSelect.selectedIndex]?.textContent?.replace(/^\[[^\]]+\]\s*/, "") || "Selected game";
+    const context = document.createElement("div");
+    context.className = "ai-answer-context";
+    context.textContent = `${selectedGameLabel} · ${globalSeasonSelect.options[globalSeasonSelect.selectedIndex]?.textContent || globalSeasonSelect.value}`;
+    aiPlaySearchResult.appendChild(context);
 
     if (playByPlayMatchCount !== null) {
         const playByPlayNotice = document.createElement("div");
-        playByPlayNotice.style.marginTop = "6px";
-        playByPlayNotice.style.color = "#5148c8";
-        playByPlayNotice.style.fontWeight = "800";
-        playByPlayNotice.textContent = playByPlayMatchCount === 1
-            ? "Το Play-by-Play φιλτραρίστηκε σε 1 ενέργεια."
-            : `Το Play-by-Play φιλτραρίστηκε σε ${playByPlayMatchCount} ενέργειες.`;
+        playByPlayNotice.className = playByPlayMatchCount > 0 ? "ai-filter-success" : "ai-filter-empty";
+        playByPlayNotice.textContent = playByPlayMatchCount === 0
+            ? "No matching Play-by-Play actions were found."
+            : (playByPlayMatchCount === 1
+                ? "✓ The Play-by-Play now shows the matching action."
+                : `✓ The Play-by-Play now shows ${playByPlayMatchCount} matching actions.`);
         aiPlaySearchResult.appendChild(playByPlayNotice);
+    }
+
+    const friendlySummary = buildFriendlyDataSummary(results, data.boolean);
+    if (friendlySummary) {
+        const summary = document.createElement("div");
+        summary.className = "ai-friendly-summary";
+        summary.textContent = friendlySummary;
+        aiPlaySearchResult.appendChild(summary);
+    }
+
+    if (matchedPlayByPlayActions.length > 0) {
+        aiPlaySearchResult.appendChild(renderFriendlyPlayByPlayResults(matchedPlayByPlayActions));
+        return;
     }
 
     if (results.length > 0) {
         const columns = [...new Set(results.flatMap(result => Object.keys(result)))].filter(column => {
             const normalized = column.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return !["action", "actionuri", "play", "playuri", "event", "eventuri"].includes(normalized);
+            return !["action", "actionuri", "play", "playuri", "event", "eventuri", "order", "sequence"].includes(normalized);
         });
         if (columns.length === 0) {
             if (typeof data.boolean !== "boolean" && playByPlayMatchCount === null) {
                 const emptyMessage = document.createElement("div");
-                emptyMessage.textContent = "Τα αποτελέσματα αντιστοιχούν σε Play-by-Play ενέργειες.";
-                emptyMessage.style.marginTop = "6px";
+                emptyMessage.className = "ai-answer-empty";
+                emptyMessage.textContent = "The matching actions are available in the Play-by-Play panel.";
                 aiPlaySearchResult.appendChild(emptyMessage);
             }
         } else {
-            const table = document.createElement("table");
-            table.className = "ai-result-table";
-
-            const headerRow = document.createElement("tr");
-            columns.forEach(column => {
-                const th = document.createElement("th");
-                th.textContent = column;
-                headerRow.appendChild(th);
-            });
-            const thead = document.createElement("thead");
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-
-            const tbody = document.createElement("tbody");
-            results.forEach(result => {
-                const row = document.createElement("tr");
+            const cards = document.createElement("div");
+            cards.className = "ai-answer-grid";
+            results.forEach((result, index) => {
+                const card = document.createElement("article");
+                card.className = "ai-answer-item";
+                card.setAttribute("aria-label", `Result ${index + 1}`);
                 columns.forEach(column => {
-                    const td = document.createElement("td");
-                    td.textContent = getAiResultValue(result[column]);
-                    row.appendChild(td);
+                    if (!(column in result)) return;
+                    const field = document.createElement("div");
+                    field.className = "ai-answer-field";
+                    const label = document.createElement("span");
+                    label.className = "ai-answer-label";
+                    label.textContent = getAiResultLabel(column);
+                    const value = document.createElement("strong");
+                    value.className = "ai-answer-value";
+                    value.textContent = getAiResultValue(result[column]);
+                    field.append(label, value);
+                    card.appendChild(field);
                 });
-                tbody.appendChild(row);
+                cards.appendChild(card);
             });
-            table.appendChild(tbody);
-            aiPlaySearchResult.appendChild(table);
+            aiPlaySearchResult.appendChild(cards);
         }
-    } else if (typeof data.boolean !== "boolean") {
+    } else if (typeof data.boolean !== "boolean" && playByPlayMatchCount !== 0) {
         const emptyMessage = document.createElement("div");
-        emptyMessage.textContent = "Δεν βρέθηκαν εγγραφές για αυτή την ερώτηση.";
-        emptyMessage.style.marginTop = "6px";
+        emptyMessage.className = "ai-answer-empty";
+        emptyMessage.textContent = "No matching game data was found for this question.";
         aiPlaySearchResult.appendChild(emptyMessage);
-    }
-
-    if (data.generated_query) {
-        const details = document.createElement("details");
-        details.className = "ai-query-details";
-        const detailsSummary = document.createElement("summary");
-        detailsSummary.textContent = "Generated SPARQL";
-        const query = document.createElement("pre");
-        query.textContent = data.generated_query;
-        details.append(detailsSummary, query);
-        aiPlaySearchResult.appendChild(details);
     }
 }
 
@@ -236,7 +437,10 @@ async function runAiPlaySearch() {
     aiPlaySearchButton.disabled = true;
     aiPlaySearchButton.textContent = "SEARCHING...";
     aiPlaySearchResult?.setAttribute("aria-busy", "true");
-    showAiSearchMessage("Το AI δημιουργεί και εκτελεί το SPARQL query...", "loading");
+    showAiSearchMessage("The AI is searching this game's data...", "loading");
+    if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
+        window.clearAiPlayByPlayFilter();
+    }
 
     try {
         const [data, loadedPlayByPlay] = await Promise.all([
@@ -258,12 +462,17 @@ async function runAiPlaySearch() {
         if (data.playbyplay_filter && typeof window.applyAiPlayByPlayFilter === "function") {
             playByPlayMatchCount = window.applyAiPlayByPlayFilter(
                 data.action_uris || [],
-                message.length > 60 ? `${message.slice(0, 57)}...` : message
+                message.length > 60 ? `${message.slice(0, 57)}...` : message,
+                data.playbyplay_action_kind || ""
             );
         } else if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
             window.clearAiPlayByPlayFilter();
         }
-        renderAiSearchResponse(data, playByPlayMatchCount);
+        renderAiSearchResponse(data, playByPlayMatchCount, message);
+    } catch (error) {
+        if (activeQueryGeneration === queryGeneration && error.name !== "AbortError") {
+            showAiSearchMessage("Το AI Search ή το Play-by-Play δεν απάντησε. Δοκίμασε ξανά.", "error");
+        }
     } finally {
         if (activeQueryGeneration === queryGeneration) {
             aiPlaySearchButton.disabled = false;
@@ -307,7 +516,7 @@ function setSidebarFiltersForMode(mode) {
     if (globalSeasonSelect && globalSeasonSelect.parentElement) globalSeasonSelect.parentElement.style.display = displaySelects;
     if (globalGameSelect && globalGameSelect.parentElement) globalGameSelect.parentElement.style.display = displaySelects;
     if (mainActionBtn) mainActionBtn.style.display = isQuizMode ? "none" : "block";
-    if (document.getElementById("tryGameBtn")) document.getElementById("tryGameBtn").style.display = isQuizMode ? "none" : "block";
+    if (document.getElementById("tryGameBtn")) document.getElementById("tryGameBtn").style.display = mode === "top-lineups" ? "block" : "none";
 
     // 2. Κρύβουμε όλα τα υπόλοιπα φίλτρα
     if (playerFilterGroup) playerFilterGroup.style.display = isVideoMode || isQuizMode ? "none" : "block";
@@ -375,13 +584,13 @@ mainModeSelect.addEventListener("change", (e) => {
         
         if (tryGameBtn) {
             tryGameBtn.innerText = "TRY GAME";
-            tryGameBtn.style.display = "block"; // Το εμφανίζουμε ξανά γιατί μπορεί να είχε κρυφτεί πατώντας GAME
+            tryGameBtn.style.display = e.target.value === "top-lineups" ? "block" : "none";
         }
 
         // 4. Scroll πίσω στην κορυφή (στα Top Lineups)
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
-        return; // Σταματάμε εδώ την εκτέλεση! Δεν θέλουμε να κάνει νέα αναζήτηση.
+        // Continue with the selected section so changing mode also exits the simulator cleanly.
     }
     const mode = e.target.value;
     const tryGameBtn = document.getElementById("tryGameBtn");
@@ -415,7 +624,8 @@ mainModeSelect.addEventListener("change", (e) => {
     if (mode === "euro-chart" || mode === "video-shots") {
         const isGameMode = mode === "euro-chart";
 
-        shotSearchWrapper.style.display = "flex";
+        // Video mode uses the responsive CSS grid; Euro Chart keeps the side-by-side flex layout.
+        shotSearchWrapper.style.display = isGameMode ? "flex" : "";
         setShotViewMode(mode);
         mainActionBtn.innerText = isGameMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)";
     } 
@@ -555,7 +765,11 @@ async function loadGamesForSeason(seasonCode) {
     }
 }
 
-globalSeasonSelect.addEventListener("change", (e) => loadGamesForSeason(e.target.value));
+globalSeasonSelect.addEventListener("change", (e) => {
+    resetShotQueryState();
+    loadGamesForSeason(e.target.value);
+});
+globalGameSelect.addEventListener("change", () => resetShotQueryState());
 
 
 // === ΚΕΝΤΡΙΚΟΣ "ΑΤΡΩΤΟΣ" ΕΛΕΓΧΟΣ ΚΛΙΚ ΓΙΑ ΟΛΑ ΤΑ CHECKBOXES (EVENT DELEGATION) ===
@@ -582,8 +796,29 @@ document.addEventListener("change", (e) => {
 });
 
 
+function normalizeQuarterLabel(quarter) {
+    const value = String(quarter || "").trim().toUpperCase();
+    const regulation = { "1": "1st", "Q1": "1st", "1ST": "1st", "2": "2nd", "Q2": "2nd", "2ND": "2nd", "3": "3rd", "Q3": "3rd", "3RD": "3rd", "4": "4th", "Q4": "4th", "4TH": "4th" };
+    if (regulation[value]) return regulation[value];
+    if (["OT", "1OT", "OT1"].includes(value)) return "OT";
+    const overtimeMatch = value.match(/^(?:OT(\d+)|(\d+)OT)$/);
+    if (overtimeMatch) {
+        const overtimeNumber = Number(overtimeMatch[1] || overtimeMatch[2]);
+        return overtimeNumber <= 1 ? "OT" : `${overtimeNumber}OT`;
+    }
+    return String(quarter || "").trim();
+}
+
+function quarterSortValue(quarter) {
+    const normalized = normalizeQuarterLabel(quarter);
+    const regulationOrder = { "1st": 0, "2nd": 1, "3rd": 2, "4th": 3, "OT": 4 };
+    if (normalized in regulationOrder) return regulationOrder[normalized];
+    const overtimeMatch = normalized.match(/^(\d+)OT$/);
+    return overtimeMatch ? 3 + Number(overtimeMatch[1]) : 99;
+}
+
 // === ΔΥΝΑΜΙΚΗ ΔΗΜΙΟΥΡΓΙΑ QUARTERS ΜΕ ΤΟ ΣΚΟΡ ΤΟΥΣ ===
-function buildDynamicQuarters(shotsData) {
+function buildDynamicQuarters(shotsData, preserveSelection = false) {
     const quartersBars = document.querySelectorAll('.quarters-bar');
     if (quartersBars.length === 0) return;
 
@@ -593,23 +828,24 @@ function buildDynamicQuarters(shotsData) {
 
     shotsData.forEach(shot => {
         if (shot.quarter) {
-            if (!quartersMap.has(shot.quarter)) {
-                quartersMap.set(shot.quarter, { maxHome: 0, maxRoad: 0 });
+            const quarter = normalizeQuarterLabel(shot.quarter);
+            if (!quartersMap.has(quarter)) {
+                quartersMap.set(quarter, { maxHome: 0, maxRoad: 0 });
             }
-            const qData = quartersMap.get(shot.quarter);
+            const qData = quartersMap.get(quarter);
             if (shot.homeScore !== undefined && shot.homeScore > 0) qData.maxHome = Math.max(qData.maxHome, shot.homeScore);
             if (shot.roadScore !== undefined && shot.roadScore > 0) qData.maxRoad = Math.max(qData.maxRoad, shot.roadScore);
         }
     });
 
-    const order = ["1st", "2nd", "3rd", "4th", "OT", "2OT", "3OT", "4OT", "5OT"];
-    const uniqueQuarters = Array.from(quartersMap.keys()).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const uniqueQuarters = Array.from(quartersMap.keys()).sort((a, b) => quarterSortValue(a) - quarterSortValue(b));
 
     quartersBars.forEach(bar => {
-        // Διατηρούμε την κατάσταση αν ήταν ήδη τσεκαρισμένα
-        const previouslyChecked = new Set();
-        bar.querySelectorAll('.quarter-cb:checked').forEach(cb => previouslyChecked.add(cb.value));
-        const hasPrevious = previouslyChecked.size > 0;
+        // Preserve explicit choices, while newly discovered overtime periods default to checked.
+        const previousStates = new Map();
+        if (preserveSelection) {
+            bar.querySelectorAll('.quarter-cb').forEach(cb => previousStates.set(normalizeQuarterLabel(cb.value), cb.checked));
+        }
 
         bar.innerHTML = "";
         uniqueQuarters.forEach(q => {
@@ -621,7 +857,7 @@ function buildDynamicQuarters(shotsData) {
                 scoreLabel = `<span style="font-size: 0.65rem; color: #777; margin-top:2px; font-weight:bold;">${qData.maxHome} - ${qData.maxRoad}</span>`;
             }
 
-            const isChecked = hasPrevious ? previouslyChecked.has(q) : true;
+            const isChecked = previousStates.has(q) ? previousStates.get(q) : true;
 
             const qBox = document.createElement("div");
             qBox.className = "quarter-box";
@@ -684,7 +920,7 @@ window.applyChartFilters = function() {
     const filteredShots = window.currentShotsData.filter(shot => {
         // The selectable roster belongs to Video mode; Euro Chart uses clicked-shot lineups.
         const playerMatch = activePlayers.size === 0 || activePlayers.has(shot.playerName);
-        const quarterMatch = !shot.quarter || activeQuarters.has(shot.quarter);
+        const quarterMatch = !shot.quarter || activeQuarters.has(normalizeQuarterLabel(shot.quarter));
         
         if (!playerMatch || !quarterMatch) return false;
 
@@ -811,7 +1047,7 @@ mainActionBtn.addEventListener("click", async () => {
                         <p>${window.quizState.hints[0]}</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="quizAnswerInput" placeholder="Μάντεψε τον παίκτη (π.χ. Sloukas)..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
+                        <input type="text" id="quizAnswerInput" placeholder="Μάντεψε το όνομα του παίκτη..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
                         <button id="quizAnswerBtn" style="padding: 12px 25px; background: #6c63ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;">ΑΠΑΝΤΗΣΗ</button>
                     </div>
                 </div>
@@ -877,27 +1113,44 @@ mainActionBtn.addEventListener("click", async () => {
     }
 
     if (mode === "euro-chart" || mode === "video-shots") {
+        if (activeShotRequestController) activeShotRequestController.abort();
+        const requestController = new AbortController();
+        activeShotRequestController = requestController;
+        queryGeneration += 1;
         const activeQueryGeneration = queryGeneration;
-        const [shots, playByPlayActions, videoConfig] = await Promise.all([
-            fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd),
-            isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason) : Promise.resolve([]),
-            isVideoShotMode ? fetchVideoConfig(selectedGame, selectedSeason) : Promise.resolve(null)
-        ]);
-        if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
-
-        if (isVideoShotMode && typeof window.setYouTubeVideo === "function") {
-            window.setYouTubeVideo(
-                videoConfig?.available ? videoConfig.youtube_id : null,
-                videoConfig?.playback_lead_seconds ?? 5
-            );
+        mainActionBtn.disabled = true;
+        mainActionBtn.innerText = "ΦΟΡΤΩΣΗ...";
+        if (isVideoShotMode) {
+            showVideoStatus("Φόρτωση video, σουτ και Play-by-Play...");
+            const pbpList = document.getElementById("pbpList");
+            if (pbpList) pbpList.innerHTML = "<li class='pbp-filter-empty'>Φόρτωση Play-by-Play...</li>";
         }
-        window.currentShotsData = shots;
 
-        // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα
-        buildDynamicQuarters(shots);
+        try {
+            const [shots, playByPlayActions, videoConfig] = await Promise.all([
+                fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd, null, requestController.signal),
+                isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason, requestController.signal) : Promise.resolve([]),
+                isVideoShotMode ? fetchVideoConfig(selectedGame, selectedSeason, requestController.signal) : Promise.resolve(null)
+            ]);
+            if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
+            showVideoStatus();
 
-        if (selectedGame && selectedSeason !== "ALL") {
-            try {
+            if (isVideoShotMode && typeof window.setYouTubeVideo === "function") {
+                window.setYouTubeVideo(
+                    videoConfig?.available ? videoConfig.youtube_id : null,
+                    videoConfig?.playback_lead_seconds ?? 5
+                );
+                if (!videoConfig?.available || !videoConfig?.timeline_available) {
+                    showVideoStatus("Δεν υπάρχει διαθέσιμο ή συγχρονισμένο video για αυτό το παιχνίδι.", "error");
+                }
+            }
+            window.currentShotsData = shots;
+
+            // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα
+            buildDynamicQuarters(shots);
+
+            if (selectedGame && selectedSeason !== "ALL") {
+                try {
                 const opt = globalGameSelect.options[globalGameSelect.selectedIndex];
                 if (opt && opt.text.includes("vs")) {
                     const matchText = opt.text.includes("] ") ? opt.text.split("] ")[1] : opt.text;
@@ -918,7 +1171,8 @@ mainActionBtn.addEventListener("click", async () => {
                     if (roadTitleEl) roadTitleEl.innerText = roadTeamName.toUpperCase();
                 }
 
-                const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=${selectedGame}&season_code=${selectedSeason}`);
+                const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=${selectedGame}&season_code=${selectedSeason}`, { signal: requestController.signal });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
 
@@ -964,14 +1218,35 @@ mainActionBtn.addEventListener("click", async () => {
                 const rsa = document.querySelector('.euro-roster.road .roster-sub input');
                 if (rsa) rsa.checked = true;
 
-            } catch (error) { console.error("Σφάλμα στα lineups:", error); }
-        }
+                } catch (error) {
+                    if (error.name === "AbortError") throw error;
+                    console.error("Σφάλμα στα lineups:", error);
+                    showVideoStatus("Τα σουτ φορτώθηκαν, αλλά το roster δεν ήταν διαθέσιμο.", "error");
+                }
+            }
 
-        if (isVideoShotMode && typeof window.setPlayByPlayActions === "function") {
-            window.setPlayByPlayActions(playByPlayActions);
-            window.currentPlayByPlayGameKey = `${selectedSeason}:${selectedGame}`;
+            if (isVideoShotMode && typeof window.setPlayByPlayActions === "function") {
+                window.setPlayByPlayActions(playByPlayActions);
+                window.currentPlayByPlayGameKey = `${selectedSeason}:${selectedGame}`;
+            }
+            applyChartFilters();
+        } catch (error) {
+            if (error.name !== "AbortError" && activeQueryGeneration === queryGeneration) {
+                console.error("Σφάλμα στη φόρτωση του shot view:", error);
+                if (isVideoShotMode) {
+                    showVideoStatus("Αποτυχία φόρτωσης του video game. Έλεγξε ότι το backend τρέχει και δοκίμασε ξανά.", "error");
+                    if (typeof window.setPlayByPlayActions === "function") window.setPlayByPlayActions([]);
+                } else {
+                    window.alert("Αποτυχία φόρτωσης των σουτ. Δοκίμασε ξανά.");
+                }
+            }
+        } finally {
+            if (activeShotRequestController === requestController) activeShotRequestController = null;
+            if (activeQueryGeneration === queryGeneration) {
+                mainActionBtn.disabled = false;
+                mainActionBtn.innerText = isVideoShotMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)";
+            }
         }
-        applyChartFilters();
     } 
     else {
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold;'>Φόρτωση δεδομένων...</div>";
@@ -1341,7 +1616,8 @@ if (simBtn) {
         const p4 = slotPF.getAttribute("data-id");
         const p5 = slotC.getAttribute("data-id");
         
-        const gameCode = document.getElementById("analyticsGameCodeInput") ? document.getElementById("analyticsGameCodeInput").value.trim() : "333";
+        const gameCodeInput = document.getElementById("analyticsGameCodeInput");
+        const gameCode = gameCodeInput?.value.trim() || window.currentScenario?.game_code || "";
         
         resultDiv.innerHTML = `<span style="color: #f39c12; font-size: 1.2rem; font-weight: bold;">Προσομοίωση αγώνα σε εξέλιξη... 🎲</span>`;
 

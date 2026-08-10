@@ -28,15 +28,19 @@ except ImportError:  # Direct script execution from the repository root.
 
 
 REQUIRED_QUARTERS = ("1st", "2nd", "3rd", "4th")
+START_COVERAGE_TOLERANCE_SECONDS = 15
+END_COVERAGE_TOLERANCE_SECONDS = 5
+MAX_CLOCK_GAP_SECONDS = 10
 
 
 def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
     errors: list[str] = []
+    warnings: list[str] = []
     try:
         with path.open(newline="", encoding="utf-8") as handle:
             rows = list(csv.DictReader(handle))
     except FileNotFoundError:
-        return {"rows": 0, "quarters": {}}, ["file is missing"]
+        return {"rows": 0, "quarters": {}, "warnings": []}, ["file is missing"]
 
     by_quarter: dict[str, list[dict[str, str]]] = defaultdict(list)
     previous_video_time = -1.0
@@ -63,6 +67,9 @@ def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
     for quarter, quarter_rows in by_quarter.items():
         clocks = [clock_to_seconds(row["game_clock"]) for row in quarter_rows]
         valid_clocks = [value for value in clocks if value is not None]
+        if not valid_clocks:
+            errors.append(f"{quarter} has no readable clock values")
+            continue
         start_clock = valid_clocks[0]
         end_clock = valid_clocks[-1]
         expected_start = 600 if quarter in REQUIRED_QUARTERS else 300
@@ -70,10 +77,20 @@ def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
             errors.append(f"{quarter} clock exceeds its period duration")
         if start_clock < expected_start - 60:
             errors.append(f"{quarter} starts too late at {quarter_rows[0]['game_clock']}")
+        elif start_clock < expected_start - START_COVERAGE_TOLERANCE_SECONDS:
+            warnings.append(f"{quarter} starts at {quarter_rows[0]['game_clock']}")
         if end_clock > 15:
             errors.append(f"{quarter} ends too early at {quarter_rows[-1]['game_clock']}")
+        elif end_clock > END_COVERAGE_TOLERANCE_SECONDS:
+            warnings.append(f"{quarter} ends at {quarter_rows[-1]['game_clock']}")
         if any(current > previous for previous, current in zip(valid_clocks, valid_clocks[1:])):
             errors.append(f"{quarter} clock is not monotonic")
+        maximum_clock_gap = max(
+            (previous - current for previous, current in zip(valid_clocks, valid_clocks[1:])),
+            default=0,
+        )
+        if maximum_clock_gap > MAX_CLOCK_GAP_SECONDS:
+            warnings.append(f"{quarter} has a {maximum_clock_gap:.0f}s clock coverage gap")
         for previous_row, current_row in zip(quarter_rows, quarter_rows[1:]):
             previous_clock = clock_to_seconds(previous_row["game_clock"])
             current_clock = clock_to_seconds(current_row["game_clock"])
@@ -92,13 +109,14 @@ def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
             "points": len(quarter_rows),
             "start": quarter_rows[0]["game_clock"],
             "end": quarter_rows[-1]["game_clock"],
+            "max_clock_gap": maximum_clock_gap,
         }
 
     for quarter in REQUIRED_QUARTERS:
         if quarter not in by_quarter:
             errors.append(f"missing {quarter}")
 
-    return {"rows": len(rows), "quarters": summary}, errors
+    return {"rows": len(rows), "quarters": summary, "warnings": warnings}, errors
 
 
 def repair_timeline(input_path: Path, output_path: Path) -> tuple[int, int]:
@@ -121,8 +139,15 @@ def repair_timeline(input_path: Path, output_path: Path) -> tuple[int, int]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog-file", type=Path, default=DEFAULT_CATALOG_FILE)
+    parser.add_argument("--season-code")
+    parser.add_argument("--game-code")
     parser.add_argument("--enabled-only", action="store_true")
     parser.add_argument("--existing-only", action="store_true")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Treat incomplete period coverage warnings as validation failures",
+    )
     parser.add_argument("--repair-file", type=Path)
     parser.add_argument("--repair-output", type=Path)
     args = parser.parse_args()
@@ -136,6 +161,10 @@ def main() -> int:
 
     failures = 0
     for game in load_game_catalog(args.catalog_file.resolve()):
+        if args.season_code and str(game.get("season_code")) != args.season_code:
+            continue
+        if args.game_code and str(game.get("game_code")) != args.game_code:
+            continue
         if args.enabled_only and not game.get("enabled"):
             continue
         path = resolve_repo_path(str(game.get("timeline_file", "")))
@@ -143,6 +172,7 @@ def main() -> int:
             continue
         summary, errors = validate_timeline(path)
         label = f"{game.get('season_code')}/{game.get('game_code')}"
+        warnings = summary.get("warnings", [])
         if errors:
             failures += 1
             print(f"FAIL {label}: {'; '.join(errors)}")
@@ -152,7 +182,15 @@ def main() -> int:
             f"{quarter} {details['start']}->{details['end']} ({details['points']})"
             for quarter, details in quarters.items()
         )
-        print(f"OK {label}: {summary['rows']} points; {coverage}")
+        if warnings:
+            if args.strict:
+                failures += 1
+                status = "FAIL"
+            else:
+                status = "WARN"
+            print(f"{status} {label}: {summary['rows']} points; {coverage}; {'; '.join(warnings)}")
+        else:
+            print(f"OK {label}: {summary['rows']} points; {coverage}")
     return 1 if failures else 0
 
 

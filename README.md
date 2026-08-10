@@ -201,7 +201,18 @@ Validate all timeline files that currently exist:
   --existing-only
 ```
 
-The new game must be reported as `OK` before it is enabled.
+Run strict validation for a new game before it is enabled:
+
+```bash
+.venv/bin/python \
+  src/data_pipeline/validate_video_timelines.py \
+  --catalog-file src/data_pipeline/video_games.json \
+  --season-code E2024 \
+  --game-code 123 \
+  --strict
+```
+
+The new game must be reported as `OK` before it is enabled. `WARN` identifies incomplete start, end, or internal clock coverage and becomes a failure in strict mode.
 
 The validator checks:
 
@@ -213,6 +224,7 @@ The validator checks:
 - Period clocks that do not exceed their valid duration.
 - Clock decreases that remain physically possible relative to elapsed video time.
 - Start and end coverage for each detected period.
+- Large internal clock-coverage gaps that may leave Play-by-Play actions without a timestamp.
 
 Do not enable a timeline reported as `FAIL`. Correct the start hint or OCR profile and run OCR again.
 
@@ -239,7 +251,10 @@ Validate every enabled timeline:
 Run the OCR unit tests:
 
 ```bash
-.venv/bin/python -m unittest src.data_pipeline.test_video_ocr
+.venv/bin/python -m unittest \
+  src.data_pipeline.test_video_ocr \
+  src.data_pipeline.test_video_timelines \
+  src.backend.test_video_sync
 ```
 
 Check the frontend JavaScript and the Git diff:

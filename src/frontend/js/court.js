@@ -291,6 +291,15 @@ window.currentPlayByPlayData = [];
 window.activePbpCategories = new Set();
 window.aiPbpActionUris = null;
 window.aiPbpFilterLabel = "";
+window.lastAiPbpMatches = [];
+window.pbpVisibleCount = 80;
+const PBP_RENDER_BATCH_SIZE = 80;
+
+function resetPlayByPlayWindow() {
+    window.pbpVisibleCount = PBP_RENDER_BATCH_SIZE;
+    const container = document.getElementById("pbpContainer");
+    if (container) container.scrollTop = 0;
+}
 
 function getActionCategory(action) {
     const type = String(action.action_type || "");
@@ -343,6 +352,7 @@ function renderActionTypeFilters(actions) {
         label.querySelector("input").addEventListener("change", event => {
             if (event.target.checked) window.activePbpCategories.add(category.id);
             else window.activePbpCategories.delete(category.id);
+            resetPlayByPlayWindow();
             renderPlayByPlay(window.currentPlayByPlayData);
         });
         container.appendChild(label);
@@ -358,6 +368,7 @@ function renderActionTypeFilters(actions) {
             container.querySelectorAll("input[type='checkbox']").forEach(checkbox => {
                 checkbox.checked = selectAll;
             });
+            resetPlayByPlayWindow();
             renderPlayByPlay(window.currentPlayByPlayData);
         });
         container.appendChild(button);
@@ -372,19 +383,51 @@ window.setPlayByPlayActions = function(actions) {
     window.currentPlayByPlayData = Array.isArray(actions) ? actions : [];
     window.aiPbpActionUris = null;
     window.aiPbpFilterLabel = "";
+    window.lastAiPbpMatches = [];
     window.activePbpCategories = new Set(
         window.currentPlayByPlayData.map(action => getActionCategory(action).id)
     );
+    resetPlayByPlayWindow();
     renderActionTypeFilters(window.currentPlayByPlayData);
     renderPlayByPlay(window.currentPlayByPlayData);
 };
 
-window.applyAiPlayByPlayFilter = function(actionUris, label = "") {
+window.applyAiPlayByPlayFilter = function(actionUris, label = "", actionKind = "") {
     const requestedUris = new Set((Array.isArray(actionUris) ? actionUris : []).filter(Boolean));
-    const matchingActions = window.currentPlayByPlayData.filter(action => requestedUris.has(action.uri));
+    const exactMatches = window.currentPlayByPlayData.filter(action => requestedUris.has(action.uri));
+    let matchingActions = exactMatches;
+
+    // Older/generated queries may return the assisted shot URI. For assist questions,
+    // display the linked PBP-style Assist event at the same clock/sequence instead.
+    if (actionKind === "assists") {
+        const assistActions = window.currentPlayByPlayData.filter(action => getActionCategory(action).id === "assists");
+        const directlyMatchedAssists = exactMatches.filter(action => getActionCategory(action).id === "assists");
+        const nearbyAssists = exactMatches
+            .filter(action => getActionCategory(action).id !== "assists")
+            .map(action => {
+                const actionSequence = Number(action.sequence || 0);
+                const candidates = assistActions.filter(assist =>
+                    String(assist.quarter || "").toUpperCase() === String(action.quarter || "").toUpperCase()
+                    && (assist.playTime === action.playTime || Math.abs(Number(assist.sequence || 0) - actionSequence) <= 3)
+                );
+                return candidates.sort((a, b) => {
+                    const sameClockA = a.playTime === action.playTime ? 0 : 1;
+                    const sameClockB = b.playTime === action.playTime ? 0 : 1;
+                    return sameClockA - sameClockB
+                        || Math.abs(Number(a.sequence || 0) - actionSequence) - Math.abs(Number(b.sequence || 0) - actionSequence);
+                })[0];
+            })
+            .filter(Boolean);
+        matchingActions = [...new Map(
+            [...directlyMatchedAssists, ...nearbyAssists].map(action => [action.uri, action])
+        ).values()];
+    }
+
     window.aiPbpActionUris = new Set(matchingActions.map(action => action.uri));
     window.aiPbpFilterLabel = label;
+    window.lastAiPbpMatches = matchingActions;
     matchingActions.forEach(action => window.activePbpCategories.add(getActionCategory(action).id));
+    resetPlayByPlayWindow();
     renderActionTypeFilters(window.currentPlayByPlayData);
     renderPlayByPlay(window.currentPlayByPlayData);
     document.getElementById("pbpContainer")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -394,9 +437,11 @@ window.applyAiPlayByPlayFilter = function(actionUris, label = "") {
 window.clearAiPlayByPlayFilter = function() {
     window.aiPbpActionUris = null;
     window.aiPbpFilterLabel = "";
+    window.lastAiPbpMatches = [];
     window.activePbpCategories = new Set(
         window.currentPlayByPlayData.map(action => getActionCategory(action).id)
     );
+    resetPlayByPlayWindow();
     renderActionTypeFilters(window.currentPlayByPlayData);
     renderPlayByPlay(window.currentPlayByPlayData);
 };
@@ -446,6 +491,7 @@ function renderPlayByPlay(actions) {
         const timeDifference = clockSeconds(b.playTime) - clockSeconds(a.playTime);
         return quarterDifference || timeDifference || Number(a.sequence || 0) - Number(b.sequence || 0);
     });
+    const visibleActions = sortedActions.slice(0, Math.max(PBP_RENDER_BATCH_SIZE, window.pbpVisibleCount));
     const homeTeamName = document.getElementById("homeTeamTitle")?.textContent?.trim() || "HOME TEAM";
     const roadTeamName = document.getElementById("roadTeamTitle")?.textContent?.trim() || "ROAD TEAM";
 
@@ -458,7 +504,7 @@ function renderPlayByPlay(actions) {
     list.appendChild(headings);
 
     let renderedQuarter = null;
-    sortedActions.forEach(action => {
+    visibleActions.forEach(action => {
         const quarter = String(action.quarter || "-").toUpperCase();
         if (quarter !== renderedQuarter) {
             renderedQuarter = quarter;
@@ -519,4 +565,27 @@ function renderPlayByPlay(actions) {
         });
         list.appendChild(li);
     });
+
+    if (visibleActions.length < sortedActions.length) {
+        const pagination = document.createElement("li");
+        pagination.className = "pbp-pagination";
+
+        const status = document.createElement("span");
+        status.textContent = `Showing ${visibleActions.length} of ${sortedActions.length} actions`;
+
+        const loadMore = document.createElement("button");
+        loadMore.type = "button";
+        loadMore.className = "pbp-load-more";
+        loadMore.textContent = `SHOW ${Math.min(PBP_RENDER_BATCH_SIZE, sortedActions.length - visibleActions.length)} MORE`;
+        loadMore.addEventListener("click", () => {
+            const container = document.getElementById("pbpContainer");
+            const previousScrollTop = container?.scrollTop || 0;
+            window.pbpVisibleCount += PBP_RENDER_BATCH_SIZE;
+            renderPlayByPlay(window.currentPlayByPlayData);
+            if (container) container.scrollTop = previousScrollTop;
+        });
+
+        pagination.append(status, loadMore);
+        list.appendChild(pagination);
+    }
 }

@@ -1,6 +1,7 @@
 // api.js
 
-const API_BASE_URL = "http://localhost:8000"; 
+const API_BASE_URL = window.EUROLEAGUE_API_BASE_URL
+    || `${window.location.protocol}//${window.location.hostname || "localhost"}:8000`;
 
 function appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId) {
     if (seasonCode && seasonCode !== "ALL") params.append("season_code", seasonCode);
@@ -14,7 +15,7 @@ function appendCommonParams(params, seasonCode, gameCode, quarter, minStart, min
     }
 }
 
-async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = null, filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, lineupUri = null) {
+async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCode = null, seasonCode = null, filterType = null, filterId = null, quarter = null, minStart = null, minEnd = null, lineupUri = null, signal = null) {
     try {
         const params = new URLSearchParams();
         appendCommonParams(params, seasonCode, gameCode, quarter, minStart, minEnd, filterType, filterId);
@@ -25,27 +26,59 @@ async function fetchFilteredShots(playerId = null, assistPlayerId = null, gameCo
         
         const url = `${API_BASE_URL}/api/shots?${params.toString()}`;
         console.log("Fetching shots from:", url);
-        const response = await fetch(url);
+        const response = await fetch(url, { signal });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
         return data.shots; 
-    } catch (error) { console.error("Σφάλμα στα σουτ:", error); return []; }
+    } catch (error) {
+        if (error.name !== "AbortError") console.error("Σφάλμα στα σουτ:", error);
+        throw error;
+    }
 }
 
-async function fetchMatchPlayByPlay(gameCode, seasonCode) {
+async function fetchMatchPlayByPlay(gameCode, seasonCode, signal = null) {
     try {
         const params = new URLSearchParams({
             game_code: gameCode,
             season_code: seasonCode
         });
-        const response = await fetch(`${API_BASE_URL}/api/match/playbyplay?${params.toString()}`);
+        const response = await fetch(`${API_BASE_URL}/api/match/playbyplay?${params.toString()}`, { signal });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         return data.actions || [];
     } catch (error) {
-        console.error("Σφάλμα στο play-by-play:", error);
-        return [];
+        if (error.name !== "AbortError") console.error("Σφάλμα στο play-by-play:", error);
+        throw error;
+    }
+}
+
+async function fetchVideoConfig(gameCode, seasonCode, signal = null) {
+    try {
+        const params = new URLSearchParams({
+            game_code: gameCode,
+            season_code: seasonCode
+        });
+        const response = await fetch(`${API_BASE_URL}/api/video/config?${params.toString()}`, { signal });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        if (error.name !== "AbortError") console.error("Σφάλμα στη ρύθμιση του βίντεο:", error);
+        throw error;
+    }
+}
+
+async function fetchAvailableVideoGames(seasonCode = null) {
+    try {
+        const params = new URLSearchParams();
+        if (seasonCode) params.set("season_code", seasonCode);
+        const suffix = params.toString() ? `?${params.toString()}` : "";
+        const response = await fetch(`${API_BASE_URL}/api/video/games${suffix}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Σφάλμα στη λίστα video games:", error);
+        return { seasons: [], games: [] };
     }
 }
 
@@ -164,7 +197,7 @@ async function fetchSimulatorResult(p1, p2, p3, p4, p5, gameCode) {
 /**
  * SIMULATOR: Ζητάει ένα πλήρες τυχαίο σενάριο 4ου δεκαλέπτου
  */
-async function fetchSimulatorScenario(seasonCode = "E2023") {
+async function fetchSimulatorScenario(seasonCode) {
     try {
         const url = `${API_BASE_URL}/api/simulator/scenario?season_code=${seasonCode}`;
         const response = await fetch(url);
@@ -191,15 +224,15 @@ async function fetchGameRoster(gameCode) {
     }
 }
 
-async function fetchAiChat(userMessage, gameCode = null, seasonCode = null) {
+async function fetchAiChat(userMessage, gameCode, seasonCode) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: userMessage,
-                game_code: gameCode || null,
-                season_code: seasonCode || null
+                game_code: gameCode,
+                season_code: seasonCode
             })
         });
 

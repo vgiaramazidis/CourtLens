@@ -123,7 +123,7 @@ def get_filtered_shots_query(game_code=None, season_code=None, player_id=None, a
     query += "\n    } LIMIT 500"
     return query
 
-def get_match_playbyplay_query(game_code="170", season_code="E2023"):
+def get_match_playbyplay_query(game_code, season_code):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -209,7 +209,7 @@ def get_play_context_query(action_uri):
     }}
     """
 
-def get_games_list_query(season_code="E2023"):
+def get_games_list_query(season_code):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -658,7 +658,7 @@ def get_defensive_anchors_query(filter_type=None, filter_id=None, quarter=None, 
     """
     return query
 
-def get_game_lineups_query(game_code="333", season_code="E2023"):
+def get_game_lineups_query(game_code, season_code):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -809,7 +809,7 @@ def get_simulator_crunch_time_query(game_code, quarter, players_list):
     """
     return query
 
-def get_timeouts_query(season_code="E2023"):
+def get_timeouts_query(season_code):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>

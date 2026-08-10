@@ -20,5 +20,17 @@ __pycache__/
 # macOS / Windows
 .DS_Store
 Thumbs.db
-data/processed/AllActions.json
-data/processed/Triplets.nt
+
+# Generated/local data
+data/
+
+debug_frames/
+
+# Secrets / Environment Variables
+.env
+
+# Logs
+*.log
+
+# Frontend (For Vanilla JS or frameworks)
+node_modules/

@@ -43,11 +43,19 @@ const analyticsTitle = document.getElementById("analyticsTitle");
 const aiPlaySearchInput = document.getElementById("aiPlaySearchInput");
 const aiPlaySearchButton = document.getElementById("aiPlaySearchButton");
 const aiPlaySearchResult = document.getElementById("aiPlaySearchResult");
+const videoStatusMessage = document.getElementById("videoStatusMessage");
 
 window.homePlayersSet = new Set();
 window.roadPlayersSet = new Set();
 window.currentShotsData = [];
 let queryGeneration = 0;
+let activeShotRequestController = null;
+
+function showVideoStatus(message = "", type = "") {
+    if (!videoStatusMessage) return;
+    videoStatusMessage.textContent = message;
+    videoStatusMessage.className = `video-status-message video-shots-only${message ? " visible" : ""}${type ? ` ${type}` : ""}`;
+}
 
 function resetGameSelection() {
     globalSeasonSelect.value = "";
@@ -56,6 +64,10 @@ function resetGameSelection() {
 }
 
 function resetShotQueryState() {
+    if (activeShotRequestController) {
+        activeShotRequestController.abort();
+        activeShotRequestController = null;
+    }
     queryGeneration += 1;
     window.currentShotsData = [];
     window.homePlayersSet.clear();
@@ -66,6 +78,7 @@ function resetShotQueryState() {
     window.activePbpCategories = new Set();
     window.aiPbpActionUris = null;
     window.aiPbpFilterLabel = "";
+    window.lastAiPbpMatches = [];
     window.currentPlayByPlayGameKey = "";
 
     if (typeof window.drawShots === "function") window.drawShots([]);
@@ -114,10 +127,10 @@ function resetShotQueryState() {
         aiPlaySearchButton.disabled = false;
         aiPlaySearchButton.textContent = "AI SEARCH";
     }
+    if (mainActionBtn) mainActionBtn.disabled = false;
 
-    if (typeof player !== "undefined" && player && typeof player.stopVideo === "function") {
-        player.stopVideo();
-    }
+    if (typeof window.setYouTubeVideo === "function") window.setYouTubeVideo(null);
+    showVideoStatus();
 }
 
 function showAiSearchMessage(message, type = "") {
@@ -128,90 +141,276 @@ function showAiSearchMessage(message, type = "") {
 
 function getAiResultValue(value) {
     if (value === null || value === undefined) return "—";
-    if (typeof value === "object" && "value" in value) return String(value.value);
-    return String(value);
+    const rawValue = typeof value === "object" && "value" in value ? String(value.value) : String(value);
+    if (/^https?:\/\//i.test(rawValue)) {
+        const compactValue = rawValue.split(/[\/#]/).filter(Boolean).pop() || rawValue;
+        try {
+            return decodeURIComponent(compactValue).replace(/[_-]+/g, " ");
+        } catch (_error) {
+            return compactValue.replace(/[_-]+/g, " ");
+        }
+    }
+    return rawValue;
 }
 
-function renderAiSearchResponse(data, playByPlayMatchCount = null) {
+function getAiResultLabel(column) {
+    const normalized = String(column).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const labels = {
+        player: "Player", playername: "Player", assistingplayer: "Assisting player",
+        assistingplayername: "Assisting player", receiver: "Receiver", receivername: "Receiver",
+        team: "Team", teamname: "Team", points: "Points", totalpoints: "Total points",
+        assists: "Assists", totalassists: "Total assists", count: "Total", quarter: "Quarter",
+        clock: "Game clock", playtime: "Game clock", actiontype: "Action", order: "Sequence",
+        sequence: "Sequence", score: "Score", homescore: "Home score", roadscore: "Road score"
+    };
+    if (labels[normalized]) return labels[normalized];
+    return String(column)
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/[_-]+/g, " ")
+        .replace(/^./, character => character.toUpperCase());
+}
+
+function getBindingValue(result, candidateKeys) {
+    const normalizedCandidates = new Set(candidateKeys.map(key => key.toLowerCase().replace(/[^a-z0-9]/g, "")));
+    const matchingKey = Object.keys(result || {}).find(key => normalizedCandidates.has(key.toLowerCase().replace(/[^a-z0-9]/g, "")));
+    return matchingKey ? getAiResultValue(result[matchingKey]) : "";
+}
+
+function getFriendlyActionExplanation(action) {
+    const actionType = String(action.action_type || "Action");
+    const player = action.playerName || "A player";
+    const relatedMadeShot = (window.currentPlayByPlayData || [])
+        .filter(candidate => /PointShotMade/.test(candidate.action_type || "")
+            && candidate.quarter === action.quarter
+            && (candidate.playTime === action.playTime
+                || Math.abs(Number(candidate.sequence || 0) - Number(action.sequence || 0)) <= 3))
+        .sort((a, b) => {
+            const sameClockA = a.playTime === action.playTime ? 0 : 1;
+            const sameClockB = b.playTime === action.playTime ? 0 : 1;
+            return sameClockA - sameClockB
+                || Math.abs(Number(a.sequence || 0) - Number(action.sequence || 0))
+                - Math.abs(Number(b.sequence || 0) - Number(action.sequence || 0));
+        })[0];
+
+    if (/Assist/.test(actionType)) {
+        const receiver = relatedMadeShot?.playerName;
+        const shotValue = relatedMadeShot?.action_type?.includes("ThreePoint") ? "three-point basket" : "basket";
+        return receiver
+            ? `${player} created the ${shotValue} scored by ${receiver}.`
+            : `${player} created a scoring chance that a teammate finished.`;
+    }
+    if (/ThreePointShotMade/.test(actionType)) return `${player} made a three-point shot and added 3 points.`;
+    if (/TwoPointShotMade/.test(actionType)) return `${player} made a two-point shot and added 2 points.`;
+    if (/FreeThrowMade/.test(actionType)) return `${player} made a free throw and added 1 point.`;
+    if (/ThreePointShotMissed/.test(actionType)) return `${player} attempted a three-point shot but missed.`;
+    if (/TwoPointShotMissed/.test(actionType)) return `${player} attempted a two-point shot but missed.`;
+    if (/FreeThrowMissed/.test(actionType)) return `${player} attempted a free throw but missed.`;
+    if (/OffensiveRebound/.test(actionType)) return `${player} collected the offensive rebound and kept the attack alive.`;
+    if (/DefensiveRebound/.test(actionType)) return `${player} collected the defensive rebound and ended the opponent's attack.`;
+    if (/Turnover/.test(actionType)) return `${player} lost possession of the ball.`;
+    if (/FoulDrawn/.test(actionType)) return `${player} forced an opponent to commit a foul.`;
+    if (/Foul/.test(actionType)) return `${player} committed a foul.`;
+    if (/Steal/.test(actionType)) return `${player} won possession with a steal.`;
+    if (/Block|ShotRejected/.test(actionType)) return `${player} stopped an opponent's shot with a block.`;
+    return `${player} was involved in this play.`;
+}
+
+function renderFriendlyPlayByPlayResults(actions) {
+    const section = document.createElement("section");
+    section.className = "ai-friendly-actions";
+    const heading = document.createElement("strong");
+    heading.className = "ai-friendly-heading";
+    heading.textContent = "What happened in the game";
+    const explanation = document.createElement("p");
+    explanation.textContent = "Each card below is linked to the matching moment in the Play-by-Play.";
+    section.append(heading, explanation);
+
+    const grid = document.createElement("div");
+    grid.className = "ai-friendly-action-grid";
+    actions.forEach(action => {
+        const card = document.createElement("article");
+        card.className = "ai-friendly-action-card";
+        const description = document.createElement("strong");
+        description.textContent = getFriendlyActionExplanation(action);
+        const details = document.createElement("div");
+        details.className = "ai-friendly-action-meta";
+        const quarter = String(action.quarter || "period").toUpperCase();
+        const clock = action.playTime || "--:--";
+        details.textContent = `${quarter} quarter · ${clock} remaining · Score ${action.homeScore ?? 0}–${action.roadScore ?? 0}`;
+        const badge = document.createElement("span");
+        badge.className = "ai-friendly-action-badge";
+        badge.textContent = getAiResultLabel(String(action.action_type || "Action").replace(/Made|Missed/g, ""));
+        card.append(description, details, badge);
+        grid.appendChild(card);
+    });
+    section.appendChild(grid);
+    return section;
+}
+
+function buildFriendlyDataSummary(results, booleanAnswer) {
+    if (typeof booleanAnswer === "boolean") {
+        return booleanAnswer
+            ? "Yes — the game data confirms that this happened."
+            : "No — the game data does not contain a matching event.";
+    }
+    if (results.length === 0) return "";
+
+    const result = results[0];
+    const player = getBindingValue(result, ["playerName", "player", "scorer", "passer", "assistingPlayerName"]);
+    const percentage = getBindingValue(result, ["percentage", "shotPercentage", "fieldGoalPercentage"]);
+    if (percentage) {
+        const made = getBindingValue(result, ["made", "shotsMade", "madeShots"]);
+        const attempts = getBindingValue(result, ["attempts", "shotAttempts", "totalAttempts"]);
+        const numericPercentage = Number(String(percentage).replace("%", ""));
+        const displayPercentage = Number.isFinite(numericPercentage)
+            ? (Number.isInteger(numericPercentage) ? String(numericPercentage) : numericPercentage.toFixed(1))
+            : String(percentage).replace("%", "");
+        if (made && attempts) {
+            return `${player || "The selected player"} made ${made} of ${attempts} attempts — ${displayPercentage}% shooting.`;
+        }
+        return `${player || "The selected player"} shot ${displayPercentage}% for the requested shot type.`;
+    }
+    const metrics = [
+        { keys: ["totalPoints", "points"], unit: "points", verb: "scored" },
+        { keys: ["totalMissedFreeThrows"], unit: "free throws", verb: "missed" },
+        { keys: ["totalMissedThreePointShots"], unit: "three-point shots", verb: "missed" },
+        { keys: ["totalMissedTwoPointShots"], unit: "two-point shots", verb: "missed" },
+        { keys: ["totalMissedShots"], unit: "shot attempts", verb: "missed" },
+        { keys: ["totalMadeFreeThrows"], unit: "free throws", verb: "made" },
+        { keys: ["totalMadeThreePointShots"], unit: "three-point shots", verb: "made" },
+        { keys: ["totalMadeTwoPointShots"], unit: "two-point shots", verb: "made" },
+        { keys: ["totalMadeShots"], unit: "shots", verb: "made" },
+        { keys: ["totalFreeThrows"], unit: "free-throw attempts", verb: "took" },
+        { keys: ["totalThreePointShots"], unit: "three-point attempts", verb: "took" },
+        { keys: ["totalTwoPointShots"], unit: "two-point attempts", verb: "took" },
+        { keys: ["totalShots"], unit: "shot attempts", verb: "took" },
+        { keys: ["totalAssists", "assists"], unit: "assists", verb: "recorded" },
+        { keys: ["totalRebounds", "rebounds"], unit: "rebounds", verb: "collected" },
+        { keys: ["totalTurnovers", "turnovers"], unit: "turnovers", verb: "recorded" },
+        { keys: ["totalFouls", "fouls"], unit: "fouls", verb: "recorded" },
+        { keys: ["count", "total", "actionCount"], unit: "matching actions", verb: "recorded" }
+    ];
+    for (const metric of metrics) {
+        const value = getBindingValue(result, metric.keys);
+        if (value) {
+            const singularUnits = {
+                "points": "point", "free throws": "free throw", "three-point shots": "three-point shot",
+                "two-point shots": "two-point shot", "shot attempts": "shot attempt", "shots": "shot",
+                "free-throw attempts": "free-throw attempt", "three-point attempts": "three-point attempt",
+                "two-point attempts": "two-point attempt", "assists": "assist", "rebounds": "rebound",
+                "turnovers": "turnover", "fouls": "foul", "matching actions": "matching action"
+            };
+            const displayUnit = Number(value) === 1 ? (singularUnits[metric.unit] || metric.unit) : metric.unit;
+            return player
+                ? `${player} ${metric.verb} ${value} ${displayUnit} in the selected game.`
+                : `The answer is ${value} ${displayUnit} in the selected game.`;
+        }
+    }
+    return "";
+}
+
+function renderAiSearchResponse(data, playByPlayMatchCount = null, question = "") {
     if (!aiPlaySearchResult) return;
     aiPlaySearchResult.className = "ai-search-result visible";
     aiPlaySearchResult.replaceChildren();
 
     const results = Array.isArray(data.results) ? data.results : [];
-    const summary = document.createElement("strong");
-    if (typeof data.boolean === "boolean") {
-        summary.textContent = `Απάντηση: ${data.boolean ? "Ναι" : "Όχι"}`;
-    } else {
-        summary.textContent = results.length === 1 ? "Βρέθηκε 1 αποτέλεσμα" : `Βρέθηκαν ${results.length} αποτελέσματα`;
+    const matchedPlayByPlayActions = Array.isArray(window.lastAiPbpMatches) ? window.lastAiPbpMatches : [];
+    const header = document.createElement("div");
+    header.className = "ai-answer-header";
+    const headingText = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = "AI game answer";
+    headingText.appendChild(title);
+    if (question) {
+        const questionText = document.createElement("span");
+        questionText.className = "ai-answer-question";
+        questionText.textContent = question;
+        headingText.appendChild(questionText);
     }
-    aiPlaySearchResult.appendChild(summary);
+    const countBadge = document.createElement("span");
+    countBadge.className = "ai-answer-count";
+    if (typeof data.boolean === "boolean") {
+        countBadge.textContent = data.boolean ? "YES" : "NO";
+    } else if (playByPlayMatchCount !== null) {
+        countBadge.textContent = playByPlayMatchCount === 1 ? "1 PLAY" : `${playByPlayMatchCount} PLAYS`;
+    } else {
+        countBadge.textContent = results.length === 1 ? "1 RESULT" : `${results.length} RESULTS`;
+    }
+    header.append(headingText, countBadge);
+    aiPlaySearchResult.appendChild(header);
+
+    const selectedGameLabel = globalGameSelect.options[globalGameSelect.selectedIndex]?.textContent?.replace(/^\[[^\]]+\]\s*/, "") || "Selected game";
+    const context = document.createElement("div");
+    context.className = "ai-answer-context";
+    context.textContent = `${selectedGameLabel} · ${globalSeasonSelect.options[globalSeasonSelect.selectedIndex]?.textContent || globalSeasonSelect.value}`;
+    aiPlaySearchResult.appendChild(context);
 
     if (playByPlayMatchCount !== null) {
         const playByPlayNotice = document.createElement("div");
-        playByPlayNotice.style.marginTop = "6px";
-        playByPlayNotice.style.color = "#5148c8";
-        playByPlayNotice.style.fontWeight = "800";
-        playByPlayNotice.textContent = playByPlayMatchCount === 1
-            ? "Το Play-by-Play φιλτραρίστηκε σε 1 ενέργεια."
-            : `Το Play-by-Play φιλτραρίστηκε σε ${playByPlayMatchCount} ενέργειες.`;
+        playByPlayNotice.className = playByPlayMatchCount > 0 ? "ai-filter-success" : "ai-filter-empty";
+        playByPlayNotice.textContent = playByPlayMatchCount === 0
+            ? "No matching Play-by-Play actions were found."
+            : (playByPlayMatchCount === 1
+                ? "✓ The Play-by-Play now shows the matching action."
+                : `✓ The Play-by-Play now shows ${playByPlayMatchCount} matching actions.`);
         aiPlaySearchResult.appendChild(playByPlayNotice);
+    }
+
+    const friendlySummary = buildFriendlyDataSummary(results, data.boolean);
+    if (friendlySummary) {
+        const summary = document.createElement("div");
+        summary.className = "ai-friendly-summary";
+        summary.textContent = friendlySummary;
+        aiPlaySearchResult.appendChild(summary);
+    }
+
+    if (matchedPlayByPlayActions.length > 0) {
+        aiPlaySearchResult.appendChild(renderFriendlyPlayByPlayResults(matchedPlayByPlayActions));
+        return;
     }
 
     if (results.length > 0) {
         const columns = [...new Set(results.flatMap(result => Object.keys(result)))].filter(column => {
             const normalized = column.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return !["action", "actionuri", "play", "playuri", "event", "eventuri"].includes(normalized);
+            return !["action", "actionuri", "play", "playuri", "event", "eventuri", "order", "sequence"].includes(normalized);
         });
         if (columns.length === 0) {
             if (typeof data.boolean !== "boolean" && playByPlayMatchCount === null) {
                 const emptyMessage = document.createElement("div");
-                emptyMessage.textContent = "Τα αποτελέσματα αντιστοιχούν σε Play-by-Play ενέργειες.";
-                emptyMessage.style.marginTop = "6px";
+                emptyMessage.className = "ai-answer-empty";
+                emptyMessage.textContent = "The matching actions are available in the Play-by-Play panel.";
                 aiPlaySearchResult.appendChild(emptyMessage);
             }
         } else {
-            const table = document.createElement("table");
-            table.className = "ai-result-table";
-
-            const headerRow = document.createElement("tr");
-            columns.forEach(column => {
-                const th = document.createElement("th");
-                th.textContent = column;
-                headerRow.appendChild(th);
-            });
-            const thead = document.createElement("thead");
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-
-            const tbody = document.createElement("tbody");
-            results.forEach(result => {
-                const row = document.createElement("tr");
+            const cards = document.createElement("div");
+            cards.className = "ai-answer-grid";
+            results.forEach((result, index) => {
+                const card = document.createElement("article");
+                card.className = "ai-answer-item";
+                card.setAttribute("aria-label", `Result ${index + 1}`);
                 columns.forEach(column => {
-                    const td = document.createElement("td");
-                    td.textContent = getAiResultValue(result[column]);
-                    row.appendChild(td);
+                    if (!(column in result)) return;
+                    const field = document.createElement("div");
+                    field.className = "ai-answer-field";
+                    const label = document.createElement("span");
+                    label.className = "ai-answer-label";
+                    label.textContent = getAiResultLabel(column);
+                    const value = document.createElement("strong");
+                    value.className = "ai-answer-value";
+                    value.textContent = getAiResultValue(result[column]);
+                    field.append(label, value);
+                    card.appendChild(field);
                 });
-                tbody.appendChild(row);
+                cards.appendChild(card);
             });
-            table.appendChild(tbody);
-            aiPlaySearchResult.appendChild(table);
+            aiPlaySearchResult.appendChild(cards);
         }
-    } else if (typeof data.boolean !== "boolean") {
+    } else if (typeof data.boolean !== "boolean" && playByPlayMatchCount !== 0) {
         const emptyMessage = document.createElement("div");
-        emptyMessage.textContent = "Δεν βρέθηκαν εγγραφές για αυτή την ερώτηση.";
-        emptyMessage.style.marginTop = "6px";
+        emptyMessage.className = "ai-answer-empty";
+        emptyMessage.textContent = "No matching game data was found for this question.";
         aiPlaySearchResult.appendChild(emptyMessage);
-    }
-
-    if (data.generated_query) {
-        const details = document.createElement("details");
-        details.className = "ai-query-details";
-        const detailsSummary = document.createElement("summary");
-        detailsSummary.textContent = "Generated SPARQL";
-        const query = document.createElement("pre");
-        query.textContent = data.generated_query;
-        details.append(detailsSummary, query);
-        aiPlaySearchResult.appendChild(details);
     }
 }
 
@@ -238,7 +437,10 @@ async function runAiPlaySearch() {
     aiPlaySearchButton.disabled = true;
     aiPlaySearchButton.textContent = "SEARCHING...";
     aiPlaySearchResult?.setAttribute("aria-busy", "true");
-    showAiSearchMessage("Το AI δημιουργεί και εκτελεί το SPARQL query...", "loading");
+    showAiSearchMessage("The AI is searching this game's data...", "loading");
+    if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
+        window.clearAiPlayByPlayFilter();
+    }
 
     try {
         const [data, loadedPlayByPlay] = await Promise.all([
@@ -260,12 +462,17 @@ async function runAiPlaySearch() {
         if (data.playbyplay_filter && typeof window.applyAiPlayByPlayFilter === "function") {
             playByPlayMatchCount = window.applyAiPlayByPlayFilter(
                 data.action_uris || [],
-                message.length > 60 ? `${message.slice(0, 57)}...` : message
+                message.length > 60 ? `${message.slice(0, 57)}...` : message,
+                data.playbyplay_action_kind || ""
             );
         } else if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
             window.clearAiPlayByPlayFilter();
         }
-        renderAiSearchResponse(data, playByPlayMatchCount);
+        renderAiSearchResponse(data, playByPlayMatchCount, message);
+    } catch (error) {
+        if (activeQueryGeneration === queryGeneration && error.name !== "AbortError") {
+            showAiSearchMessage("Το AI Search ή το Play-by-Play δεν απάντησε. Δοκίμασε ξανά.", "error");
+        }
     } finally {
         if (activeQueryGeneration === queryGeneration) {
             aiPlaySearchButton.disabled = false;
@@ -303,33 +510,20 @@ function setSidebarFiltersForMode(mode) {
     const isVideoMode = mode === "video-shots";
     const isEuroChartMode = mode === "euro-chart";
     const isQuizMode = mode === "quiz-ball";
-    const isCoachMode = mode === "top-lineups"; 
 
-    // 1. Κρύβουμε τη Season ΜΟΝΟ στο Quiz
-    if (globalSeasonSelect && globalSeasonSelect.parentElement) {
-        globalSeasonSelect.parentElement.style.display = isQuizMode ? "none" : "block";
-    }
-    
-    // 2. Κρύβουμε το Game στο Quiz ΚΑΙ στον Coach Simulator
-    if (globalGameSelect && globalGameSelect.parentElement) {
-        globalGameSelect.parentElement.style.display = (isQuizMode || isCoachMode) ? "none" : "block";
-    }
+    // 1. Κρύβουμε Season, Game και το κεντρικό κουμπί αν είμαστε στο Quiz
+    const displaySelects = isQuizMode ? "none" : "block";
+    if (globalSeasonSelect && globalSeasonSelect.parentElement) globalSeasonSelect.parentElement.style.display = displaySelects;
+    if (globalGameSelect && globalGameSelect.parentElement) globalGameSelect.parentElement.style.display = displaySelects;
+    if (mainActionBtn) mainActionBtn.style.display = isQuizMode ? "none" : "block";
+    if (document.getElementById("tryGameBtn")) document.getElementById("tryGameBtn").style.display = mode === "top-lineups" ? "block" : "none";
 
-    // 3. Κρύβουμε το κεντρικό κουμπί Αναζήτησης αν είμαστε στο Quiz ή στον Coach
-    if (mainActionBtn) {
-        mainActionBtn.style.display = (isQuizMode || isCoachMode) ? "none" : "block";
-    }
-
-    if (document.getElementById("tryGameBtn")) {
-        document.getElementById("tryGameBtn").style.display = "none";
-    }
-
-    // 4. Κρύβουμε όλα τα υπόλοιπα φίλτρα (Παίκτης, Τύπος σουτ, Δεκάλεπτα) για το Coach Mode & Quiz
-    if (playerFilterGroup) playerFilterGroup.style.display = isVideoMode || isQuizMode || isCoachMode ? "none" : "block";
-    if (shotFiltersDivider) shotFiltersDivider.style.display = isVideoMode || isQuizMode || isCoachMode ? "none" : "block";
+    // 2. Κρύβουμε όλα τα υπόλοιπα φίλτρα
+    if (playerFilterGroup) playerFilterGroup.style.display = isVideoMode || isQuizMode ? "none" : "block";
+    if (shotFiltersDivider) shotFiltersDivider.style.display = isVideoMode || isQuizMode ? "none" : "block";
     if (shotFiltersForm) shotFiltersForm.style.display = isEuroChartMode ? "block" : "none";
-    if (extraFiltersContainer) extraFiltersContainer.style.display = isVideoMode || isQuizMode || isCoachMode ? "none" : "block";
-    if (timeFiltersContainer) timeFiltersContainer.style.display = isVideoMode || isQuizMode || isCoachMode ? "none" : "block";
+    if (extraFiltersContainer) extraFiltersContainer.style.display = isVideoMode || isQuizMode ? "none" : "block";
+    if (timeFiltersContainer) timeFiltersContainer.style.display = isVideoMode || isQuizMode ? "none" : "block";
 
     if (optAllSeasons) {
         optAllSeasons.hidden = isVideoMode;
@@ -338,88 +532,119 @@ function setSidebarFiltersForMode(mode) {
     if (optSelectSeason) optSelectSeason.hidden = false;
 }
 
-// --- 1. ΕΝΑΛΛΑΓΗ ΛΕΙΤΟΥΡΓΙΑΣ (MENU) ---
-mainModeSelect.addEventListener("change", (e) => {
-    
-   const mode = e.target.value;
-    const tryGameBtn = document.getElementById("tryGameBtn");
-    const integratedSimulator = document.getElementById("integratedSimulator");
-    
-    // --- Η ΛΥΣΗ: Επαναφέρουμε ΠΑΝΤΑ την ορατότητα στα πάνελ σε κάθε αλλαγή ---
-    if (analyticsContent) {
-        analyticsContent.style.display = ""; // Αφαιρεί το display: none
-        analyticsContent.innerHTML = "";
-    }
-    if (analyticsTitle) {
-        analyticsTitle.style.display = "";
-        analyticsTitle.innerText = "Αποτελέσματα";
+async function setSeasonOptionsForMode(mode) {
+    if (!globalSeasonSelect) return;
+    const seasonOptions = Array.from(globalSeasonSelect.options)
+        .filter(option => /^E\d{4}$/.test(option.value));
+
+    if (mode !== "video-shots") {
+        seasonOptions.forEach(option => {
+            option.hidden = false;
+            option.disabled = false;
+        });
+        globalSeasonSelect.disabled = false;
+        return;
     }
 
+    globalSeasonSelect.disabled = true;
+    const videoCatalog = await fetchAvailableVideoGames();
+    if (mainModeSelect.value !== "video-shots") return;
+    const availableSeasons = new Set(videoCatalog.seasons || []);
+    seasonOptions.forEach(option => {
+        const available = availableSeasons.has(option.value);
+        option.hidden = !available;
+        option.disabled = !available;
+    });
+    globalSeasonSelect.disabled = availableSeasons.size === 0;
+}
+
+// --- 1. ΕΝΑΛΛΑΓΗ ΛΕΙΤΟΥΡΓΙΑΣ (MENU) ---
+mainModeSelect.addEventListener("change", (e) => {
+    if (mainActionBtn.innerText === "ΕΞΟΔΟΣ ΑΠΟ GAME") {
+        const integratedSimulator = document.getElementById("integratedSimulator");
+        const actualSimulatorUI = document.getElementById("actualSimulatorUI");
+        const extraFilters = document.getElementById("extraFiltersContainer");
+        const timeFilters = document.getElementById("timeFiltersContainer");
+        const tryGameBtn = document.getElementById("tryGameBtn");
+
+        // 1. Κρύβουμε όλο το Simulator block
+        if (integratedSimulator) integratedSimulator.style.display = "none";
+        if (actualSimulatorUI) actualSimulatorUI.style.display = "none"; 
+
+        // 2. Επαναφέρουμε τα φίλτρα
+        if (extraFilters) extraFilters.style.display = "block";
+        if (timeFilters) timeFilters.style.display = "block";
+        if (analyticsContent) analyticsContent.style.display = "block";
+        if (analyticsTitle) analyticsTitle.style.display = "block";
+        if (playerFilterGroup) playerFilterGroup.style.display = "block";
+        
+        // 3. Επαναφέρουμε τα κουμπιά
+        mainActionBtn.innerText = "ΑΝΑΖΗΤΗΣΗ";
+        mainActionBtn.style.backgroundColor = "#ea5314";
+        
+        if (tryGameBtn) {
+            tryGameBtn.innerText = "TRY GAME";
+            tryGameBtn.style.display = e.target.value === "top-lineups" ? "block" : "none";
+        }
+
+        // 4. Scroll πίσω στην κορυφή (στα Top Lineups)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Continue with the selected section so changing mode also exits the simulator cleanly.
+    }
+    const mode = e.target.value;
+    const tryGameBtn = document.getElementById("tryGameBtn");
+    const integratedSimulator = document.getElementById("integratedSimulator");
+    if (analyticsContent) analyticsContent.innerHTML = "";
+    if (analyticsTitle) analyticsTitle.innerText = "Αποτελέσματα";
     resetShotQueryState();
     resetGameSelection();
     setSidebarFiltersForMode(mode);
+    setSeasonOptionsForMode(mode);
 
     analyticsWrapper.style.display = "none";
     
     analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #777; font-style: italic; font-size: 1.1rem;'>Πάτα 'ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ' για να δεις τα δεδομένα...</div>";
     
-    if (mode === "top-lineups") analyticsTitle.innerText = "Coach Simulator";
+    if (mode === "top-lineups") analyticsTitle.innerText = "Top Lineups";
+    else if (mode === "second-chance") analyticsTitle.innerText = "Second Chance Points";
+    else if (mode === "assist-duos") analyticsTitle.innerText = "Top Assist Duos";
+    else if (mode === "fouls-drawn") analyticsTitle.innerText = "Fouls Drawn Gravity";
+    else if (mode === "defensive-anchors") analyticsTitle.innerText = "Defensive Anchors";
     else if (mode === "quiz-ball") analyticsTitle.innerText = "Quiz Ball";
     else analyticsTitle.innerText = "Αποτελέσματα Ανάλυσης";
     
-    // Αφαιρούμε τα περιττά φίλτρα αν υπάρχουν
     const shooterFilter = document.getElementById("defensiveFiltersContainer");
-    if (shooterFilter) shooterFilter.style.display = "none";
+    if (shooterFilter) shooterFilter.style.display = (mode === "defensive-anchors") ? "block" : "none";
 
     const foulsFilter = document.getElementById("foulsFiltersContainer");
-    if (foulsFilter) foulsFilter.style.display = "none";
-
+    if (foulsFilter) foulsFilter.style.display = (mode === "fouls-drawn") ? "block" : "none";
     if (tryGameBtn) tryGameBtn.style.display = "none";
     if (integratedSimulator) integratedSimulator.style.display = "none";
     if (mode === "euro-chart" || mode === "video-shots") {
         const isGameMode = mode === "euro-chart";
 
-        shotSearchWrapper.style.display = "flex";
+        // Video mode uses the responsive CSS grid; Euro Chart keeps the side-by-side flex layout.
+        shotSearchWrapper.style.display = isGameMode ? "flex" : "";
         setShotViewMode(mode);
-        
-        // --- Η ΛΥΣΗ: Βεβαιωνόμαστε ότι το κουμπί εμφανίζεται ξανά! ---
-        if (mainActionBtn) {
-            mainActionBtn.style.display = "block";
-            mainActionBtn.innerText = isGameMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)";
-        }
+        mainActionBtn.innerText = isGameMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)";
     } 
     else {
         shotSearchWrapper.style.display = "none";
         analyticsWrapper.style.display = "block";
         shotFiltersForm.style.display = "none";
+        mainActionBtn.innerText = "ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ";
         
         // ΝΕΟ: Έλεγχος εμφάνισης του κουμπιού Try Game και απόκρυψη του Simulator
         if (mode === "top-lineups") {
-            if (analyticsContent) analyticsContent.style.display = "none";
-            if (analyticsTitle) analyticsTitle.style.display = "none";
-            
-            // 3. Εμφανίζουμε κατευθείαν το πράσινο κουμπί GAME
-            if (tryGameBtn) {
-                tryGameBtn.style.display = "block";
-                tryGameBtn.innerText = "GAME";
-            }
-            
-            // 4. Εμφανίζουμε τις Οδηγίες του Simulator
-            const integratedSimulator = document.getElementById("integratedSimulator");
-            const gameInstructions = document.getElementById("gameInstructions");
-            const actualSimulatorUI = document.getElementById("actualSimulatorUI");
-            
-            if (integratedSimulator) integratedSimulator.style.display = "block";
-            if (gameInstructions) gameInstructions.style.display = "block";
-            if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
-            
-            return; // Τερματίζουμε την εκτέλεση
+            if (tryGameBtn) tryGameBtn.style.display = "block"; // Εμφανίζουμε το Try Game
+            if (integratedSimulator) integratedSimulator.style.display = "none"; // Κρύβουμε το Simulator αρχικά
         }
         if (mode === "quiz-ball") {
             analyticsContent.innerHTML = `
                 <div class="quiz-menu-container">
                     <h2 style="color:#2b528a; text-align:center; margin-bottom:20px; font-size:2rem; font-weight:900; text-transform:uppercase;">ΕΠΙΛΟΓΗ ΚΑΤΗΓΟΡΙΑΣ</h2>
-                    
+
                     <!-- 1. ΠΟΙΟΣ ΕΙΜΑΙ; -->
                     <div class="quiz-category-row" style="background: linear-gradient(90deg, #9706d5 0%, #9b59b6 100%); margin-bottom: 15px;">
                         <div class="quiz-category-left">
@@ -445,7 +670,7 @@ mainModeSelect.addEventListener("change", (e) => {
                             <button class="quiz-diff-btn" onclick="startQuizCategory('who-is-missing', 'hard')">ΔΥΣ</button>
                         </div>
                     </div>
-                    <!-- 3. HIGHER / LOWER -->
+                    <!-- 2. HIGHER / LOWER -->
                     <div class="quiz-category-row" style="background: linear-gradient(90deg, #600404fe 0%, #f10303 100%);">
                         <div class="quiz-category-left">
                             <div class="quiz-icon">📈</div>
@@ -457,7 +682,7 @@ mainModeSelect.addEventListener("change", (e) => {
                             <button class="quiz-diff-btn" onclick="startQuizCategory('higher-or-lower', 'hard')">ΔΥΣ</button>
                         </div>
                     </div>
-                    <!-- 4. TOP 5 -->
+                    <!-- 3. TOP 5 -->
                     <div class="quiz-category-row" style="background: linear-gradient(90deg, #1e8449 0%, #2ecc71 100%); margin-bottom: 15px;">
                         <div class="quiz-category-left">
                             <div class="quiz-icon">🔝</div>
@@ -510,25 +735,41 @@ async function loadGamesForSeason(seasonCode) {
     globalGameSelect.disabled = true;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/games?season_code=${seasonCode}`);
+        const isVideoMode = mainModeSelect.value === "video-shots";
+        const [response, videoCatalog] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/games?season_code=${seasonCode}`),
+            isVideoMode ? fetchAvailableVideoGames(seasonCode) : Promise.resolve(null)
+        ]);
         const data = await response.json();
+        const availableGameCodes = isVideoMode
+            ? new Set((videoCatalog?.games || []).map(game => String(game.game_code)))
+            : null;
+        const games = (data.games || []).filter(game =>
+            !availableGameCodes || availableGameCodes.has(String(game.gameCode))
+        );
         
         globalGameSelect.innerHTML = "<option value=''>-- Επίλεξε Αγώνα --</option>";
-        if (data.games && data.games.length > 0) {
-            data.games.forEach(game => {
+        if (games.length > 0) {
+            games.forEach(game => {
                 const option = document.createElement("option");
                 option.value = game.gameCode;
                 option.textContent = `[${game.gameCode}] ${game.matchup}`;
                 globalGameSelect.appendChild(option);
             });
             globalGameSelect.disabled = false;
+        } else if (isVideoMode) {
+            globalGameSelect.innerHTML = "<option value=''>Δεν υπάρχουν έτοιμα video games</option>";
         }
     } catch (error) {
         globalGameSelect.innerHTML = "<option value=''>Σφάλμα φόρτωσης</option>";
     }
 }
 
-globalSeasonSelect.addEventListener("change", (e) => loadGamesForSeason(e.target.value));
+globalSeasonSelect.addEventListener("change", (e) => {
+    resetShotQueryState();
+    loadGamesForSeason(e.target.value);
+});
+globalGameSelect.addEventListener("change", () => resetShotQueryState());
 
 
 // === ΚΕΝΤΡΙΚΟΣ "ΑΤΡΩΤΟΣ" ΕΛΕΓΧΟΣ ΚΛΙΚ ΓΙΑ ΟΛΑ ΤΑ CHECKBOXES (EVENT DELEGATION) ===
@@ -555,8 +796,29 @@ document.addEventListener("change", (e) => {
 });
 
 
+function normalizeQuarterLabel(quarter) {
+    const value = String(quarter || "").trim().toUpperCase();
+    const regulation = { "1": "1st", "Q1": "1st", "1ST": "1st", "2": "2nd", "Q2": "2nd", "2ND": "2nd", "3": "3rd", "Q3": "3rd", "3RD": "3rd", "4": "4th", "Q4": "4th", "4TH": "4th" };
+    if (regulation[value]) return regulation[value];
+    if (["OT", "1OT", "OT1"].includes(value)) return "OT";
+    const overtimeMatch = value.match(/^(?:OT(\d+)|(\d+)OT)$/);
+    if (overtimeMatch) {
+        const overtimeNumber = Number(overtimeMatch[1] || overtimeMatch[2]);
+        return overtimeNumber <= 1 ? "OT" : `${overtimeNumber}OT`;
+    }
+    return String(quarter || "").trim();
+}
+
+function quarterSortValue(quarter) {
+    const normalized = normalizeQuarterLabel(quarter);
+    const regulationOrder = { "1st": 0, "2nd": 1, "3rd": 2, "4th": 3, "OT": 4 };
+    if (normalized in regulationOrder) return regulationOrder[normalized];
+    const overtimeMatch = normalized.match(/^(\d+)OT$/);
+    return overtimeMatch ? 3 + Number(overtimeMatch[1]) : 99;
+}
+
 // === ΔΥΝΑΜΙΚΗ ΔΗΜΙΟΥΡΓΙΑ QUARTERS ΜΕ ΤΟ ΣΚΟΡ ΤΟΥΣ ===
-function buildDynamicQuarters(shotsData) {
+function buildDynamicQuarters(shotsData, preserveSelection = false) {
     const quartersBars = document.querySelectorAll('.quarters-bar');
     if (quartersBars.length === 0) return;
 
@@ -566,23 +828,24 @@ function buildDynamicQuarters(shotsData) {
 
     shotsData.forEach(shot => {
         if (shot.quarter) {
-            if (!quartersMap.has(shot.quarter)) {
-                quartersMap.set(shot.quarter, { maxHome: 0, maxRoad: 0 });
+            const quarter = normalizeQuarterLabel(shot.quarter);
+            if (!quartersMap.has(quarter)) {
+                quartersMap.set(quarter, { maxHome: 0, maxRoad: 0 });
             }
-            const qData = quartersMap.get(shot.quarter);
+            const qData = quartersMap.get(quarter);
             if (shot.homeScore !== undefined && shot.homeScore > 0) qData.maxHome = Math.max(qData.maxHome, shot.homeScore);
             if (shot.roadScore !== undefined && shot.roadScore > 0) qData.maxRoad = Math.max(qData.maxRoad, shot.roadScore);
         }
     });
 
-    const order = ["1st", "2nd", "3rd", "4th", "OT", "2OT", "3OT", "4OT", "5OT"];
-    const uniqueQuarters = Array.from(quartersMap.keys()).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    const uniqueQuarters = Array.from(quartersMap.keys()).sort((a, b) => quarterSortValue(a) - quarterSortValue(b));
 
     quartersBars.forEach(bar => {
-        // Διατηρούμε την κατάσταση αν ήταν ήδη τσεκαρισμένα
-        const previouslyChecked = new Set();
-        bar.querySelectorAll('.quarter-cb:checked').forEach(cb => previouslyChecked.add(cb.value));
-        const hasPrevious = previouslyChecked.size > 0;
+        // Preserve explicit choices, while newly discovered overtime periods default to checked.
+        const previousStates = new Map();
+        if (preserveSelection) {
+            bar.querySelectorAll('.quarter-cb').forEach(cb => previousStates.set(normalizeQuarterLabel(cb.value), cb.checked));
+        }
 
         bar.innerHTML = "";
         uniqueQuarters.forEach(q => {
@@ -594,7 +857,7 @@ function buildDynamicQuarters(shotsData) {
                 scoreLabel = `<span style="font-size: 0.65rem; color: #777; margin-top:2px; font-weight:bold;">${qData.maxHome} - ${qData.maxRoad}</span>`;
             }
 
-            const isChecked = hasPrevious ? previouslyChecked.has(q) : true;
+            const isChecked = previousStates.has(q) ? previousStates.get(q) : true;
 
             const qBox = document.createElement("div");
             qBox.className = "quarter-box";
@@ -657,7 +920,7 @@ window.applyChartFilters = function() {
     const filteredShots = window.currentShotsData.filter(shot => {
         // The selectable roster belongs to Video mode; Euro Chart uses clicked-shot lineups.
         const playerMatch = activePlayers.size === 0 || activePlayers.has(shot.playerName);
-        const quarterMatch = !shot.quarter || activeQuarters.has(shot.quarter);
+        const quarterMatch = !shot.quarter || activeQuarters.has(normalizeQuarterLabel(shot.quarter));
         
         if (!playerMatch || !quarterMatch) return false;
 
@@ -686,35 +949,50 @@ window.applyChartFilters = function() {
 document.addEventListener("DOMContentLoaded", () => {
     setShotViewMode(mainModeSelect.value);
     setSidebarFiltersForMode(mainModeSelect.value);
+    setSeasonOptionsForMode(mainModeSelect.value);
     resetGameSelection();
 });
 
 mainActionBtn.addEventListener("click", async () => {
     const tryGameBtn = document.getElementById("tryGameBtn");
-    
-    // 1. Έλεγχος αν είμαστε σε Game Mode (Έξοδος)
+    // ΝΕΟ ΠΙΟ ΑΣΦΑΛΕΣ: Έλεγχος αν είμαστε σε Game Mode (Έξοδος)
     if (mainActionBtn.innerText.includes("ΕΞΟΔΟΣ")) {
+        const integratedSimulator = document.getElementById("integratedSimulator");
         const actualSimulatorUI = document.getElementById("actualSimulatorUI");
-        const gameInstructions = document.getElementById("gameInstructions");
+        const extraFilters = document.getElementById("extraFiltersContainer");
+        const timeFilters = document.getElementById("timeFiltersContainer");
+        const analyticsContent = document.getElementById("analyticsContent");
+        const analyticsTitle = document.getElementById("analyticsTitle");
+        const gameInput = document.getElementById("analyticsGameCodeInput");
+        // 1. Κρύβουμε όλο το Simulator block
+        if (integratedSimulator) integratedSimulator.style.display = "none";
+        if (actualSimulatorUI) actualSimulatorUI.style.display = "none"; 
+
+        // 2. Επαναφέρουμε τα φίλτρα
+        if (extraFilters) extraFilters.style.display = "block";
+        if (timeFilters) timeFilters.style.display = "block";
+        if (analyticsTitle) analyticsTitle.style.display = "block";
+        if (playerFilterGroup) playerFilterGroup.style.display = "block";
+        if (analyticsContent) analyticsContent.style.display = "grid";
+        // 3. Επαναφέρουμε το μεγάλο κουμπί
+        if (gameInput) gameInput.value = "";
+        mainActionBtn.innerText = "ΑΝΑΖΗΤΗΣΗ";
+        mainActionBtn.style.backgroundColor = "#ea5314";
         
-        if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
-        if (gameInstructions) gameInstructions.style.display = "block";
-        
-        mainActionBtn.style.display = "none"; // Κρύβουμε το κόκκινο κουμπί Εξόδου
-        
+        // 4. ΣΙΓΟΥΡΗ ΕΠΑΝΑΦΟΡΑ ΤΟΥ TRY GAME
         if (tryGameBtn) {
-            tryGameBtn.style.display = "block";
-            tryGameBtn.innerText = "GAME"; // Επαναφέρουμε το πράσινο κουμπί
+            tryGameBtn.style.display = "block"; // Το εμφανίζουμε ΞΑΝΑ
+            tryGameBtn.innerText = " TRY GAME"; // Του δίνουμε το αρχικό κείμενο
         }
-        return; 
+
+        // 5. Scroll πίσω στην κορυφή
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        return; // Σταματάμε εδώ!
     }
 
     const mode = mainModeSelect.value;
     const isVideoShotMode = mode === "video-shots";
-    
-    // 2. Αν δεν είμαστε σε λειτουργία Shot Search, το κουμπί δεν κάνει τίποτα!
-    if (mode !== "euro-chart" && mode !== "video-shots") return;
-
     const selectedSeason = globalSeasonSelect.value;
     const selectedGame = globalGameSelect.value.trim() || null;
 
@@ -726,102 +1004,293 @@ mainActionBtn.addEventListener("click", async () => {
         window.alert("Στο Video Shot Search πρέπει να επιλέξεις συγκεκριμένο Game.");
         return;
     }
+    const selectedPlayer = !isVideoShotMode && playerSelectInput ? playerSelectInput.value.trim() : null;
+    const selectedAssistant = !isVideoShotMode && document.getElementById("assistSelect") ? document.getElementById("assistSelect").value : null;
     
-    const selectedPlayer = playerSelectInput ? playerSelectInput.value.trim() : null;
-    const selectedAssistant = document.getElementById("assistSelect") ? document.getElementById("assistSelect").value : null;
+    let filterType = !isVideoShotMode && document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : null;
+    let filterId = !isVideoShotMode && document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : null;
+    const quarter = !isVideoShotMode && document.getElementById("quarterSelectAnalytics") ? document.getElementById("quarterSelectAnalytics").value : null;
+    const minStart = !isVideoShotMode && document.getElementById("minStart") ? document.getElementById("minStart").value : null;
+    const minEnd = !isVideoShotMode && document.getElementById("minEnd") ? document.getElementById("minEnd").value : null;
     
-    let filterType = document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : null;
-    let filterId = document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : null;
-    const quarter = document.getElementById("quarterSelectAnalytics") ? document.getElementById("quarterSelectAnalytics").value : null;
-    const minStart = document.getElementById("minStart") ? document.getElementById("minStart").value : null;
-    const minEnd = document.getElementById("minEnd") ? document.getElementById("minEnd").value : null;
+    let fouledId = document.getElementById("fouledIdInput") ? document.getElementById("fouledIdInput").value.trim() : null;
+    let foulingId = document.getElementById("foulingIdInput") ? document.getElementById("foulingIdInput").value.trim() : null;
+    let shooterId = document.getElementById("shooterIdInput") ? document.getElementById("shooterIdInput").value.trim() : null;
+    let blockerId = document.getElementById("blockerIdInput") ? document.getElementById("blockerIdInput").value.trim() : null;
 
-    const activeQueryGeneration = queryGeneration;
-    const [shots, playByPlayActions] = await Promise.all([
-        fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd),
-        isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason) : Promise.resolve([])
-    ]);
-    
-    if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
-    window.currentShotsData = shots;
+    let secondChancePlayer = null; 
+    if (mode === "quiz-ball") {
+        if (!selectedGame || !selectedSeason) {
+            window.alert("Επίλεξε Season και Game για να παίξεις Quiz Ball.");
+            return;
+        }
 
-    // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα
-    buildDynamicQuarters(shots);
+        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #6c63ff; font-weight: bold; font-size: 1.5rem; padding: 40px;'>Ο Αιμίλιος διαβάζει τα στατιστικά... ⏱️</div>";
 
-    if (selectedGame && selectedSeason !== "ALL") {
         try {
-            const opt = globalGameSelect.options[globalGameSelect.selectedIndex];
-            if (opt && opt.text.includes("vs")) {
-                const matchText = opt.text.includes("] ") ? opt.text.split("] ")[1] : opt.text;
-                const teams = matchText.split(/vs/i);
+            const response = await fetch(`${API_BASE_URL}/api/quiz/who-am-i?game_code=${selectedGame}&season_code=${selectedSeason}`);
+            const data = await response.json();
+
+            if (data.error || !data.hints) throw new Error(data.error || "Αποτυχία φόρτωσης quiz.");
+
+            window.quizState.isActive = true;
+            window.quizState.hints = data.hints;
+            window.quizState.secretName = data.secret_player_name;
+            window.quizState.currentHintIndex = 0;
+
+            // Χτίζουμε ένα καθαρό αυτόνομο UI ερωταπαντήσεων μέσα στο analyticsContent
+            analyticsContent.innerHTML = `
+                <div style="grid-column: 1 / -1; background:#fff; padding:30px; border-radius:12px; border-left:8px solid #6c63ff; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+                    <h2 style="color:#2b528a; margin-bottom: 20px;">🤔 Quiz Ball: Ποιος Είμαι;</h2>
+                    <div id="quizChatBox" style="min-height: 150px; background: #f4f6f8; padding: 20px; border-radius: 8px; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
+                        <p style="color: #e74c3c; font-weight: bold;">Στοιχείο 1:</p>
+                        <p>${window.quizState.hints[0]}</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="quizAnswerInput" placeholder="Μάντεψε το όνομα του παίκτη..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
+                        <button id="quizAnswerBtn" style="padding: 12px 25px; background: #6c63ff; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;">ΑΠΑΝΤΗΣΗ</button>
+                    </div>
+                </div>
+            `;
+
+            const quizInput = document.getElementById("quizAnswerInput");
+            const quizBtn = document.getElementById("quizAnswerBtn");
+            const chatBox = document.getElementById("quizChatBox");
+
+            // Τοπική συνάρτηση για την υποβολή της απάντησης
+            const submitAnswer = () => {
+                if (!window.quizState.isActive || !quizInput.value.trim()) return;
+
+                const userGuess = quizInput.value.trim().toLowerCase();
+                const secret = window.quizState.secretName.toLowerCase();
+
+                // Δέχεται τη σωστή απάντηση ακόμα και αν ο χρήστης γράψει μόνο το επίθετο
+                if (secret.includes(userGuess)) {
+                    chatBox.innerHTML += `
+                        <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60;">
+                            <strong style="color: #27ae60;">🎉 ΣΩΣΤΟ!</strong> Ήταν ο <b>${window.quizState.secretName}</b>!
+                        </div>`;
+                    window.quizState.isActive = false;
+                    quizBtn.disabled = true;
+                    quizInput.disabled = true;
+                } else {
+                    window.quizState.currentHintIndex++;
+                    if (window.quizState.currentHintIndex < 3) {
+                        chatBox.innerHTML += `
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px dashed #ccc;">
+                                <p style="color: #e74c3c; font-weight: bold;">❌ Λάθος! Στοιχείο ${window.quizState.currentHintIndex + 1}:</p>
+                                <p>${window.quizState.hints[window.quizState.currentHintIndex]}</p>
+                            </div>`;
+                    } else {
+                        chatBox.innerHTML += `
+                            <div style="margin-top: 20px; padding: 15px; background: #fadbd8; border-radius: 8px; border-left: 5px solid #c0392b;">
+                                <strong style="color: #c0392b;">ΧΑΣΑΤΕ! 😢</strong> Ο παίκτης ήταν ο <b>${window.quizState.secretName}</b>.
+                            </div>`;
+                        window.quizState.isActive = false;
+                        quizBtn.disabled = true;
+                        quizInput.disabled = true;
+                    }
+                }
+                quizInput.value = "";
+                quizInput.focus();
+            };
+
+            // Event Listeners για το κουμπί "Απάντηση" και το πλήκτρο "Enter"
+            quizBtn.addEventListener("click", submitAnswer);
+            quizInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAnswer(); });
+            quizInput.focus();
+
+        } catch (error) {
+            analyticsContent.innerHTML = `<div style='grid-column: 1 / -1; color: red; text-align:center;'>Σφάλμα: ${error.message}</div>`;
+        }
+        return; // Τερματίζουμε την εκτέλεση εδώ, αποφεύγοντας την κλήση των άλλων analytics queries
+    }
+    if (selectedPlayer && mode !== "euro-chart" && mode !== "video-shots") {
+        if (mode === "top-lineups") { if (!filterId) { filterId = selectedPlayer; filterType = "on_court"; } } 
+        else if (mode === "fouls-drawn") { if (!fouledId) fouledId = selectedPlayer; } 
+        else if (mode === "defensive-anchors") { if (!blockerId) blockerId = selectedPlayer; }
+        else if (mode === "second-chance") { secondChancePlayer = selectedPlayer; }
+    }
+
+    if (mode === "euro-chart" || mode === "video-shots") {
+        if (activeShotRequestController) activeShotRequestController.abort();
+        const requestController = new AbortController();
+        activeShotRequestController = requestController;
+        queryGeneration += 1;
+        const activeQueryGeneration = queryGeneration;
+        mainActionBtn.disabled = true;
+        mainActionBtn.innerText = "ΦΟΡΤΩΣΗ...";
+        if (isVideoShotMode) {
+            showVideoStatus("Φόρτωση video, σουτ και Play-by-Play...");
+            const pbpList = document.getElementById("pbpList");
+            if (pbpList) pbpList.innerHTML = "<li class='pbp-filter-empty'>Φόρτωση Play-by-Play...</li>";
+        }
+
+        try {
+            const [shots, playByPlayActions, videoConfig] = await Promise.all([
+                fetchFilteredShots(selectedPlayer, selectedAssistant, selectedGame, selectedSeason, filterType, filterId, quarter, minStart, minEnd, null, requestController.signal),
+                isVideoShotMode ? fetchMatchPlayByPlay(selectedGame, selectedSeason, requestController.signal) : Promise.resolve([]),
+                isVideoShotMode ? fetchVideoConfig(selectedGame, selectedSeason, requestController.signal) : Promise.resolve(null)
+            ]);
+            if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
+            showVideoStatus();
+
+            if (isVideoShotMode && typeof window.setYouTubeVideo === "function") {
+                window.setYouTubeVideo(
+                    videoConfig?.available ? videoConfig.youtube_id : null,
+                    videoConfig?.playback_lead_seconds ?? 5
+                );
+                if (!videoConfig?.available || !videoConfig?.timeline_available) {
+                    showVideoStatus("Δεν υπάρχει διαθέσιμο ή συγχρονισμένο video για αυτό το παιχνίδι.", "error");
+                }
+            }
+            window.currentShotsData = shots;
+
+            // Δημιουργία δυναμικών Quarters με βάση τα δεδομένα του αγώνα
+            buildDynamicQuarters(shots);
+
+            if (selectedGame && selectedSeason !== "ALL") {
+                try {
+                const opt = globalGameSelect.options[globalGameSelect.selectedIndex];
+                if (opt && opt.text.includes("vs")) {
+                    const matchText = opt.text.includes("] ") ? opt.text.split("] ")[1] : opt.text;
+                    const teams = matchText.split(/vs/i);
+                    
+                    const homeTeamName = (teams[0] || "HOME").trim() || "HOME";
+                    const roadTeamName = (teams[1] || "ROAD").trim() || "ROAD";
+                    
+                    document.querySelectorAll('#txtHomeTeamName, #txtHomeTeamName2, #txtHomeTeamName3, #txtHomeTeamName4, #txtHomeTeamName5').forEach(el => el.innerText = homeTeamName.toUpperCase());
+                    document.querySelectorAll('#txtRoadTeamName, #txtRoadTeamName2, #txtRoadTeamName3, #txtRoadTeamName4, #txtRoadTeamName5').forEach(el => el.innerText = roadTeamName.toUpperCase());
+                    document.getElementById("uiHomeTeam").innerText = homeTeamName.substring(0,3).toUpperCase();
+                    document.getElementById("uiRoadTeam").innerText = roadTeamName.substring(0,3).toUpperCase();
+                    
+                    // Αλλαγή των Titles αν υπάρχουν (homeTeamTitle)
+                    const homeTitleEl = document.getElementById("homeTeamTitle");
+                    if (homeTitleEl) homeTitleEl.innerText = homeTeamName.toUpperCase();
+                    const roadTitleEl = document.getElementById("roadTeamTitle");
+                    if (roadTitleEl) roadTitleEl.innerText = roadTeamName.toUpperCase();
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=${selectedGame}&season_code=${selectedSeason}`, { signal: requestController.signal });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
+
+                window.homePlayersSet.clear();
+                window.roadPlayersSet.clear();
+                window.homeRosterDetails = [];
+                window.roadRosterDetails = [];
+
+                data.lineups.forEach(lineup => {
+                    if (!lineup.players) return;
+                    lineup.players.split("@@").forEach(pInfo => {
+                        const parts = pInfo.split("|");
+                        const pId = parts[0];
+                        const pName = parts[1] || parts[0];
+                        // Διαβάζουμε την εικόνα κατευθείαν από το ίδιο πακέτο!
+                        const pImg = (parts[2] && parts[2] !== "NO_IMG") ? parts[2] : null;
+                        
+                        if (lineup.teamType === "home") {
+                            window.homePlayersSet.add(pName); 
+                            if (!window.homeRosterDetails.some(x => x.id === pId)) {
+                                window.homeRosterDetails.push({id: pId, name: pName, img: pImg});
+                            }
+                        } else if (lineup.teamType === "road") {
+                            window.roadPlayersSet.add(pName);
+                            if (!window.roadRosterDetails.some(x => x.id === pId)) {
+                                window.roadRosterDetails.push({id: pId, name: pName, img: pImg});
+                            }
+                        }
+                    });
+                });
+
+                const homeScoreEl = document.getElementById("uiScoreHome");
+                if (homeScoreEl) homeScoreEl.innerText = data.homeScore || 0;
                 
-                const homeTeamName = (teams[0] || "HOME").trim() || "HOME";
-                const roadTeamName = (teams[1] || "ROAD").trim() || "ROAD";
+                const roadScoreEl = document.getElementById("uiScoreRoad");
+                if (roadScoreEl) roadScoreEl.innerText = data.roadScore || 0;
                 
-                document.querySelectorAll('#txtHomeTeamName, #txtHomeTeamName2, #txtHomeTeamName3, #txtHomeTeamName4, #txtHomeTeamName5').forEach(el => el.innerText = homeTeamName.toUpperCase());
-                document.querySelectorAll('#txtRoadTeamName, #txtRoadTeamName2, #txtRoadTeamName3, #txtRoadTeamName4, #txtRoadTeamName5').forEach(el => el.innerText = roadTeamName.toUpperCase());
-                document.getElementById("uiHomeTeam").innerText = homeTeamName.substring(0,3).toUpperCase();
-                document.getElementById("uiRoadTeam").innerText = roadTeamName.substring(0,3).toUpperCase();
+                buildRoster(window.homeRosterDetails, homePlayersContainer, "home");
+                buildRoster(window.roadRosterDetails, roadPlayersContainer, "road");
                 
-                const homeTitleEl = document.getElementById("homeTeamTitle");
-                if (homeTitleEl) homeTitleEl.innerText = homeTeamName.toUpperCase();
-                const roadTitleEl = document.getElementById("roadTeamTitle");
-                if (roadTitleEl) roadTitleEl.innerText = roadTeamName.toUpperCase();
+                const hsa = document.querySelector('.euro-roster.home .roster-sub input');
+                if (hsa) hsa.checked = true;
+                const rsa = document.querySelector('.euro-roster.road .roster-sub input');
+                if (rsa) rsa.checked = true;
+
+                } catch (error) {
+                    if (error.name === "AbortError") throw error;
+                    console.error("Σφάλμα στα lineups:", error);
+                    showVideoStatus("Τα σουτ φορτώθηκαν, αλλά το roster δεν ήταν διαθέσιμο.", "error");
+                }
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/game/lineups?game_code=${selectedGame}&season_code=${selectedSeason}`);
-            const data = await response.json();
-            if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== mode) return;
+            if (isVideoShotMode && typeof window.setPlayByPlayActions === "function") {
+                window.setPlayByPlayActions(playByPlayActions);
+                window.currentPlayByPlayGameKey = `${selectedSeason}:${selectedGame}`;
+            }
+            applyChartFilters();
+        } catch (error) {
+            if (error.name !== "AbortError" && activeQueryGeneration === queryGeneration) {
+                console.error("Σφάλμα στη φόρτωση του shot view:", error);
+                if (isVideoShotMode) {
+                    showVideoStatus("Αποτυχία φόρτωσης του video game. Έλεγξε ότι το backend τρέχει και δοκίμασε ξανά.", "error");
+                    if (typeof window.setPlayByPlayActions === "function") window.setPlayByPlayActions([]);
+                } else {
+                    window.alert("Αποτυχία φόρτωσης των σουτ. Δοκίμασε ξανά.");
+                }
+            }
+        } finally {
+            if (activeShotRequestController === requestController) activeShotRequestController = null;
+            if (activeQueryGeneration === queryGeneration) {
+                mainActionBtn.disabled = false;
+                mainActionBtn.innerText = isVideoShotMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)";
+            }
+        }
+    } 
+    else {
+        analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold;'>Φόρτωση δεδομένων...</div>";
+        
+        try {
+            if (mode === "top-lineups") {
+                const integratedSimulator = document.getElementById("integratedSimulator");
+                if (integratedSimulator) integratedSimulator.style.display = "none";
+                
+                if (tryGameBtn) {
+                    tryGameBtn.style.display = "block";
+                    tryGameBtn.innerText = " TRY GAME";
+                }
 
-            window.homePlayersSet.clear();
-            window.roadPlayersSet.clear();
-            window.homeRosterDetails = [];
-            window.roadRosterDetails = [];
-
-            data.lineups.forEach(lineup => {
-                if (!lineup.players) return;
-                lineup.players.split("@@").forEach(pInfo => {
-                    const parts = pInfo.split("|");
-                    const pId = parts[0];
-                    const pName = parts[1] || parts[0];
-                    const pImg = (parts[2] && parts[2] !== "NO_IMG") ? parts[2] : null;
-                    
-                    if (lineup.teamType === "home") {
-                        window.homePlayersSet.add(pName); 
-                        if (!window.homeRosterDetails.some(x => x.id === pId)) {
-                            window.homeRosterDetails.push({id: pId, name: pName, img: pImg});
-                        }
-                    } else if (lineup.teamType === "road") {
-                        window.roadPlayersSet.add(pName);
-                        if (!window.roadRosterDetails.some(x => x.id === pId)) {
-                            window.roadRosterDetails.push({id: pId, name: pName, img: pImg});
-                        }
-                    }
-                });
-            });
-
-            const homeScoreEl = document.getElementById("uiScoreHome");
-            if (homeScoreEl) homeScoreEl.innerText = data.homeScore || 0;
-            
-            const roadScoreEl = document.getElementById("uiScoreRoad");
-            if (roadScoreEl) roadScoreEl.innerText = data.roadScore || 0;
-            
-            buildRoster(window.homeRosterDetails, homePlayersContainer, "home");
-            buildRoster(window.roadRosterDetails, roadPlayersContainer, "road");
-            
-            const hsa = document.querySelector('.euro-roster.home .roster-sub input');
-            if (hsa) hsa.checked = true;
-            const rsa = document.querySelector('.euro-roster.road .roster-sub input');
-            if (rsa) rsa.checked = true;
-
-        } catch (error) { console.error("Σφάλμα στα lineups:", error); }
+                analyticsTitle.innerText = "Top Lineups";
+                analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
+                
+                const lineups = await fetchTopLineups(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason);
+                if (!lineups || lineups.length === 0) {
+                    analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
+                    return;
+                }
+                await renderTopLineups(lineups, selectedGame, selectedSeason);
+            } 
+            else if (mode === "second-chance") {
+                const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason, secondChancePlayer);        
+                renderPlayerCards(players, "total_points", "ΠΟΝΤΟΙ", "#27ae60");
+            } 
+            else if (mode === "assist-duos") {
+                const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason);        
+                renderAssistDuos(duos);
+            }
+            else if (mode === "fouls-drawn") {
+                const players = await fetchFoulsDrawn(filterType, filterId, quarter, minStart, minEnd, fouledId, foulingId, selectedGame, selectedSeason);
+                renderPlayerCards(players, "total_fouls_drawn", "ΚΕΡΔΙΣΜΕΝΑ ΦΑΟΥΛ", "#e74c3c");
+            } 
+            else if (mode === "defensive-anchors") {
+                const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, selectedGame, selectedSeason);        
+                renderPlayerCards(players, "total_blocks", "ΜΠΛΟΚ", "#34495e");
+            }
+        } catch (error) {
+            analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; color: red;'>Σφάλμα φόρτωσης.</div>";
+        }
     }
-
-    if (isVideoShotMode && typeof window.setPlayByPlayActions === "function") {
-        window.setPlayByPlayActions(playByPlayActions);
-        window.currentPlayByPlayGameKey = `${selectedSeason}:${selectedGame}`;
-    }
-    applyChartFilters();
 });
 
 // --- CURRENT LINEUPS ΓΙΑ ΤΟ EURO CHART MODE ---
@@ -1147,7 +1616,8 @@ if (simBtn) {
         const p4 = slotPF.getAttribute("data-id");
         const p5 = slotC.getAttribute("data-id");
         
-        const gameCode = document.getElementById("analyticsGameCodeInput") ? document.getElementById("analyticsGameCodeInput").value.trim() : "333";
+        const gameCodeInput = document.getElementById("analyticsGameCodeInput");
+        const gameCode = gameCodeInput?.value.trim() || window.currentScenario?.game_code || "";
         
         resultDiv.innerHTML = `<span style="color: #f39c12; font-size: 1.2rem; font-weight: bold;">Προσομοίωση αγώνα σε εξέλιξη... 🎲</span>`;
 
@@ -1236,28 +1706,56 @@ if (simBtn) {
 const tryGameBtn = document.getElementById("tryGameBtn");
 if (tryGameBtn) {
     tryGameBtn.addEventListener("click", async () => {
+        const integratedSimulator = document.getElementById("integratedSimulator");
         const gameInstructions = document.getElementById("gameInstructions");
         const actualSimulatorUI = document.getElementById("actualSimulatorUI");
+        const extraFilters = document.getElementById("extraFiltersContainer");
+        const timeFilters = document.getElementById("timeFiltersContainer");
         const mainActionBtn = document.getElementById("mainActionBtn");
-        const rosterPool = document.getElementById("rosterPool");
+        
+        // ----------------------------------------------------
+        // ΦΑΣΗ 1: Μπαίνει στο Mode Οδηγιών (Πατώντας TRY GAME)
+        // ----------------------------------------------------
+        if (tryGameBtn.innerText.includes("TRY GAME")) {
+            // 1. Κρύβουμε τα φίλτρα
+            if (extraFilters) extraFilters.style.display = "none";
+            if (timeFilters) timeFilters.style.display = "none";
+            if (analyticsContent) analyticsContent.style.display = "none";
+            if (analyticsTitle) analyticsTitle.style.display = "none";
 
-        if (tryGameBtn.innerText.includes("GAME")) {
-            // 1. Κρύβουμε τις οδηγίες και το πράσινο κουμπί
-            if (gameInstructions) gameInstructions.style.display = "none";
-            tryGameBtn.style.display = "none"; 
-            
-            // 2. Εμφανίζουμε το παρκέ του Simulator
-            if (actualSimulatorUI) actualSimulatorUI.style.display = "block";
-
-            // 3. Εμφανίζουμε το κουμπί ΕΞΟΔΟΣ ΑΠΟ GAME (Το κόκκινο κουμπί)
+            if (playerFilterGroup) playerFilterGroup.style.display = "none";
+            // 2. Αλλάζουμε το κουμπί της Αναζήτησης σε Έξοδο
             if (mainActionBtn) {
-                mainActionBtn.style.display = "block";
                 mainActionBtn.innerText = "ΕΞΟΔΟΣ ΑΠΟ GAME";
                 mainActionBtn.style.backgroundColor = "#c0392b"; 
             }
 
-            // 4. Ξεκινάμε το Fetching του παιχνιδιού
-            const selectedSeason = document.getElementById("globalSeasonSelect") ? document.getElementById("globalSeasonSelect").value : "";
+            // 3. Εμφανίζουμε ΜΟΝΟ τις οδηγίες
+            if (integratedSimulator) {
+                integratedSimulator.style.display = "block";
+                if (gameInstructions) gameInstructions.style.display = "block";
+                if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
+                integratedSimulator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // 4. Αλλάζουμε το κείμενο σε σκέτο GAME για το επόμενο κλικ
+            tryGameBtn.innerText = " GAME";
+            return; // Σταματάμε εδώ την εκτέλεση!
+        }
+
+        // ----------------------------------------------------
+        // ΦΑΣΗ 2: Ξεκινάει η Προσομοίωση (Πατώντας GAME)
+        // ----------------------------------------------------
+        if (tryGameBtn.innerText.includes("GAME")) {
+            // 1. Κρύβουμε τις οδηγίες και το ίδιο το κουμπί
+            if (gameInstructions) gameInstructions.style.display = "none";
+            tryGameBtn.style.display = "none"; 
+            
+            // 2. Εμφανίζουμε το παρκέ (UI)
+            if (actualSimulatorUI) actualSimulatorUI.style.display = "block";
+
+            // 3. Ξεκινάμε το Fetching του παιχνιδιού
+            const selectedSeason = document.getElementById("seasonSelect") ? document.getElementById("seasonSelect").value : "";
             const simMatchupTitle = document.getElementById("simMatchupTitle");
             const simScenarioText = document.getElementById("simScenarioText");
             const rosterPool = document.getElementById("rosterPool");
@@ -1340,23 +1838,31 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
     if (!keepStreak) window.quizState.streak = 0;
     window.quizState.difficulty = difficulty;
     const analyticsContent = document.getElementById("analyticsContent");
-    
+
     analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #6c63ff; font-weight: bold; font-size: 1.5rem; padding: 40px;'>Ετοιμάζεται η ερώτηση... ⏱️</div>";
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/quiz/${category}?difficulty=${difficulty}`);
         const data = await response.json();
-        
+
         if (data.error) throw new Error(data.error);
-        
+
         window.quizState.isActive = true;
         window.quizState.secretName = data.secret_player_name;
         window.quizState.category = category; // Κρατάμε το είδος του quiz
         window.quizState.currentHintIndex = 0; // Χρησιμοποιείται ως μετρητής λαθών/hints
-        
+
         let initialMessage = "";
-        let themeColor = category === 'who-am-i' ? '#6c63ff' : '#27ae60';
-        let quizTitle = category === 'who-am-i' ? '🤔 Ποιος Είμαι;' : '❓ Ποιος Λείπει;';
+        const quizPresentation = {
+            'who-am-i': { color: '#6c63ff', title: '🤔 Ποιος Είμαι;' },
+            'who-is-missing': { color: '#27ae60', title: '❓ Ποιος Λείπει;' },
+            'higher-or-lower': { color: '#c0392b', title: '📈 Higher / Lower' },
+            'top-5': { color: '#117A65', title: '🔝 Top 5' },
+            'fifty-fifty': { color: '#0f9bce', title: '⚖️ 50 / 50' }
+        };
+        const presentation = quizPresentation[category] || quizPresentation['who-am-i'];
+        const themeColor = presentation.color;
+        const quizTitle = presentation.title;
 
         // Διαμόρφωση UI ανάλογα με το παιχνίδι
         if (category === "who-am-i") {
@@ -1369,32 +1875,28 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     <span style="background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔥 STREAK: ${window.quizState.streak}</span>
                 </div>
                 <p style="color: #333; font-weight: 600; text-align: center; font-size: 1.15rem; margin-bottom: 25px;"><i>"${data.question_text}"</i></p>
-                
+
                 <div id="fiftyFiftyButtons" style="display: flex; gap: 20px; justify-content: center;">
                     <button onclick="handleFiftyFifty(0, ${data.correct_index})" style="flex: 1; padding: 25px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 2.5rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">${data.options[0]}</button>
-                    
                     <button onclick="handleFiftyFifty(1, ${data.correct_index})" style="flex: 1; padding: 25px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 2.5rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">${data.options[1]}</button>
                 </div>
-                
+
                 <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: #777; font-weight: bold;">
                     ${data.matchup} | ${data.season}
                 </div>
             `;
-            
+
             window.handleFiftyFifty = function(selectedIndex, correctIndex) {
                 const buttonsDiv = document.getElementById("fiftyFiftyButtons");
+                if (!buttonsDiv) return;
                 const buttons = buttonsDiv.querySelectorAll("button");
                 const chatBox = document.getElementById("quizChatBox");
-                
-                // Κλειδώνουμε τα κουμπιά για να μην πατηθούν 2η φορά
-                buttons[0].disabled = true;
-                buttons[1].disabled = true;
-                
-                // Χρωματίζουμε την απάντηση (Πράσινο στο Σωστό, Κόκκινο στο Λάθος)
+
+                buttons.forEach(button => { button.disabled = true; });
                 buttons[correctIndex].style.background = "#2ecc71";
                 const wrongIndex = correctIndex === 0 ? 1 : 0;
                 buttons[wrongIndex].style.background = "#e74c3c";
-                
+
                 if (selectedIndex === correctIndex) {
                     window.quizState.streak++;
                     chatBox.innerHTML += `
@@ -1402,7 +1904,6 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                             <strong style="color: #27ae60; font-size: 1.2rem;">🎉 ΣΩΣΤΟ!</strong><br>
                             Φόρτωση επόμενου γύρου... ⏳
                         </div>`;
-                    
                     setTimeout(() => {
                         window.startQuizCategory('fifty-fifty', window.quizState.difficulty, true);
                     }, 2000);
@@ -1415,7 +1916,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         </div>`;
                 }
             };
-        }else if (category === "who-is-missing") {
+        } else if (category === "who-is-missing") {
             // 1. Προετοιμασία των παικτών για το γήπεδο
             let allPlayers = [...data.known_players];
             // Επιλέγουμε μια τυχαία θέση (0 έως 4) για τον μυστικό παίκτη
@@ -1436,7 +1937,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             allPlayers.forEach((player, i) => {
                 const pos = positions[i];
                 const posStyle = `position:absolute; top:${pos.top || 'auto'}; bottom:${pos.bottom || 'auto'}; left:${pos.left || 'auto'}; right:${pos.right || 'auto'}; ${pos.transform ? 'transform:'+pos.transform+';' : ''} display:flex; flex-direction:column; align-items:center; width:80px; z-index: 2;`;
-                
+
                 if (player.isSecret) {
                     playersHTML += `
                         <div style="${posStyle}">
@@ -1445,7 +1946,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     `;
                 } else {
                     // Παίρνουμε το επίθετο για να χωράει κάτω από το εικονίδιο
-                    let shortName = player.split(' ').pop(); 
+                    let shortName = player.split(' ').pop();
                     playersHTML += `
                         <div style="${posStyle}">
                             <div style="width:45px; height:45px; background: radial-gradient(circle, #e67e22, #d35400); border: 2px solid #fff; border-radius: 50%; display:flex; justify-content:center; align-items:center; color:white; font-size:1.3rem; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">🏀</div>
@@ -1458,14 +1959,14 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             // 4. Κατασκευή του Γηπέδου και του Banner (εμπνευσμένο από την εικόνα)
             initialMessage = `
                 <div style="position: relative; width: 100%; max-width: 500px; height: 320px; background-color: #d4a373; border: 4px solid #fff; border-radius: 12px; margin: 0 auto 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
-                    
+
                     <!-- Γραμμές Γηπέδου -->
                     <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 160px; border: 3px solid rgba(255,255,255,0.7); border-bottom: none; background: rgba(255,255,255,0.1);"></div>
                     <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 400px; height: 300px; border: 3px solid rgba(255,255,255,0.7); border-radius: 50% 50% 0 0 / 100% 100% 0 0; border-bottom: none;"></div>
-                    
+
                     <!-- Παίκτες -->
                     ${playersHTML}
-                    
+
                     <!-- Πράσινο Banner Στατιστικών (Στο κάτω μέρος) -->
                     <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); padding: 8px 15px; color: white; display: flex; align-items: center; justify-content: space-between; border-top: 2px solid rgba(255,255,255,0.4); z-index: 3;">
                         <div style="display:flex; align-items:center; gap: 10px;">
@@ -1480,22 +1981,22 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="background: #fdf2e9; padding: 15px; border-radius: 8px; border-left: 5px solid #e67e22;">
-                    <p style="color: #d35400; font-weight: 900; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase;">Βοηθεια :</p>
+                    <p style="color: #d35400; font-weight: 900; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase;">Βοηθεια Αιμιλιου:</p>
                     <p style="color: #333; font-weight: 600;">${data.hint}</p>
                 </div>
             `;
         } else if (category === "higher-or-lower") {
             window.quizState.playerBStat = data.player_b.stat;
-            
+
             initialMessage = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <span style="background: #2b528a; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px;">📊 ${data.category_name}</span>
                     <span style="background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔥 STREAK: ${window.quizState.streak}</span>
                 </div>
                 <p style="color: #333; font-weight: 600; text-align: center; font-size: 1.15rem; margin-bottom: 25px;"><i>"${data.question_text}"</i></p>
-                
+
                 <div style="display: flex; gap: 20px; justify-content: center; align-items: stretch;">
                     <!-- Player A (Φανερό Στατιστικό) -->
                     <div style="flex: 1; background: white; border: 3px solid #3498db; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
@@ -1504,9 +2005,9 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div style="font-size: 3rem; font-weight: 900; color: #3498db;">${data.player_a.stat}</div>
                         <div style="font-size: 0.8rem; color: #777; font-weight: bold; text-transform: uppercase;">${data.category_name}</div>
                     </div>
-                    
+
                     <div style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: #bdc3c7;">VS</div>
-                    
+
                     <!-- Player B (Επιλογή) -->
                     <div style="flex: 1; background: #2b528a; border: 3px solid #2b528a; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
@@ -1520,34 +2021,34 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div id="holResultDisplay" style="display: none; font-size: 3rem; font-weight: 900; color: white;"></div>
                     </div>
                 </div>
-                
+
                 <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: #777; font-weight: bold;">
                     ${data.matchup} | ${data.season}
                 </div>
             `;
-            
+
             window.handleHigherLower = function(guess, statA) {
                 const statB = window.quizState.playerBStat;
                 const buttonsDiv = document.getElementById("holButtons");
                 const resultDiv = document.getElementById("holResultDisplay");
                 const chatBox = document.getElementById("quizChatBox");
-                
+
                 buttonsDiv.style.display = "none";
                 resultDiv.style.display = "block";
                 resultDiv.innerText = statB;
-                
+
                 const isHigher = statB > statA;
                 const isCorrect = (guess === "higher" && isHigher) || (guess === "lower" && !isHigher);
-                
+
                 if (isCorrect) {
                     window.quizState.streak++;
-                    resultDiv.style.color = "#2ecc71"; 
+                    resultDiv.style.color = "#2ecc71";
                     chatBox.innerHTML += `
                         <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60; text-align: center;">
                             <strong style="color: #27ae60; font-size: 1.2rem;">🎉 ΣΩΣΤΟ!</strong><br>
                             Ο ${data.player_b.name} είχε ${statB}. Φόρτωση επόμενου γύρου... ⏳
                         </div>`;
-                    
+
                     // Κρύβουμε το input box του chat αφού δεν χρειάζεται
                     document.getElementById("quizAnswerInput").parentElement.style.display = "none";
 
@@ -1555,16 +2056,16 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     setTimeout(() => {
                         window.startQuizCategory('higher-or-lower', window.quizState.difficulty, true);
                     }, 2000);
-                    
+
                 } else {
-                    resultDiv.style.color = "#e74c3c"; 
+                    resultDiv.style.color = "#e74c3c";
                     chatBox.innerHTML += `
                         <div style="margin-top: 20px; padding: 15px; background: #fadbd8; border-radius: 8px; border-left: 5px solid #c0392b; text-align: center;">
                             <strong style="color: #c0392b; font-size: 1.2rem;">❌ ΛΑΘΟΣ!</strong><br>
                             Ο ${data.player_b.name} είχε ${statB}. Το σερί σου σταμάτησε στο <b>${window.quizState.streak}</b> 🔥!<br><br>
                             <button onclick="window.startQuizCategory('higher-or-lower', window.quizState.difficulty, false)" style="padding: 10px 20px; background: #c0392b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔄 ΠΑΙΞΕ ΞΑΝΑ</button>
                         </div>`;
-                        
+
                     // Κρύβουμε το input box του chat
                     document.getElementById("quizAnswerInput").parentElement.style.display = "none";
                 }
@@ -1573,7 +2074,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             window.quizState.top5Answers = data.answers;
             window.quizState.top5Revealed = [false, false, false, false, false];
             window.quizState.strikes = 0;
-            
+
             // Το UI της πράσινης κάρτας
             initialMessage = `
                 <div style="background: linear-gradient(135deg, #117A65 0%, #2ecc71 100%); padding: 25px; border-radius: 16px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 600px; margin: 0 auto;">
@@ -1581,7 +2082,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div style="background: white; color: #27ae60; font-weight: 900; font-size: 1.5rem; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">🔝5</div>
                         <h3 style="font-size: 1.8rem; font-weight: 900; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">TOP 5</h3>
                     </div>
-                    
+
                     <div id="top5Board" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
                         ${data.answers.map((ans, i) => `
                             <div id="top5-slot-${i}" style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); border: 2px solid rgba(255,255,255,0.1);">
@@ -1591,54 +2092,57 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                             </div>
                         `).join('')}
                     </div>
-                    
+
                     <div id="strikesContainer" style="display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 999px; width: fit-content;">
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                     </div>
-                    
+
                     <div style="background: white; color: #1e8449; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; font-weight: 900; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                         ${data.question_text}
                     </div>
                 </div>
             `;
         }
-        
+
         analyticsContent.innerHTML = `
             <div style="grid-column: 1 / -1; background:#fff; padding:30px; border-radius:12px; border-left:8px solid ${themeColor}; box-shadow:0 10px 25px rgba(0,0,0,0.1); position: relative;">
                 <button onclick="document.getElementById('mainModeSelect').dispatchEvent(new Event('change'))" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#777; cursor:pointer; font-weight:bold; font-size:1rem;">🔙 Πίσω στο Μενού</button>
                 <h2 style="color:#2b528a; margin-bottom: 20px; text-transform: uppercase;">${quizTitle} (${difficulty.toUpperCase()})</h2>
-                
+
                 <div id="quizChatBox" style="min-height: 150px; background: #f4f6f8; padding: 20px; border-radius: 8px; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
                     ${initialMessage}
                 </div>
-                
+
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="quizAnswerInput" placeholder="Μάντεψε τον παίκτη..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
                     <button id="quizAnswerBtn" style="padding: 12px 25px; background: ${themeColor}; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">ΑΠΑΝΤΗΣΗ</button>
                 </div>
             </div>
         `;
-        
+
         const quizInput = document.getElementById("quizAnswerInput");
         const quizBtn = document.getElementById("quizAnswerBtn");
         const chatBox = document.getElementById("quizChatBox");
-        
+        if (category === "fifty-fifty" || category === "higher-or-lower") {
+            quizInput.parentElement.style.display = "none";
+        }
+
         const submitAnswer = () => {
             if (!window.quizState.isActive || !quizInput.value.trim()) return;
-            
+
             const userGuess = quizInput.value.trim().toLowerCase();
-            
+
             if (window.quizState.category === "top-5") {
                 let foundMatch = false;
-                
+
                 // Ελέγχουμε όλες τις απαντήσεις του Top 5
                 window.quizState.top5Answers.forEach((ans, index) => {
                     if (!window.quizState.top5Revealed[index] && ans.name.toLowerCase().includes(userGuess)) {
                         window.quizState.top5Revealed[index] = true;
                         foundMatch = true;
-                        
+
                         // Αποκάλυψη στο UI
                         const textEl = document.getElementById(`top5-text-${index}`);
                         const statEl = document.getElementById(`top5-stat-${index}`);
@@ -1649,7 +2153,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         document.getElementById(`top5-slot-${index}`).style.color = "#27ae60";
                     }
                 });
-                
+
                 if (foundMatch) {
                     // Έλεγχος αν τα βρήκε όλα
                     if (window.quizState.top5Revealed.every(v => v === true)) {
@@ -1666,7 +2170,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         strikes[window.quizState.strikes - 1].style.background = "#e74c3c";
                         strikes[window.quizState.strikes - 1].style.color = "white";
                     }
-                    
+
                     if (window.quizState.strikes >= 3) {
                         // Game Over -> Αποκαλύπτουμε τις υπόλοιπες απαντήσεις
                         window.quizState.top5Answers.forEach((ans, index) => {
@@ -1690,7 +2194,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                 return; // Τερματίζουμε την εκτέλεση εδώ για το Top 5
             }
             const secret = window.quizState.secretName.toLowerCase();
-            
+
             if (secret.includes(userGuess)) {
                 chatBox.innerHTML += `
                     <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60;">
@@ -1701,7 +2205,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                 quizInput.disabled = true;
             } else {
                 window.quizState.currentHintIndex++;
-                
+
                 if (window.quizState.category === "who-am-i") {
                     if (window.quizState.currentHintIndex < 3) {
                         chatBox.innerHTML += `
@@ -1739,13 +2243,12 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             quizInput.value = "";
             quizInput.focus();
         };
-        
+
         quizBtn.addEventListener("click", submitAnswer);
         quizInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAnswer(); });
         quizInput.focus();
-        
+
     } catch (error) {
         analyticsContent.innerHTML = `<div style='grid-column: 1 / -1; color: red; text-align:center;'>Σφάλμα: ${error.message}</div>`;
     }
 };
-

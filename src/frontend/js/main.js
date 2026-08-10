@@ -434,7 +434,7 @@ mainModeSelect.addEventListener("change", (e) => {
             analyticsContent.innerHTML = `
                 <div class="quiz-menu-container">
                     <h2 style="color:#2b528a; text-align:center; margin-bottom:20px; font-size:2rem; font-weight:900; text-transform:uppercase;">ΕΠΙΛΟΓΗ ΚΑΤΗΓΟΡΙΑΣ</h2>
-                    
+
                     <!-- 1. ΠΟΙΟΣ ΕΙΜΑΙ; -->
                     <div class="quiz-category-row" style="background: linear-gradient(90deg, #9706d5 0%, #9b59b6 100%); margin-bottom: 15px;">
                         <div class="quiz-category-left">
@@ -482,6 +482,18 @@ mainModeSelect.addEventListener("change", (e) => {
                             <button class="quiz-diff-btn" onclick="startQuizCategory('top-5', 'easy')">ΕΥΚ</button>
                             <button class="quiz-diff-btn" onclick="startQuizCategory('top-5', 'medium')">ΜΕΤ</button>
                             <button class="quiz-diff-btn" onclick="startQuizCategory('top-5', 'hard')">ΔΥΣ</button>
+                        </div>
+                    </div>
+                    <!-- 5. 50/50 -->
+                    <div class="quiz-category-row" style="background: linear-gradient(90deg, #0b18a7 0%, #0f9bce 100%);">
+                        <div class="quiz-category-left">
+                            <div class="quiz-icon">⚖️</div>
+                            <span>50 / 50</span>
+                        </div>
+                        <div class="quiz-difficulties">
+                            <button class="quiz-diff-btn" onclick="startQuizCategory('fifty-fifty', 'easy')">ΕΥΚ</button>
+                            <button class="quiz-diff-btn" onclick="startQuizCategory('fifty-fifty', 'medium')">ΜΕΤ</button>
+                            <button class="quiz-diff-btn" onclick="startQuizCategory('fifty-fifty', 'hard')">ΔΥΣ</button>
                         </div>
                     </div>
                 </div>
@@ -776,20 +788,20 @@ mainActionBtn.addEventListener("click", async () => {
             window.alert("Επίλεξε Season και Game για να παίξεις Quiz Ball.");
             return;
         }
-        
+
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #6c63ff; font-weight: bold; font-size: 1.5rem; padding: 40px;'>Ο Αιμίλιος διαβάζει τα στατιστικά... ⏱️</div>";
-        
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/quiz/who-am-i?game_code=${selectedGame}&season_code=${selectedSeason}`);
             const data = await response.json();
-            
+
             if (data.error || !data.hints) throw new Error(data.error || "Αποτυχία φόρτωσης quiz.");
-            
+
             window.quizState.isActive = true;
             window.quizState.hints = data.hints;
             window.quizState.secretName = data.secret_player_name;
             window.quizState.currentHintIndex = 0;
-            
+
             // Χτίζουμε ένα καθαρό αυτόνομο UI ερωταπαντήσεων μέσα στο analyticsContent
             analyticsContent.innerHTML = `
                 <div style="grid-column: 1 / -1; background:#fff; padding:30px; border-radius:12px; border-left:8px solid #6c63ff; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
@@ -804,18 +816,18 @@ mainActionBtn.addEventListener("click", async () => {
                     </div>
                 </div>
             `;
-            
+
             const quizInput = document.getElementById("quizAnswerInput");
             const quizBtn = document.getElementById("quizAnswerBtn");
             const chatBox = document.getElementById("quizChatBox");
-            
+
             // Τοπική συνάρτηση για την υποβολή της απάντησης
             const submitAnswer = () => {
                 if (!window.quizState.isActive || !quizInput.value.trim()) return;
-                
+
                 const userGuess = quizInput.value.trim().toLowerCase();
                 const secret = window.quizState.secretName.toLowerCase();
-                
+
                 // Δέχεται τη σωστή απάντηση ακόμα και αν ο χρήστης γράψει μόνο το επίθετο
                 if (secret.includes(userGuess)) {
                     chatBox.innerHTML += `
@@ -846,12 +858,12 @@ mainActionBtn.addEventListener("click", async () => {
                 quizInput.value = "";
                 quizInput.focus();
             };
-            
+
             // Event Listeners για το κουμπί "Απάντηση" και το πλήκτρο "Enter"
             quizBtn.addEventListener("click", submitAnswer);
             quizInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAnswer(); });
             quizInput.focus();
-            
+
         } catch (error) {
             analyticsContent.innerHTML = `<div style='grid-column: 1 / -1; color: red; text-align:center;'>Σφάλμα: ${error.message}</div>`;
         }
@@ -1434,7 +1446,7 @@ if (tryGameBtn) {
             if (timeFilters) timeFilters.style.display = "none";
             if (analyticsContent) analyticsContent.style.display = "none";
             if (analyticsTitle) analyticsTitle.style.display = "none";
-            
+
             if (playerFilterGroup) playerFilterGroup.style.display = "none";
             // 2. Αλλάζουμε το κουμπί της Αναζήτησης σε Έξοδο
             if (mainActionBtn) {
@@ -1550,28 +1562,84 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
     if (!keepStreak) window.quizState.streak = 0;
     window.quizState.difficulty = difficulty;
     const analyticsContent = document.getElementById("analyticsContent");
-    
+
     analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #6c63ff; font-weight: bold; font-size: 1.5rem; padding: 40px;'>Ετοιμάζεται η ερώτηση... ⏱️</div>";
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/quiz/${category}?difficulty=${difficulty}`);
         const data = await response.json();
-        
+
         if (data.error) throw new Error(data.error);
-        
+
         window.quizState.isActive = true;
         window.quizState.secretName = data.secret_player_name;
         window.quizState.category = category; // Κρατάμε το είδος του quiz
         window.quizState.currentHintIndex = 0; // Χρησιμοποιείται ως μετρητής λαθών/hints
-        
+
         let initialMessage = "";
-        let themeColor = category === 'who-am-i' ? '#6c63ff' : '#27ae60';
-        let quizTitle = category === 'who-am-i' ? '🤔 Ποιος Είμαι;' : '❓ Ποιος Λείπει;';
+        const quizPresentation = {
+            'who-am-i': { color: '#6c63ff', title: '🤔 Ποιος Είμαι;' },
+            'who-is-missing': { color: '#27ae60', title: '❓ Ποιος Λείπει;' },
+            'higher-or-lower': { color: '#c0392b', title: '📈 Higher / Lower' },
+            'top-5': { color: '#117A65', title: '🔝 Top 5' },
+            'fifty-fifty': { color: '#0f9bce', title: '⚖️ 50 / 50' }
+        };
+        const presentation = quizPresentation[category] || quizPresentation['who-am-i'];
+        const themeColor = presentation.color;
+        const quizTitle = presentation.title;
 
         // Διαμόρφωση UI ανάλογα με το παιχνίδι
         if (category === "who-am-i") {
             window.quizState.hints = data.hints;
             initialMessage = `<p style="color: #e74c3c; font-weight: bold;">Στοιχείο 1:</p><p>${window.quizState.hints[0]}</p>`;
+        } else if (category === "fifty-fifty") {
+            initialMessage = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="background: #e67e22; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px;">⚖️ 50 / 50</span>
+                    <span style="background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔥 STREAK: ${window.quizState.streak}</span>
+                </div>
+                <p style="color: #333; font-weight: 600; text-align: center; font-size: 1.15rem; margin-bottom: 25px;"><i>"${data.question_text}"</i></p>
+
+                <div id="fiftyFiftyButtons" style="display: flex; gap: 20px; justify-content: center;">
+                    <button onclick="handleFiftyFifty(0, ${data.correct_index})" style="flex: 1; padding: 25px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 2.5rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">${data.options[0]}</button>
+                    <button onclick="handleFiftyFifty(1, ${data.correct_index})" style="flex: 1; padding: 25px; background: #34495e; color: white; border: none; border-radius: 12px; font-weight: 900; font-size: 2.5rem; cursor: pointer; transition: transform 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">${data.options[1]}</button>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: #777; font-weight: bold;">
+                    ${data.matchup} | ${data.season}
+                </div>
+            `;
+
+            window.handleFiftyFifty = function(selectedIndex, correctIndex) {
+                const buttonsDiv = document.getElementById("fiftyFiftyButtons");
+                if (!buttonsDiv) return;
+                const buttons = buttonsDiv.querySelectorAll("button");
+                const chatBox = document.getElementById("quizChatBox");
+
+                buttons.forEach(button => { button.disabled = true; });
+                buttons[correctIndex].style.background = "#2ecc71";
+                const wrongIndex = correctIndex === 0 ? 1 : 0;
+                buttons[wrongIndex].style.background = "#e74c3c";
+
+                if (selectedIndex === correctIndex) {
+                    window.quizState.streak++;
+                    chatBox.innerHTML += `
+                        <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60; text-align: center;">
+                            <strong style="color: #27ae60; font-size: 1.2rem;">🎉 ΣΩΣΤΟ!</strong><br>
+                            Φόρτωση επόμενου γύρου... ⏳
+                        </div>`;
+                    setTimeout(() => {
+                        window.startQuizCategory('fifty-fifty', window.quizState.difficulty, true);
+                    }, 2000);
+                } else {
+                    chatBox.innerHTML += `
+                        <div style="margin-top: 20px; padding: 15px; background: #fadbd8; border-radius: 8px; border-left: 5px solid #c0392b; text-align: center;">
+                            <strong style="color: #c0392b; font-size: 1.2rem;">❌ ΛΑΘΟΣ!</strong><br>
+                            Το σερί σου σταμάτησε στο <b>${window.quizState.streak}</b> 🔥!<br><br>
+                            <button onclick="window.startQuizCategory('fifty-fifty', window.quizState.difficulty, false)" style="padding: 10px 20px; background: #c0392b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔄 ΠΑΙΞΕ ΞΑΝΑ</button>
+                        </div>`;
+                }
+            };
         } else if (category === "who-is-missing") {
             // 1. Προετοιμασία των παικτών για το γήπεδο
             let allPlayers = [...data.known_players];
@@ -1593,7 +1661,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             allPlayers.forEach((player, i) => {
                 const pos = positions[i];
                 const posStyle = `position:absolute; top:${pos.top || 'auto'}; bottom:${pos.bottom || 'auto'}; left:${pos.left || 'auto'}; right:${pos.right || 'auto'}; ${pos.transform ? 'transform:'+pos.transform+';' : ''} display:flex; flex-direction:column; align-items:center; width:80px; z-index: 2;`;
-                
+
                 if (player.isSecret) {
                     playersHTML += `
                         <div style="${posStyle}">
@@ -1602,7 +1670,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     `;
                 } else {
                     // Παίρνουμε το επίθετο για να χωράει κάτω από το εικονίδιο
-                    let shortName = player.split(' ').pop(); 
+                    let shortName = player.split(' ').pop();
                     playersHTML += `
                         <div style="${posStyle}">
                             <div style="width:45px; height:45px; background: radial-gradient(circle, #e67e22, #d35400); border: 2px solid #fff; border-radius: 50%; display:flex; justify-content:center; align-items:center; color:white; font-size:1.3rem; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">🏀</div>
@@ -1615,14 +1683,14 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             // 4. Κατασκευή του Γηπέδου και του Banner (εμπνευσμένο από την εικόνα)
             initialMessage = `
                 <div style="position: relative; width: 100%; max-width: 500px; height: 320px; background-color: #d4a373; border: 4px solid #fff; border-radius: 12px; margin: 0 auto 20px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2);">
-                    
+
                     <!-- Γραμμές Γηπέδου -->
                     <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 140px; height: 160px; border: 3px solid rgba(255,255,255,0.7); border-bottom: none; background: rgba(255,255,255,0.1);"></div>
                     <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 400px; height: 300px; border: 3px solid rgba(255,255,255,0.7); border-radius: 50% 50% 0 0 / 100% 100% 0 0; border-bottom: none;"></div>
-                    
+
                     <!-- Παίκτες -->
                     ${playersHTML}
-                    
+
                     <!-- Πράσινο Banner Στατιστικών (Στο κάτω μέρος) -->
                     <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to right, #2ecc71, #27ae60); padding: 8px 15px; color: white; display: flex; align-items: center; justify-content: space-between; border-top: 2px solid rgba(255,255,255,0.4); z-index: 3;">
                         <div style="display:flex; align-items:center; gap: 10px;">
@@ -1637,7 +1705,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="background: #fdf2e9; padding: 15px; border-radius: 8px; border-left: 5px solid #e67e22;">
                     <p style="color: #d35400; font-weight: 900; margin-bottom: 5px; font-size: 0.9rem; text-transform: uppercase;">Βοηθεια Αιμιλιου:</p>
                     <p style="color: #333; font-weight: 600;">${data.hint}</p>
@@ -1645,14 +1713,14 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             `;
         } else if (category === "higher-or-lower") {
             window.quizState.playerBStat = data.player_b.stat;
-            
+
             initialMessage = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <span style="background: #2b528a; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px;">📊 ${data.category_name}</span>
                     <span style="background: #e74c3c; color: white; padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔥 STREAK: ${window.quizState.streak}</span>
                 </div>
                 <p style="color: #333; font-weight: 600; text-align: center; font-size: 1.15rem; margin-bottom: 25px;"><i>"${data.question_text}"</i></p>
-                
+
                 <div style="display: flex; gap: 20px; justify-content: center; align-items: stretch;">
                     <!-- Player A (Φανερό Στατιστικό) -->
                     <div style="flex: 1; background: white; border: 3px solid #3498db; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
@@ -1661,9 +1729,9 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div style="font-size: 3rem; font-weight: 900; color: #3498db;">${data.player_a.stat}</div>
                         <div style="font-size: 0.8rem; color: #777; font-weight: bold; text-transform: uppercase;">${data.category_name}</div>
                     </div>
-                    
+
                     <div style="display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; color: #bdc3c7;">VS</div>
-                    
+
                     <!-- Player B (Επιλογή) -->
                     <div style="flex: 1; background: #2b528a; border: 3px solid #2b528a; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
@@ -1677,34 +1745,34 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div id="holResultDisplay" style="display: none; font-size: 3rem; font-weight: 900; color: white;"></div>
                     </div>
                 </div>
-                
+
                 <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: #777; font-weight: bold;">
                     ${data.matchup} | ${data.season}
                 </div>
             `;
-            
+
             window.handleHigherLower = function(guess, statA) {
                 const statB = window.quizState.playerBStat;
                 const buttonsDiv = document.getElementById("holButtons");
                 const resultDiv = document.getElementById("holResultDisplay");
                 const chatBox = document.getElementById("quizChatBox");
-                
+
                 buttonsDiv.style.display = "none";
                 resultDiv.style.display = "block";
                 resultDiv.innerText = statB;
-                
+
                 const isHigher = statB > statA;
                 const isCorrect = (guess === "higher" && isHigher) || (guess === "lower" && !isHigher);
-                
+
                 if (isCorrect) {
                     window.quizState.streak++;
-                    resultDiv.style.color = "#2ecc71"; 
+                    resultDiv.style.color = "#2ecc71";
                     chatBox.innerHTML += `
                         <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60; text-align: center;">
                             <strong style="color: #27ae60; font-size: 1.2rem;">🎉 ΣΩΣΤΟ!</strong><br>
                             Ο ${data.player_b.name} είχε ${statB}. Φόρτωση επόμενου γύρου... ⏳
                         </div>`;
-                    
+
                     // Κρύβουμε το input box του chat αφού δεν χρειάζεται
                     document.getElementById("quizAnswerInput").parentElement.style.display = "none";
 
@@ -1712,16 +1780,16 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     setTimeout(() => {
                         window.startQuizCategory('higher-or-lower', window.quizState.difficulty, true);
                     }, 2000);
-                    
+
                 } else {
-                    resultDiv.style.color = "#e74c3c"; 
+                    resultDiv.style.color = "#e74c3c";
                     chatBox.innerHTML += `
                         <div style="margin-top: 20px; padding: 15px; background: #fadbd8; border-radius: 8px; border-left: 5px solid #c0392b; text-align: center;">
                             <strong style="color: #c0392b; font-size: 1.2rem;">❌ ΛΑΘΟΣ!</strong><br>
                             Ο ${data.player_b.name} είχε ${statB}. Το σερί σου σταμάτησε στο <b>${window.quizState.streak}</b> 🔥!<br><br>
                             <button onclick="window.startQuizCategory('higher-or-lower', window.quizState.difficulty, false)" style="padding: 10px 20px; background: #c0392b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔄 ΠΑΙΞΕ ΞΑΝΑ</button>
                         </div>`;
-                        
+
                     // Κρύβουμε το input box του chat
                     document.getElementById("quizAnswerInput").parentElement.style.display = "none";
                 }
@@ -1730,7 +1798,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             window.quizState.top5Answers = data.answers;
             window.quizState.top5Revealed = [false, false, false, false, false];
             window.quizState.strikes = 0;
-            
+
             // Το UI της πράσινης κάρτας
             initialMessage = `
                 <div style="background: linear-gradient(135deg, #117A65 0%, #2ecc71 100%); padding: 25px; border-radius: 16px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 600px; margin: 0 auto;">
@@ -1738,7 +1806,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         <div style="background: white; color: #27ae60; font-weight: 900; font-size: 1.5rem; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">🔝5</div>
                         <h3 style="font-size: 1.8rem; font-weight: 900; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">TOP 5</h3>
                     </div>
-                    
+
                     <div id="top5Board" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
                         ${data.answers.map((ans, i) => `
                             <div id="top5-slot-${i}" style="background: rgba(255,255,255,0.2); border-radius: 12px; padding: 12px 20px; font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); border: 2px solid rgba(255,255,255,0.1);">
@@ -1748,54 +1816,57 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                             </div>
                         `).join('')}
                     </div>
-                    
+
                     <div id="strikesContainer" style="display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 999px; width: fit-content;">
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                         <div class="strike-box" style="width: 25px; height: 25px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-weight: bold; color: transparent;">X</div>
                     </div>
-                    
+
                     <div style="background: white; color: #1e8449; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; font-weight: 900; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                         ${data.question_text}
                     </div>
                 </div>
             `;
         }
-        
+
         analyticsContent.innerHTML = `
             <div style="grid-column: 1 / -1; background:#fff; padding:30px; border-radius:12px; border-left:8px solid ${themeColor}; box-shadow:0 10px 25px rgba(0,0,0,0.1); position: relative;">
                 <button onclick="document.getElementById('mainModeSelect').dispatchEvent(new Event('change'))" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#777; cursor:pointer; font-weight:bold; font-size:1rem;">🔙 Πίσω στο Μενού</button>
                 <h2 style="color:#2b528a; margin-bottom: 20px; text-transform: uppercase;">${quizTitle} (${difficulty.toUpperCase()})</h2>
-                
+
                 <div id="quizChatBox" style="min-height: 150px; background: #f4f6f8; padding: 20px; border-radius: 8px; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">
                     ${initialMessage}
                 </div>
-                
+
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="quizAnswerInput" placeholder="Μάντεψε τον παίκτη..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
                     <button id="quizAnswerBtn" style="padding: 12px 25px; background: ${themeColor}; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">ΑΠΑΝΤΗΣΗ</button>
                 </div>
             </div>
         `;
-        
+
         const quizInput = document.getElementById("quizAnswerInput");
         const quizBtn = document.getElementById("quizAnswerBtn");
         const chatBox = document.getElementById("quizChatBox");
-        
+        if (category === "fifty-fifty" || category === "higher-or-lower") {
+            quizInput.parentElement.style.display = "none";
+        }
+
         const submitAnswer = () => {
             if (!window.quizState.isActive || !quizInput.value.trim()) return;
-            
+
             const userGuess = quizInput.value.trim().toLowerCase();
-            
+
             if (window.quizState.category === "top-5") {
                 let foundMatch = false;
-                
+
                 // Ελέγχουμε όλες τις απαντήσεις του Top 5
                 window.quizState.top5Answers.forEach((ans, index) => {
                     if (!window.quizState.top5Revealed[index] && ans.name.toLowerCase().includes(userGuess)) {
                         window.quizState.top5Revealed[index] = true;
                         foundMatch = true;
-                        
+
                         // Αποκάλυψη στο UI
                         const textEl = document.getElementById(`top5-text-${index}`);
                         const statEl = document.getElementById(`top5-stat-${index}`);
@@ -1806,7 +1877,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         document.getElementById(`top5-slot-${index}`).style.color = "#27ae60";
                     }
                 });
-                
+
                 if (foundMatch) {
                     // Έλεγχος αν τα βρήκε όλα
                     if (window.quizState.top5Revealed.every(v => v === true)) {
@@ -1823,7 +1894,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         strikes[window.quizState.strikes - 1].style.background = "#e74c3c";
                         strikes[window.quizState.strikes - 1].style.color = "white";
                     }
-                    
+
                     if (window.quizState.strikes >= 3) {
                         // Game Over -> Αποκαλύπτουμε τις υπόλοιπες απαντήσεις
                         window.quizState.top5Answers.forEach((ans, index) => {
@@ -1847,7 +1918,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                 return; // Τερματίζουμε την εκτέλεση εδώ για το Top 5
             }
             const secret = window.quizState.secretName.toLowerCase();
-            
+
             if (secret.includes(userGuess)) {
                 chatBox.innerHTML += `
                     <div style="margin-top: 20px; padding: 15px; background: #d5f5e3; border-radius: 8px; border-left: 5px solid #27ae60;">
@@ -1858,7 +1929,7 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                 quizInput.disabled = true;
             } else {
                 window.quizState.currentHintIndex++;
-                
+
                 if (window.quizState.category === "who-am-i") {
                     if (window.quizState.currentHintIndex < 3) {
                         chatBox.innerHTML += `
@@ -1896,13 +1967,12 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             quizInput.value = "";
             quizInput.focus();
         };
-        
+
         quizBtn.addEventListener("click", submitAnswer);
         quizInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAnswer(); });
         quizInput.focus();
-        
+
     } catch (error) {
         analyticsContent.innerHTML = `<div style='grid-column: 1 / -1; color: red; text-align:center;'>Σφάλμα: ${error.message}</div>`;
     }
 };
-

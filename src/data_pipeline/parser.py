@@ -1,6 +1,8 @@
+import argparse
+import re
 from itertools import count
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 import os
 import time
 import random
@@ -15,8 +17,25 @@ def clock_to_seconds(clock_str):
     m, s = map(int, clock_str.split(":"))
     return m * 60 + s
 
+
+def normalize_marker_time(clock_str):
+    """Clamp malformed negative end-of-period API clocks to game-clock zero."""
+    value = str(clock_str or "").strip()
+    if value and clock_to_seconds(value) < 0:
+        return "00:00"
+    return value
+
 def period_length(period_name):
-    return 300 if "ExtraTime" in period_name else 600
+    normalized_period = str(period_name or "").upper()
+    return 300 if "EXTRATIME" in normalized_period or "OT" in normalized_period else 600
+
+
+def default_marker_time(play_type, period_name):
+    if play_type == "BP":
+        return f"{period_length(period_name) // 60:02d}:00"
+    if play_type in ("EP", "EG"):
+        return "00:00"
+    return ""
 
 def generate_uri(entity_type, value, game_url_base=None, players_set=None):
     if not value and entity_type != "lineup": 
@@ -165,8 +184,8 @@ class GameProcessor:
     def extract_action_data(self, event, period_name):
         play_type = event.get("PLAYTYPE", "")
         if play_type == "AG":
-            return  # Ignore "ShotRejected" actions
-        
+            return  # Intentionally excluded from generated action artifacts.
+
         player_id = event.get("PLAYER_ID", "").strip() if event.get("PLAYER_ID") else None
 
         euroleague_number_of_play = event.get("NUMBEROFPLAY")
@@ -185,7 +204,10 @@ class GameProcessor:
         mapped_quarter = quarter_mapping.get(period_name, period_name)
 
         # Proper empty time handling
-        markertime = event.get("MARKERTIME") or ("10:00" if play_type == "BP" else "00:00" if play_type in ("EP", "EG") else "")
+        markertime = normalize_marker_time(
+            event.get("MARKERTIME")
+            or default_marker_time(play_type, mapped_quarter)
+        )
         
         if event.get("POINTS_A") is not None: self.current_score_a = event["POINTS_A"]
         if event.get("POINTS_B") is not None: self.current_score_b = event["POINTS_B"]
@@ -582,119 +604,321 @@ class GameProcessor:
                 player_url = generate_uri("player", pid)
                 player_uri = f"<{player_url}>"
                 triplets.append(f"{lineup_uri} <{NS}includesPlayer> {player_uri} .")
-            
+
             triplets.append("\n")
 
         return triplets
-    
+
+
 # ==================================================
-# USAGE (DYNAMIC API FETCH)
+# COMMAND-LINE BATCH PROCESSING
 # ==================================================
 
-season_str = "2025-26"
-season_code = "E2025"   
-MAX_GAMES = 406 
+DEFAULT_MAX_GAMES = {
+    "E2023": 333,
+    "E2024": 330,
+    "E2025": 406,
+}
 
-# --- Δημιουργία Session για να φαίνεται σαν πραγματικός browser ---
-session = requests.Session()
-session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "https://www.euroleaguebasketball.net/",
-    "Origin": "https://www.euroleaguebasketball.net"
-})
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(os.path.dirname(script_dir))
-output_dir = os.path.join(project_root, "data", "processed")
-os.makedirs(output_dir, exist_ok=True)
+def season_label_from_code(season_code):
+    """Convert an API season code such as E2023 to the URI label 2023-24."""
+    if not re.fullmatch(r"E\d{4}", season_code or ""):
+        raise ValueError(
+            f"Invalid season code {season_code!r}. Expected a value such as E2023."
+        )
+    start_year = int(season_code[1:])
+    return f"{start_year}-{str(start_year + 1)[-2:]}"
+
+
+def resolve_game_codes(season_code, game_code=None, max_games=None):
+    """Return one requested game or the configured numeric range for a season."""
+    if game_code is not None:
+        try:
+            numeric_game_code = int(str(game_code))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("game_code must be a positive integer") from exc
+        if numeric_game_code <= 0:
+            raise ValueError("game_code must be a positive integer")
+        return [str(numeric_game_code)]
+
+    season_max_games = (
+        DEFAULT_MAX_GAMES.get(season_code) if max_games is None else max_games
+    )
+    if not season_max_games or season_max_games <= 0:
+        raise ValueError(
+            f"No maximum game code is configured for {season_code}. "
+            "Provide --max-games when processing a full season."
+        )
+    return [str(value) for value in range(1, season_max_games + 1)]
+
+
+def build_argument_parser():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Download EuroLeague game data and generate AllActions JSON plus "
+            "RDF N-Triples for one game or a complete season."
+        )
+    )
+    parser.add_argument(
+        "season_code",
+        help="EuroLeague API season code, for example E2023",
+    )
+    parser.add_argument(
+        "game_code",
+        nargs="?",
+        help="Optional numeric game code. Omit it to process the complete season.",
+    )
+    parser.add_argument(
+        "--max-games",
+        type=int,
+        help="Override the highest game code used for a complete season.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        help=(
+            "Processed-data root containing all_actions and "
+            "playbyplay_triplets subdirectories "
+            "(default: <project>/data/processed)."
+        ),
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Regenerate files that already exist.",
+    )
+    return parser
+
+
+def create_api_session():
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/json, text/plain, */*",
+        "Referer": "https://www.euroleaguebasketball.net/",
+        "Origin": "https://www.euroleaguebasketball.net",
+    })
+    return session
+
 
 def remove_nulls(obj):
     if isinstance(obj, list):
         return [remove_nulls(item) for item in obj if item is not None]
-    elif isinstance(obj, dict):
-        return {k: remove_nulls(v) for k, v in obj.items() if v is not None}
+    if isinstance(obj, dict):
+        return {key: remove_nulls(value) for key, value in obj.items() if value is not None}
     return obj
 
-print(f"Starting batch process for Season {season_code}...")
 
-for gc in range(1, MAX_GAMES + 1):
-    game_code = str(gc)
-    dynamic_game_url_base = f"https://www.euroleaguebasketball.net/euroleague/game-center/{season_str}/-/{season_code}/{game_code}"
-    
-    # --- ΝΕΟ: Ορίζουμε τα paths των αρχείων πριν κάνουμε request ---
-    output_json_path = os.path.join(output_dir, f"AllActions_{season_code}_{game_code}.json")
-    output_triplets_path = os.path.join(output_dir, f"Triplets_{season_code}_{game_code}.nt")
-    
-    # --- ΝΕΟ: Ελέγχουμε αν τα αρχεία υπάρχουν ήδη στον φάκελο ---
-    if os.path.exists(output_json_path) and os.path.exists(output_triplets_path):
-        print(f"\n[{game_code}/{MAX_GAMES}] Files already exist. Skipping API fetch...")
-        continue # Προσπερνάμε το παιχνίδι χωρίς να κάνουμε κανένα request
+def source_play_events(pbp_data):
+    """Return every official event included by the action data model."""
+    period_names = (
+        "FirstQuarter",
+        "SecondQuarter",
+        "ThirdQuarter",
+        "ForthQuarter",
+        "ExtraTime",
+    )
+    return [
+        event
+        for period_name in period_names
+        for event in (pbp_data.get(period_name, []) or [])
+        if isinstance(event, dict)
+        and event.get("PLAYTYPE") != "AG"
+    ]
 
-    print(f"\n[{game_code}/{MAX_GAMES}] Fetching data from API...")
-    
-    try:
-        # Χρησιμοποιούμε το 'session.get' αντί για 'requests.get'
-        pbp_response = session.get(f"https://live.euroleague.net/api/PlaybyPlay?gamecode={game_code}&seasoncode={season_code}")
-        
-        # Αν μας μπλοκάρουν (403) ή έχουμε φτάσει στο όριο (429), περιμένουμε λίγο παραπάνω και ξαναδοκιμάζουμε
-        if pbp_response.status_code in (403, 429):
-            print(f"  -> Banned/Rate Limited (Status: {pbp_response.status_code})! Sleeping for 10 seconds...")
+
+def validate_processed_actions_against_source(pbp_data, actions):
+    """Fail when an official event is lost, duplicated, or changes identity."""
+    source = [
+        (event.get("NUMBEROFPLAY"), event.get("PLAYTYPE", ""))
+        for event in source_play_events(pbp_data)
+    ]
+    processed = [
+        (action.get("originalEventId"), action.get("actionInfo", ""))
+        for action in actions
+    ]
+    if processed != source:
+        source_counter = Counter(source)
+        processed_counter = Counter(processed)
+        missing = list((source_counter - processed_counter).elements())
+        unexpected = list((processed_counter - source_counter).elements())
+        raise ValueError(
+            "Processed actions do not match the official Play-by-Play source. "
+            f"Missing: {missing[:10]}; unexpected: {unexpected[:10]}"
+        )
+
+
+def fetch_game_data(session, season_code, game_code):
+    endpoint_names = ("PlaybyPlay", "Boxscore", "Points")
+    payloads = []
+    for index, endpoint_name in enumerate(endpoint_names):
+        url = (
+            f"https://live.euroleague.net/api/{endpoint_name}"
+            f"?gamecode={game_code}&seasoncode={season_code}"
+        )
+        response = session.get(url, timeout=30)
+        if response.status_code in (403, 429):
+            print(
+                f"  -> {endpoint_name} returned {response.status_code}; "
+                "waiting 10 seconds before one retry..."
+            )
             time.sleep(10)
-            pbp_response = session.get(f"https://live.euroleague.net/api/PlaybyPlay?gamecode={game_code}&seasoncode={season_code}")
+            response = session.get(url, timeout=30)
+        if response.status_code != 200:
+            print(f"  -> {endpoint_name} unavailable (HTTP {response.status_code}).")
+            return None
+        if not response.content:
+            print(f"  -> {endpoint_name} unavailable (empty HTTP 200 response).")
+            return None
+        try:
+            payloads.append(response.json())
+        except (requests.exceptions.JSONDecodeError, ValueError):
+            print(
+                f"  -> {endpoint_name} unavailable "
+                "(HTTP 200 response is not valid JSON)."
+            )
+            return None
+        if index < len(endpoint_names) - 1:
+            time.sleep(0.5)
+    return tuple(payloads)
 
-        # Μικρή παύση 0.5 δευτ. ανάμεσα στα requests του ΙΔΙΟΥ παιχνιδιού
-        time.sleep(0.5) 
-        boxscore_response = session.get(f"https://live.euroleague.net/api/Boxscore?gamecode={game_code}&seasoncode={season_code}")
-        time.sleep(0.5)
-        points_response = session.get(f"https://live.euroleague.net/api/Points?gamecode={game_code}&seasoncode={season_code}")
-        
-        if pbp_response.status_code != 200:
-            print(f"  -> Skipping... (Status: {pbp_response.status_code})")
-            time.sleep(random.uniform(2.0, 3.5))
-            continue
-            
-        pbp_data = pbp_response.json()
-        boxscore_data = boxscore_response.json()
-        points_data = points_response.json()
-        
-        if not pbp_data or not boxscore_data:
-            print(f"  -> Game {game_code} has no valid JSON data. Skipping...")
-            time.sleep(random.uniform(2.0, 3.5))
-            continue
 
-    except Exception as e:
-        print(f"  -> Error fetching data for game {game_code}: {e}")
-        time.sleep(5) # Αν "χτυπήσει" κάποιο timeout, περιμένουμε λίγο παραπάνω
-        continue 
+def process_game(
+    session,
+    season_code,
+    season_label,
+    game_code,
+    all_actions_dir,
+    triplets_dir,
+    overwrite=False,
+):
+    os.makedirs(all_actions_dir, exist_ok=True)
+    os.makedirs(triplets_dir, exist_ok=True)
+    output_json_path = os.path.join(
+        all_actions_dir, f"AllActions_{season_code}_{game_code}.json"
+    )
+    output_triplets_path = os.path.join(
+        triplets_dir, f"Triplets_{season_code}_{game_code}.nt"
+    )
 
-    print("  -> Data fetched successfully. Processing...")
-    
+    if (
+        not overwrite
+        and os.path.exists(output_json_path)
+        and os.path.exists(output_triplets_path)
+    ):
+        print(
+            "  -> Both output files already exist; skipping. "
+            "Use --overwrite to regenerate."
+        )
+        return "skipped"
+
+    game_data = fetch_game_data(session, season_code, game_code)
+    if not game_data:
+        return "unavailable"
+    pbp_data, boxscore_data, points_data = game_data
+    if not pbp_data or not boxscore_data:
+        print("  -> The game has no valid Play-by-Play or Boxscore data.")
+        return "unavailable"
+
+    game_url_base = (
+        "https://www.euroleaguebasketball.net/euroleague/game-center/"
+        f"{season_label}/-/{season_code}/{game_code}"
+    )
+    processor = GameProcessor(pbp_data, boxscore_data, points_data, game_url_base)
+    processor.run()
+    validate_processed_actions_against_source(pbp_data, processor.all_actions)
+
+    combined_output = {
+        "Possessions": processor.possessions,
+        "AllActions": processor.all_actions,
+    }
+    cleaned_output = remove_nulls(combined_output)
+    with open(output_json_path, "w", encoding="utf8") as out_file:
+        json.dump(cleaned_output, out_file, ensure_ascii=False, indent=4)
+
+    triplets = processor.generate_triplets()
+    with open(output_triplets_path, "w", encoding="utf8") as out_file:
+        for triple in triplets:
+            out_file.write(triple + "\n")
+
+    triple_count = sum(1 for triple in triplets if triple.strip())
+    print(
+        f"  -> Saved {len(processor.all_actions)} actions and "
+        f"{triple_count} RDF triples:\n"
+        f"     {output_json_path}\n"
+        f"     {output_triplets_path}"
+    )
+    return "generated"
+
+
+def main(argv=None):
+    cli_parser = build_argument_parser()
+    args = cli_parser.parse_args(argv)
     try:
-        processor = GameProcessor(pbp_data, boxscore_data, points_data, dynamic_game_url_base)
-        processor.run()
-        
-        combined_output = {
-            "Possessions": processor.possessions,
-            "AllActions": processor.all_actions
-        }
-        cleaned_output = remove_nulls(combined_output)
-        
-        with open(output_json_path, "w", encoding="utf8") as out_file:
-            json.dump(cleaned_output, out_file, ensure_ascii=False, indent=4)
-            
-        triplets = processor.generate_triplets()
-        with open(output_triplets_path, "w", encoding="utf8") as out_file:
-            for triple in triplets:
-                out_file.write(triple + "\n")
-                
-        print(f"  -> Saved successfully: AllActions_{season_code}_{game_code}.json & Triplets_{season_code}_{game_code}.nt")
-        
-    except Exception as e:
-        print(f"  -> Error processing or saving game {game_code}: {e}")
+        season_label = season_label_from_code(args.season_code)
+        game_codes = resolve_game_codes(
+            args.season_code,
+            game_code=args.game_code,
+            max_games=args.max_games,
+        )
+    except ValueError as exc:
+        cli_parser.error(str(exc))
 
-    # ΠΑΥΣΗ: Από 2.5 έως 4.5 δευτερόλεπτα (τυχαία) για να φαίνεται σαν άνθρωπος
-    sleep_time = random.uniform(2.5, 4.5)
-    time.sleep(sleep_time)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    output_root = os.path.abspath(
+        args.output_dir or os.path.join(project_root, "data", "processed")
+    )
+    all_actions_dir = os.path.join(output_root, "all_actions")
+    triplets_dir = os.path.join(output_root, "playbyplay_triplets")
+    os.makedirs(all_actions_dir, exist_ok=True)
+    os.makedirs(triplets_dir, exist_ok=True)
 
-print("\nBatch processing complete! All games processed.")
+    scope = (
+        f"game {game_codes[0]}"
+        if len(game_codes) == 1
+        else f"games 1-{game_codes[-1]}"
+    )
+    print(f"Processing {args.season_code} ({season_label}), {scope}...")
+    session = create_api_session()
+    generated = skipped = unavailable = failed = 0
+
+    for index, game_code in enumerate(game_codes, start=1):
+        print(f"\n[{index}/{len(game_codes)}] Game {game_code}")
+        try:
+            status = process_game(
+                session,
+                args.season_code,
+                season_label,
+                game_code,
+                all_actions_dir,
+                triplets_dir,
+                overwrite=args.overwrite,
+            )
+            if status == "generated":
+                generated += 1
+            elif status == "skipped":
+                skipped += 1
+            else:
+                unavailable += 1
+        except (OSError, ValueError, requests.RequestException, json.JSONDecodeError) as exc:
+            failed += 1
+            print(f"  -> Failed: {exc}")
+
+        if len(game_codes) > 1 and index < len(game_codes):
+            time.sleep(random.uniform(2.5, 4.5))
+
+    print(
+        "\nProcessing complete: "
+        f"{generated} generated, {skipped} skipped, "
+        f"{unavailable} unavailable, {failed} failed."
+    )
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

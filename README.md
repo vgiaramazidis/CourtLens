@@ -1,5 +1,110 @@
 # EuroleagueProject
 
+## Play-by-Play action and RDF generation
+
+`src/data_pipeline/parser.py` downloads the official EuroLeague Play-by-Play,
+box-score, and points data. It can process either one game or every numeric game
+code configured for a season.
+
+Generate the action JSON and N-Triples for one game:
+
+```bash
+.venv/bin/python src/data_pipeline/parser.py E2023 170
+```
+
+Generate every configured game in a season:
+
+```bash
+.venv/bin/python src/data_pipeline/parser.py E2023
+```
+
+The configured maximum game codes are maintained in `DEFAULT_MAX_GAMES` inside
+`src/data_pipeline/parser.py`. A different upper bound can be supplied without
+changing the source code:
+
+```bash
+.venv/bin/python src/data_pipeline/parser.py E2023 --max-games 333
+```
+
+Existing pairs of output files are skipped by default. Use `--overwrite` to
+regenerate them:
+
+```bash
+.venv/bin/python src/data_pipeline/parser.py E2023 170 --overwrite
+```
+
+The default processed-data root is `data/processed/`. Artifacts are separated by
+category, and each processed game creates:
+
+- `data/processed/all_actions/AllActions_<SEASON_CODE>_<GAME_CODE>.json`
+- `data/processed/playbyplay_triplets/Triplets_<SEASON_CODE>_<GAME_CODE>.nt`
+
+Use `--output-dir /path/to/processed-root` when a different root is needed; the
+two category subdirectories are created automatically.
+The parser writes the first overtime as `1OT`, while OCR timelines may write it
+as `OT`. Synchronization code must normalize both values to the same canonical
+first-overtime identifier before matching clocks.
+
+## OCR RDF generation
+
+`src/data_pipeline/ocr_triplets.py` converts video catalog metadata and OCR
+timeline CSV rows into RDF N-Triples. Before matching, it checks the local
+`AllActions_*.json` and `Triplets_*.nt` pair. Missing or invalid action artifacts
+are generated automatically from the official EuroLeague API and validated.
+Each OCR observation is then linked to the nearest local Play-by-Play action
+within four game-clock seconds.
+
+Generate OCR triples for one game:
+
+```bash
+.venv/bin/python src/data_pipeline/ocr_triplets.py E2023 170
+```
+
+Generate OCR triples for every video game registered in one season:
+
+```bash
+.venv/bin/python src/data_pipeline/ocr_triplets.py E2023
+```
+
+Use `--overwrite` to regenerate existing output. Files are written by default as
+`data/processed/ocr_triplets/OCRTriplets_<SEASON_CODE>_<GAME_CODE>.nt`.
+
+Use `--refresh-actions` to force regeneration of the Play-by-Play JSON and
+N-Triples before generating OCR RDF. `--all-actions-dir` and
+`--playbyplay-triplets-dir` can select different directories for those two
+artifact categories.
+
+Validate every generated `AllActions_*.json` and `Triplets_*.nt` pair with:
+
+```bash
+.venv/bin/python src/data_pipeline/validate_action_artifacts.py
+```
+
+The validator checks continuous internal sequences, unique official event IDs,
+valid regulation/overtime clocks, possession references, N-Triples syntax and
+duplicates, game-to-action links, and the RDF type of every action. During fresh
+generation, the parser also compares every processed `(NUMBEROFPLAY, PLAYTYPE)`
+pair with the included official API events and refuses to save incomplete
+artifacts. EuroLeague `AG` (`ShotRejected`) events are intentionally excluded
+from the generated JSON and RDF.
+
+The generated graph uses the following structure:
+
+```text
+Game
+  -> hasBroadcastVideo -> BroadcastVideo
+       -> hasOCRObservation -> OCRObservation
+            -> correspondsToPlayByPlayAction -> PlayByPlayAction
+```
+
+The reusable class and property declarations are in
+`src/data_pipeline/ocr_schema.nt`. Import that schema once into the RDF store,
+then import each generated `OCRTriplets_*.nt` data file. OCR periods are stored
+canonically: `OT`, `1OT`, and `OT1` all become `OT`; later overtimes remain
+`2OT`, `3OT`, and so on. OCR observations reuse the existing `quarter`, `clock`,
+and `quarterSecondsRemaining` properties because the current RDF store does not
+declare restrictive domains for those properties.
+
 ## Full-game video synchronization
 
 The Video Shot feature synchronizes EuroLeague play-by-play actions with full-game YouTube videos. Synchronization is generated from the broadcast game clock through OCR and stored as timeline CSV files.

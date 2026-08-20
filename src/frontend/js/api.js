@@ -1,4 +1,4 @@
-// api.js
+// api.js teo
 
 const API_BASE_URL = window.EUROLEAGUE_API_BASE_URL
     || `${window.location.protocol}//${window.location.hostname || "localhost"}:8000`;

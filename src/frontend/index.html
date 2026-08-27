@@ -24,7 +24,7 @@
             <div class="form-group">
                 <label class="mode-filter-label">Επιλογή Λειτουργίας:</label>
                 <select id="mainModeSelect">
-                    <option value="euro-chart">- 3D Game Shot Search</option>
+                    <option value="euro-chart">- General AI Play Search</option>
                     <option value="video-shots">- 3D Shot Search (Video)</option>
                     <option value="coach-simulator">- Coach Simulator</option>
                     <option value="quiz-ball">- Quiz Ball</option>
@@ -35,7 +35,7 @@
                 <label class="season-filter-label">Season:</label>
                 <select id="globalSeasonSelect">
                     <option value="" id="optSelectSeason">-- Select Season --</option>
-                    <option value="ALL" id="optAllSeasons">ALL SEASONS</option>
+                    <!--option value="ALL" id="optAllSeasons">ALL SEASONS</option-->
                     <option value="E2023">2023-24 Season</option>
                     <option value="E2024">2024-25 Season</option>
                     <option value="E2025">2025-26 Season</option>
@@ -48,66 +48,6 @@
                     <option value="">-- Επίλεξε Αγώνα --</option>
                 </select>
             </div>
-
-            <!-- ΠΑΙΚΤΗΣ ΟΡΑΤΟΣ ΠΑΝΤΟΥ -->
-            <div class="form-group" id="playerFilterGroup">
-                <label class="player-filter-label">Player (Name / ID):</label>
-                <input type="text" id="playerSelect" placeholder="Player name or ID">
-            </div>
-
-            <hr id="shotFiltersDivider">
-
-            <!-- ΦΙΛΤΡΑ: SHOT SEARCH -->
-            <div id="shotFiltersForm">
-                <div class="form-group">
-                    <label>Assist by (Name/ID):</label>
-                    <input type="text" id="assistSelect" placeholder="Assisting player name or ID">
-                </div>
-            </div>
-
-            <!-- ΕΙΔΙΚΑ ΦΙΛΤΡΑ ΑΝΑΛΥΣΗΣ -->
-            <div id="extraFiltersContainer">
-                <div class="form-group extra-filter-group">
-                    <label class="season-filter-label">Extra Filter (Optional):</label>
-                    <select id="extraFilterType">
-                        <option value="">None</option>
-                        <option value="on_court">With Teammate/Opponent</option>
-                        <option value="referee">With Referee</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="text" id="extraFilterId" placeholder="Enter Filter Name/ID">
-                </div>
-                
-                <div id="foulsFiltersContainer">
-                    <div class="form-group"><label>Κέρδισε Φάουλ (ID):</label><input type="text" id="fouledIdInput" placeholder="Player name or ID"></div>
-                    <div class="form-group"><label>Έκανε Φάουλ (ID):</label><input type="text" id="foulingIdInput" placeholder="Player name or ID"></div>
-                </div>
-
-                <div id="defensiveFiltersContainer">
-                    <div class="form-group"><label>Αμυντικός (Blocker ID):</label><input type="text" id="blockerIdInput" placeholder="Player name or ID"></div>
-                    <div class="form-group"><label>Σουτέρ (Shooter ID):</label><input type="text" id="shooterIdInput" placeholder="Player name or ID"></div>
-                </div>
-            </div>
-
-            <!-- ΦΙΛΤΡΑ ΧΡΟΝΟΥ -->
-            <div id="timeFiltersContainer">
-                <div class="form-group">
-                    <label class="mode-filter-label">Δεκάλεπτο:</label>
-                    <select id="quarterSelectAnalytics">
-                        <option value="">Όλος ο αγώνας</option>
-                        <option value="1st">1st Quarter</option>
-                        <option value="2nd">2nd Quarter</option>
-                        <option value="3rd">3rd Quarter</option>
-                        <option value="4th">4th Quarter</option>
-                    </select>
-                </div>
-                <div class="time-range-row">
-                    <div class="form-group time-range-field"><label>Από λεπτό:</label><input type="number" id="minStart" max="10" min="0"></div>
-                    <div class="form-group time-range-field"><label>Έως λεπτό:</label><input type="number" id="minEnd" max="10" min="0"></div>
-                </div>
-            </div>
-
             <button id="mainActionBtn" class="action-btn">ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ</button>
             <button id="tryGameBtn" class="action-btn">TRY GAME</button>
         </aside>
@@ -166,13 +106,13 @@
                         <span id="missLegendMarker"></span> MISSED SHOT
                         <span id="madeLegendMarker"></span> MADE SHOT
                     </div>
-                    <div id="pbpContainer" class="video-shots-only">
+                    <div id="pbpContainer" >
                         <h4 class="pbp-heading">Play-by-Play</h4>
                         <div id="pbpActionFilters" class="pbp-filter-bar"></div>
                         <ul id="pbpList"></ul>
                     </div>
 
-                    <div id="aiSearchPanel" class="ai-search-panel video-shots-only">
+                    <div id="aiSearchPanel" class="ai-search-panel ">
                         <label class="ai-search-label" for="aiPlaySearchInput"><span>✦</span> AI PLAY SEARCH</label>
                         <div class="ai-search-row">
                             <input id="aiPlaySearchInput" type="search" maxlength="1000" placeholder="Ask about a play, player, quarter, or shot..." autocomplete="off" aria-describedby="aiSearchNote">

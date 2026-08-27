@@ -131,6 +131,22 @@ function resetShotQueryState() {
 
     if (typeof window.setYouTubeVideo === "function") window.setYouTubeVideo(null);
     showVideoStatus();
+    const courtContainer = document.getElementById("courtContainer");
+    const legendContainer = document.getElementById("legendContainer");
+    const mode = document.getElementById("mainModeSelect")?.value;
+    
+    // Αν είμαστε στο γενικό mode, κρύψε το παρκέ μέχρι να γίνει αναζήτηση
+    if (mode === "euro-chart") {
+        if (courtContainer) courtContainer.style.display = "none";
+        if (legendContainer) legendContainer.style.display = "none";
+        
+
+    } else if (mode === "video-shots") {
+        // Στο video mode, δείχνε το πάντα
+        if (courtContainer) courtContainer.style.display = "block";
+        if (legendContainer) legendContainer.style.display = "block";
+        
+    }
 }
 
 function showAiSearchMessage(message, type = "") {
@@ -418,22 +434,32 @@ async function runAiPlaySearch() {
     if (!aiPlaySearchInput || !aiPlaySearchButton) return;
 
     const message = aiPlaySearchInput.value.trim();
-    const seasonCode = globalSeasonSelect.value;
-    const gameCode = globalGameSelect.value.trim();
+    let seasonCode = globalSeasonSelect.value;
+    let gameCode = globalGameSelect.value.trim();
+
+    // 1. Μεταφράζουμε το "ALL" στις συγκεκριμένες σεζόν που θέλεις
+    if (seasonCode === "ALL") {
+        seasonCode = "E2023,E2024,E2025"; 
+    }
+
+    // 2. Αν δεν έχει επιλεγεί αγώνας, το στέλνουμε ως null για να το δεχτεί το backend χωρίς error
+    if (gameCode === "") {
+        gameCode = null;
+    }
 
     if (!message) {
         showAiSearchMessage("Γράψε πρώτα μια ερώτηση.", "error");
         aiPlaySearchInput.focus();
         return;
     }
-    if (!seasonCode || !gameCode) {
+    if (!seasonCode || (!gameCode && mainModeSelect.value === "video-shots")) {
         showAiSearchMessage("Επίλεξε Season και Game πριν από το AI Search.", "error");
         return;
     }
 
     const activeQueryGeneration = queryGeneration;
     const playByPlayGameKey = `${seasonCode}:${gameCode}`;
-    const shouldLoadPlayByPlay = window.currentPlayByPlayGameKey !== playByPlayGameKey || window.currentPlayByPlayData.length === 0;
+    const shouldLoadPlayByPlay = gameCode && (window.currentPlayByPlayGameKey !== playByPlayGameKey || window.currentPlayByPlayData.length === 0);
     aiPlaySearchButton.disabled = true;
     aiPlaySearchButton.textContent = "SEARCHING...";
     aiPlaySearchResult?.setAttribute("aria-busy", "true");
@@ -441,14 +467,64 @@ async function runAiPlaySearch() {
     if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
         window.clearAiPlayByPlayFilter();
     }
-
+    const pbpList = document.getElementById("pbpList");
+    if (pbpList) {
+        pbpList.innerHTML = "<li class='pbp-filter-empty' style='color: #6c63ff; font-weight: bold;'>Αναζήτηση στο Play-by-Play... ⏱️</li>";
+    }
     try {
         const [data, loadedPlayByPlay] = await Promise.all([
             fetchAiChat(message, gameCode, seasonCode),
             shouldLoadPlayByPlay ? fetchMatchPlayByPlay(gameCode, seasonCode) : Promise.resolve(null)
         ]);
+        const courtContainer = document.getElementById("courtContainer");
+        const legendContainer = document.getElementById("legendContainer");
+
+        if (mainModeSelect.value === "euro-chart" && window.currentShotsData.length === 0 && gameCode) {
+            try {
+                window.currentShotsData = await fetchFilteredShots(null, null, gameCode, seasonCode);
+            } catch (e) {
+                console.error("Δεν μπόρεσαν να φορτωθούν τα σουτ:", e);
+            }
+        }
+
+        // 2. Πιο "έξυπνος" έλεγχος για την εμφάνιση του παρκέ
+        if (mainModeSelect.value === "euro-chart") {
+            const kind = data ? String(data.playbyplay_action_kind || "").toLowerCase() : "";
+            const userMsg = message.toLowerCase();
+            
+            // Ψάχνουμε αν το AI μας είπε "shot" Ή αν ο χρήστης έγραψε λέξεις σχετικές με σουτ στην ερώτησή του!
+            const isShotQuery = kind.includes("shot") || 
+                                userMsg.includes("shot") || 
+                                userMsg.includes("σουτ") || 
+                                userMsg.includes("σούτ") ||
+                                userMsg.includes("τρίποντ") ||
+                                userMsg.includes("3pt") ||
+                                userMsg.includes("2pt");
+
+            if (isShotQuery) {
+                courtContainer.style.display = "block";
+                if (legendContainer) legendContainer.style.display = "block";
+
+                // Φιλτράρουμε και ζωγραφίζουμε τα σουτ που βρήκε το AI
+                if (data.action_uris && window.currentShotsData) {
+                    const aiUris = new Set(data.action_uris);
+                    const aiShots = window.currentShotsData.filter(shot => aiUris.has(shot.action_uri));
+                    if (typeof window.drawShots === "function") {
+                        window.drawShots(aiShots);
+                    }
+                }
+            } else {
+                // Αν ρωτάμε για assists, turnovers κλπ, κρύβουμε το παρκέ
+                courtContainer.style.display = "none";
+                if (legendContainer) legendContainer.style.display = "none";
+            }
+        } else {
+            // Στο video mode, δείχνουμε πάντα το παρκέ
+            courtContainer.style.display = "block";
+            if (legendContainer) legendContainer.style.display = "block";
+        }
         const currentPlayByPlayGameKey = `${globalSeasonSelect.value}:${globalGameSelect.value.trim()}`;
-        if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== "video-shots" || currentPlayByPlayGameKey !== playByPlayGameKey) return;
+        if (activeQueryGeneration !== queryGeneration || (mainModeSelect.value !== "video-shots" && mainModeSelect.value !== "euro-chart") || currentPlayByPlayGameKey !== playByPlayGameKey) return;
         if (loadedPlayByPlay !== null && typeof window.setPlayByPlayActions === "function") {
             window.setPlayByPlayActions(loadedPlayByPlay);
             window.currentPlayByPlayGameKey = playByPlayGameKey;
@@ -504,6 +580,16 @@ function setShotViewMode(mode) {
 
     // Both modes share one canvas; reset only the scroll position, never move the canvas node.
     if (shotCenterArea) shotCenterArea.scrollTop = 0;
+    const courtContainer = document.getElementById("courtContainer");
+    const legendContainer = document.getElementById("legendContainer");
+    
+    if (mode === "euro-chart") {
+        if (courtContainer) courtContainer.style.display = "none";
+        if (legendContainer) legendContainer.style.display = "none";
+    } else if (mode === "video-shots") {
+        if (courtContainer) courtContainer.style.display = "block";
+        if (legendContainer) legendContainer.style.display = "block";
+    }
 }
 
 function setSidebarFiltersForMode(mode) {
@@ -536,7 +622,7 @@ function setSidebarFiltersForMode(mode) {
 
     // 5. Διαχείριση Κουμπιών Αναζήτησης / Παιχνιδιού
     if (mainActionBtn) {
-        mainActionBtn.style.display = (isQuizMode || isCoachSimulator) ? "none" : "block";
+        mainActionBtn.style.display = (isQuizMode || isCoachSimulator || isEuroChartMode) ? "none" : "block";
     }
     
     const tryGameBtn = document.getElementById("tryGameBtn");
@@ -651,7 +737,7 @@ mainModeSelect.addEventListener("change", (e) => {
     else {
         shotSearchWrapper.style.display = "none";
         analyticsWrapper.style.display = "block";
-        shotFiltersForm.style.display = "none";
+        
         mainActionBtn.innerText = "ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ";
         
         // ΝΕΟ: Έλεγχος εμφάνισης του κουμπιού Try Game και απόκρυψη του Simulator

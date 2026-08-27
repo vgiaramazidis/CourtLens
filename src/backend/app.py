@@ -905,6 +905,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
    ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ?gameCode .
    ?season bball:hasCode ?seasonCode .
    Χρησιμοποίησε ΠΑΝΤΑ τους ακριβείς κωδικούς αγώνα και σεζόν που παρέχονται στο Υποχρεωτικό context του αιτήματος.
+   ΣΗΜΑΝΤΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΠΟΛΛΑΠΛΕΣ ΣΕΖΟΝ/ΑΓΩΝΕΣ: Αν ο κωδικός σεζόν (ή αγώνα) που σου δοθεί περιέχει κόμματα (π.χ. "E2023,E2024,E2025"), ΑΠΑΓΟΡΕΥΕΤΑΙ να τον ψάξεις ως ένα ενιαίο String. ΠΡΕΠΕΙ να τον χωρίσεις και να χρησιμοποιήσεις τη συνάρτηση FILTER IN. 
+   Σωστό Παράδειγμα: FILTER(?seasonCode IN ("E2023", "E2024", "E2025"))
 2. Σύνδεση Ενεργειών:
    ?game bball:hasPlayByPlayAction ?action .
    ?action bball:hasPlayByPlaySequence ?order .
@@ -975,8 +977,8 @@ SELECT ?assistingPlayerName WHERE {
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
-    game_code: str = Field(max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
-    season_code: str = Field(max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
+    game_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
+    season_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
 
 
 def clean_and_validate_sparql(raw_query: str) -> str:

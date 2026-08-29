@@ -282,7 +282,7 @@ def get_bool(result, field, default=False):
 
     return value in ("1", "true", "True")
 
-def find_video_seconds(play_time, quarter, season_code, game_code):
+def find_video_seconds(play_time, quarter, season_code, game_code, action_type=None):
     target_sec = time_to_seconds(play_time)
     if target_sec is None or not quarter:
         return 0
@@ -307,7 +307,60 @@ def find_video_seconds(play_time, quarter, season_code, game_code):
         candidate_indexes,
         key=lambda index: (abs(clock_values[index] - target_sec), -clock_values[index]),
     )
-    return video_values[closest_index] if abs(clock_values[closest_index] - target_sec) <= 4 else 0
+    normalized_quarter = normalize_quarter(quarter)
+    period_seconds = 600 if normalized_quarter in {"1st", "2nd", "3rd", "4th"} else 300
+    action_name = str(action_type or "")
+    is_opening_metadata = (
+        action_name in {"PeriodStart", "PlayerIn", "PlayerOut"}
+        and abs(target_sec - period_seconds) < 0.001
+    )
+    elapsed_seconds = period_seconds - target_sec
+    is_opening_jump_ball = (
+        action_name == "JumpBall" and 0 <= elapsed_seconds <= 1
+    )
+    tolerance = 12 if is_opening_metadata or is_opening_jump_ball else 5
+    return (
+        video_values[closest_index]
+        if abs(clock_values[closest_index] - target_sec) <= tolerance
+        else 0
+    )
+
+
+def video_sync_clock_for_action(action_type, row, play_time, quarter):
+    """Use the event that happened on screen, not a delayed PBP annotation.
+
+    EuroLeague records an Assist as a separate action shortly after the scoring
+    play. That play already links to the Assist through ``hasAssist``, so its
+    clock is a more accurate video anchor for showing the pass. This includes
+    FIBA assists awarded after at least one resulting free throw is made.
+    """
+    if str(action_type) == "Assist":
+        shot_clock = row.get("relatedShotClock", {}).get("value", "")
+        shot_quarter = normalize_quarter(
+            row.get("relatedShotQuarter", {}).get("value", "")
+        )
+        if time_to_seconds(shot_clock) is not None and shot_quarter:
+            return shot_clock, shot_quarter
+    return play_time, quarter
+
+
+def playback_lead_for_action(game_config, action_type):
+    """Return a contextual lead without changing the synchronized timestamp."""
+    base_lead = max(
+        0, min(15, float((game_config or {}).get("playback_lead_seconds", 5)))
+    )
+    if str(action_type) != "Assist":
+        return base_lead
+    return max(
+        base_lead,
+        max(
+            0,
+            min(
+                15,
+                float((game_config or {}).get("assist_playback_lead_seconds", 9)),
+            ),
+        ),
+    )
 
 # ==========================================
 # ENDPOINTS
@@ -445,6 +498,7 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
         return {"error": "Failed to fetch play-by-play", "actions": []}
 
     actions = []
+    game_config = get_video_game_config(season_code, game_code)
     for row in data.get("results", {}).get("bindings", []):
         action_type_uri = row.get("actionType", {}).get("value", "")
         action_type_name = action_type_uri.split("#")[-1]
@@ -452,6 +506,9 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
         quarter = normalize_quarter(row.get("quarter", {}).get("value", ""))
         home_score = row.get("homeScore", {}).get("value", "0")
         road_score = row.get("roadScore", {}).get("value", "0")
+        sync_clock, sync_quarter = video_sync_clock_for_action(
+            action_type_name, row, play_time, quarter
+        )
 
         actions.append({
             "uri": row.get("action", {}).get("value", ""),
@@ -467,7 +524,16 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
             "isFastBreak": get_bool(row, "isFastBreak"),
             "isSecondChance": get_bool(row, "isSecondChance"),
             "isFromTurnover": get_bool(row, "isFromTurnover"),
-            "videoSeconds": find_video_seconds(play_time, quarter, season_code, game_code)
+            "videoSeconds": find_video_seconds(
+                sync_clock,
+                sync_quarter,
+                season_code,
+                game_code,
+                action_type=action_type_name,
+            ),
+            "playbackLeadSeconds": playback_lead_for_action(
+                game_config, action_type_name
+            ),
         })
 
     return {"actions": actions}
@@ -876,7 +942,7 @@ async def get_simulator_scenario(season_code: str = Query(...)):
         "roster": roster
     }
 
-GEMINI_API_KEY = "AQ.Ab8RN6I3sw0TGF-AfJByolLAc-7AW_XDLHQbaPeI_BqdDvWEmw"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
 # The backend can still start without Gemini configured; /api/chat reports a clear 503 instead.
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
@@ -931,7 +997,9 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 - ΕΙΔΙΚΑ ΓΙΑ ΑΣΙΣΤ: το ?action ΠΡΕΠΕΙ να είναι η ίδια η bball:Assist ενέργεια, όχι το σουτ. Χρησιμοποίησε:
   ?game bball:hasPlayByPlayAction ?action .
   ?action rdf:type bball:Assist ; bball:actionPlayer ?assistingPlayer .
-  ?shot bball:hasAssist ?action ; bball:actionPlayer ?receivingPlayer .
+  VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }
+  ?shot rdf:type ?madeShotType ; bball:hasAssist ?action ; bball:actionPlayer ?receivingPlayer .
+  Το bball:FreeThrowMade μπορεί να έχει ασίστ όταν η πάσα οδήγησε σε shooting foul και μπήκε τουλάχιστον μία από τις βολές.
   Έτσι μια ερώτηση για τις assists του PLAYER_A στον PLAYER_B επιστρέφει τις Assist κάρτες του Play-by-Play και όχι τις Shot κάρτες.
 - Για πόντους χρησιμοποίησε bball:pointsAwarded ?points και FILTER(xsd:integer(?points) > 0).
 - Για rebounds χρησιμοποίησε VALUES ?actionType { bball:OffensiveRebound bball:DefensiveRebound } και ?action rdf:type ?actionType.
@@ -1112,11 +1180,13 @@ def build_assist_action_resolution_query(action_uris: list[str]) -> str | None:
     values = " ".join(f"<{uri}>" for uri in safe_uris)
     return f"""
 PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 SELECT DISTINCT ?action WHERE {{
   VALUES ?candidate {{ {values} }}
-  {{ ?candidate bball:hasAssist ?action . }}
+  VALUES ?shotType {{ bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }}
+  {{ ?candidate rdf:type ?shotType ; bball:hasAssist ?action . }}
   UNION
-  {{ ?shot bball:hasAssist ?candidate . BIND(?candidate AS ?action) }}
+  {{ ?shot rdf:type ?shotType ; bball:hasAssist ?candidate . BIND(?candidate AS ?action) }}
   ?game bball:hasPlayByPlayAction ?action .
 }}
 LIMIT 200

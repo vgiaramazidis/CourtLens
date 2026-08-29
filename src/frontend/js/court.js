@@ -560,7 +560,7 @@ function renderPlayByPlay(actions) {
         const card = li.querySelector(".pbp-action-card");
         card.addEventListener("click", () => {
             if (action.videoSeconds && typeof window.playVideoAt === "function") {
-                window.playVideoAt(action.videoSeconds);
+                window.playVideoAt(action.videoSeconds, action.playbackLeadSeconds);
             }
         });
         list.appendChild(li);

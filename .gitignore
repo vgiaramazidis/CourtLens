@@ -26,6 +26,9 @@ data/
 
 debug_frames/
 
+# Local OCR/PDF diagnostics, downloaded videos, candidates, and run logs
+tmp/
+
 # Secrets / Environment Variables
 .env
 

@@ -1,5 +1,19 @@
 # EuroleagueProject
 
+## Backend AI configuration
+
+The AI Search credential must be supplied through the environment and must
+never be committed to the repository:
+
+```bash
+export GEMINI_API_KEY="your-api-key"
+.venv/bin/uvicorn app:app --app-dir src/backend --reload --port 8000
+```
+
+Without `GEMINI_API_KEY`, the rest of the backend starts normally and AI Search
+returns a configuration error. If a key has ever been committed, revoke it in
+the provider console and create a replacement before running the backend.
+
 ## Play-by-Play action and RDF generation
 
 `src/data_pipeline/parser.py` downloads the official EuroLeague Play-by-Play,
@@ -51,8 +65,10 @@ first-overtime identifier before matching clocks.
 timeline CSV rows into RDF N-Triples. Before matching, it checks the local
 `AllActions_*.json` and `Triplets_*.nt` pair. Missing or invalid action artifacts
 are generated automatically from the official EuroLeague API and validated.
-Each OCR observation is then linked to the nearest local Play-by-Play action
-within four game-clock seconds.
+Each Play-by-Play action is matched to the nearest OCR observation within four
+game-clock seconds. Only observations referenced by at least one successful
+match are written to production RDF. The timeline CSV remains unchanged and
+retains every OCR observation for evaluation, debugging, and regeneration.
 
 Generate OCR triples for one game:
 
@@ -94,16 +110,19 @@ The generated graph uses the following structure:
 Game
   -> hasBroadcastVideo -> BroadcastVideo
        -> hasOCRObservation -> OCRObservation
-            -> correspondsToPlayByPlayAction -> PlayByPlayAction
+
+PlayByPlayAction
+  -> correspondsToOCRObservation -> OCRObservation
 ```
 
 The reusable class and property declarations are in
 `src/data_pipeline/ocr_schema.nt`. Import that schema once into the RDF store,
 then import each generated `OCRTriplets_*.nt` data file. OCR periods are stored
 canonically: `OT`, `1OT`, and `OT1` all become `OT`; later overtimes remain
-`2OT`, `3OT`, and so on. OCR observations reuse the existing `quarter`, `clock`,
-and `quarterSecondsRemaining` properties because the current RDF store does not
-declare restrictive domains for those properties.
+`2OT`, `3OT`, and so on. OCR observations use the dedicated `ocrQuarter` and
+`ocrClock` properties. The game-clock seconds remain an internal matching value
+and are not materialized in the OCR RDF. YouTube URLs are stored as IRIs rather
+than literal strings.
 
 ## Full-game video synchronization
 
@@ -160,6 +179,7 @@ Add the game to `src/data_pipeline/video_games.json` with `enabled` set to `fals
   "ocr_profile": "euroleague_bottom_left_scorebug_16_9",
   "start_hint_seconds": 900,
   "playback_lead_seconds": 5,
+  "assist_playback_lead_seconds": 9,
   "timeline_file": "video_timelines/E2024_123.csv",
   "enabled": false
 }
@@ -174,6 +194,7 @@ Field reference:
 - `ocr_profile` identifies the reusable scoreboard layout.
 - `start_hint_seconds` is an approximate video position shortly before tip-off. It does not need to be exact, but it must not skip the beginning of the first quarter.
 - `playback_lead_seconds` starts playback slightly before the selected action. The backend accepts values from 0 to 15 seconds and defaults to 5.
+- `assist_playback_lead_seconds` is optional and controls how much of the pass is shown before an assisted basket. It accepts 0 to 15 seconds and defaults to at least 9 seconds. Assist actions use the linked made-shot clock when that RDF relation is available.
 - `timeline_file` is the repository-relative output path.
 - `enabled` controls whether the backend and frontend may expose the game.
 
@@ -292,7 +313,20 @@ video_time_sec,quarter,game_clock
 986.0,1st,9:57
 ```
 
-The OCR tracker supports regulation periods and multiple overtime periods. It also rejects impossible clock jumps, prevents regular-period replays from being interpreted as overtime, removes conflicting readings, and keeps each period monotonic.
+The OCR tracker supports regulation periods and multiple overtime periods. It also rejects impossible clock jumps, prevents regular-period replays from being interpreted as overtime, removes conflicting readings, and keeps each period monotonic. A suspicious one-digit decimal reading after a large clock drop is confirmed on the next frame before it can move the tracker into the final seconds; this prevents OCR errors such as reading `51.3` as `5.3` from corrupting the rest of a period.
+
+For frame-by-frame diagnostics, add `--trace-frames` and save the terminal output:
+
+```bash
+.venv/bin/python src/data_pipeline/video_ocr.py \
+  --season-code E2024 \
+  --game-code 220 \
+  --video-file /private/tmp/E2024_220.mp4 \
+  --output /private/tmp/E2024_220_candidate.csv \
+  --trace-frames | tee /private/tmp/E2024_220_trace.log
+```
+
+The trace reports every sampled frame, including frames with no OCR text, low-confidence or unparseable readings, and the exact tracker accept/discard reason. With the default one-second sampling interval this means one trace entry per sampled video second, not every source-video frame.
 
 The output CSV is written only after the OCR run completes successfully. An interrupted run does not create a partial replacement timeline.
 

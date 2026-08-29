@@ -1,11 +1,8 @@
-"""Convert video OCR timelines and catalog metadata to RDF N-Triples.
+"""Link Play-by-Play actions to OCR video timestamps and export N-Triples.
 
-The generated RDF keeps the complete OCR timeline and uses locally generated
-AllActions JSON to materialize the nearest Play-by-Play-to-video link. Missing
-or invalid action artifacts are generated automatically before OCR matching.
-This allows a SPARQL-backed API to serve video configuration and synchronized
-timestamps without reading ``video_games.json`` or timeline CSV files at
-runtime.
+The timeline CSV remains the complete OCR source. Production RDF contains only
+the OCR observations referenced by a synchronized Play-by-Play action. Missing
+or invalid local action artifacts are generated and validated automatically.
 """
 
 from __future__ import annotations
@@ -52,7 +49,10 @@ DEFAULT_OCR_OUTPUT_DIR = DEFAULT_PROCESSED_DIR / "ocr_triplets"
 BASKETBALL_NS = "http://www.ics.forth.gr/isl/Basketball#"
 RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 XSD_NS = "http://www.w3.org/2001/XMLSchema#"
-MAX_SYNC_DIFFERENCE_SECONDS = 4.0
+MAX_SYNC_DIFFERENCE_SECONDS = 5.0
+PERIOD_START_SYNC_DIFFERENCE_SECONDS = 12.0
+PERIOD_START_ACTION_TYPES = frozenset({"BP", "IN", "OUT"})
+OPENING_JUMP_BALL_MAX_ELAPSED_SECONDS = 1.0
 
 
 @dataclass(frozen=True)
@@ -70,6 +70,7 @@ class PlayByPlayAction:
     uri: str
     quarter: str
     quarter_seconds_remaining: float
+    action_info: str = ""
 
 
 def normalize_quarter(value: object) -> str:
@@ -126,18 +127,15 @@ def game_uri(season_code: str, game_code: str) -> str:
     )
 
 
-def escape_literal(value: object) -> str:
-    return (
+def literal(value: object, datatype: str | None = None) -> str:
+    escaped = (
         str(value)
         .replace("\\", "\\\\")
         .replace('"', '\\"')
         .replace("\n", "\\n")
         .replace("\r", "\\r")
     )
-
-
-def literal(value: object, datatype: str | None = None) -> str:
-    result = f'"{escape_literal(value)}"'
+    result = f'"{escaped}"'
     return f"{result}^^<{datatype}>" if datatype else result
 
 
@@ -154,28 +152,20 @@ def decimal_text(value: float) -> str:
     return f"{text}.0" if "." not in text else text
 
 
-def resolve_repo_path(value: object) -> Path:
-    path = Path(str(value or "")).expanduser()
-    return path if path.is_absolute() else REPO_ROOT / path
-
-
-def load_catalog(path: Path) -> list[dict[str, object]]:
+def load_selected_games(
+    path: Path,
+    season_code: str,
+    game_code: str | None = None,
+) -> list[dict[str, object]]:
     with path.open(encoding="utf-8") as handle:
         payload = json.load(handle)
     games = payload.get("games") if isinstance(payload, dict) else None
     if not isinstance(games, list):
         raise ValueError(f"Catalog {path} must contain a games list")
-    return [game for game in games if isinstance(game, dict)]
-
-
-def select_games(
-    games: Iterable[dict[str, object]],
-    season_code: str,
-    game_code: str | None = None,
-) -> list[dict[str, object]]:
     selected = [
         game
         for game in games
+        if isinstance(game, dict)
         if str(game.get("season_code", "")).strip() == season_code
         and (
             game_code is None
@@ -273,6 +263,26 @@ def find_nearest_observation(
     return observations[closest], difference
 
 
+def synchronization_tolerance(action: PlayByPlayAction) -> float:
+    """Allow opening metadata to use the first visible clock of a period."""
+    normalized_quarter = normalize_quarter(action.quarter)
+    period_seconds = (
+        600.0 if normalized_quarter in {"1st", "2nd", "3rd", "4th"} else 300.0
+    )
+    is_period_start_metadata = (
+        action.action_info in PERIOD_START_ACTION_TYPES
+        and abs(action.quarter_seconds_remaining - period_seconds) < 0.001
+    )
+    elapsed_seconds = period_seconds - action.quarter_seconds_remaining
+    is_opening_jump_ball = (
+        action.action_info == "JB"
+        and 0 <= elapsed_seconds <= OPENING_JUMP_BALL_MAX_ELAPSED_SECONDS
+    )
+    if is_period_start_metadata or is_opening_jump_ball:
+        return PERIOD_START_SYNC_DIFFERENCE_SECONDS
+    return MAX_SYNC_DIFFERENCE_SECONDS
+
+
 def load_actions(
     path: Path,
     current_game_uri: str,
@@ -282,6 +292,44 @@ def load_actions(
     rows = payload.get("AllActions") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
         raise ValueError(f"Actions file {path} must contain an AllActions list")
+
+    # An Assist is written to the official feed shortly after the scoring play.
+    # Synchronize it to that clock so the RDF points to the moment where the
+    # pass appears in the video. FIBA can award an assist when a pass leads to
+    # a shooting foul and at least one resulting free throw is made, so FTM is
+    # a valid anchor alongside made two- and three-point shots.
+    action_timings: dict[str, tuple[str, float]] = {}
+    for row in rows:
+        try:
+            event_id = int(row["originalEventId"])
+            action_timings[f"{current_game_uri}#PlayByPlay_J{event_id}"] = (
+                str(row["quarter"]).strip(),
+                float(row["quarterSecondsRemaining"]),
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+
+    assist_anchors: dict[str, tuple[str, float]] = {}
+    for row in rows:
+        assist_uri = str(row.get("hasAssist", "")).strip()
+        if not assist_uri or row.get("actionInfo") not in ("2FGM", "3FGM", "FTM"):
+            continue
+        try:
+            shot_timing = (
+                str(row["quarter"]).strip(),
+                float(row["quarterSecondsRemaining"]),
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+        assist_timing = action_timings.get(assist_uri)
+        if (
+            assist_timing
+            and normalize_quarter(assist_timing[0])
+            == normalize_quarter(shot_timing[0])
+            and abs(assist_timing[1] - shot_timing[1]) <= 5
+        ):
+            assist_anchors[assist_uri] = shot_timing
+
     actions = []
     for position, row in enumerate(rows, start=1):
         try:
@@ -296,26 +344,19 @@ def load_actions(
             raise ValueError(
                 f"Invalid local Play-by-Play action {position}: empty quarter"
             )
+        action_uri = f"{current_game_uri}#PlayByPlay_J{event_id}"
+        sync_quarter, sync_seconds = assist_anchors.get(
+            action_uri, (quarter, seconds)
+        )
         actions.append(
             PlayByPlayAction(
-                uri=f"{current_game_uri}#PlayByPlay_J{event_id}",
-                quarter=quarter,
-                quarter_seconds_remaining=seconds,
+                uri=action_uri,
+                quarter=sync_quarter,
+                quarter_seconds_remaining=sync_seconds,
+                action_info=str(row.get("actionInfo", "")).strip(),
             )
         )
     return actions
-
-
-def action_artifact_paths(
-    all_actions_dir: Path,
-    triplets_dir: Path,
-    season_code: str,
-    game_code: str,
-) -> tuple[Path, Path]:
-    return (
-        all_actions_dir / f"AllActions_{season_code}_{game_code}.json",
-        triplets_dir / f"Triplets_{season_code}_{game_code}.nt",
-    )
 
 
 def ensure_action_artifacts(
@@ -328,12 +369,8 @@ def ensure_action_artifacts(
     season_code = str(game.get("season_code", "")).strip()
     game_code = str(game.get("game_code", "")).strip()
     season_label = season_label_from_code(season_code)
-    json_path, triples_path = action_artifact_paths(
-        all_actions_dir,
-        triplets_dir,
-        season_code,
-        game_code,
-    )
+    json_path = all_actions_dir / f"AllActions_{season_code}_{game_code}.json"
+    triples_path = triplets_dir / f"Triplets_{season_code}_{game_code}.nt"
     all_actions_dir.mkdir(parents=True, exist_ok=True)
     triplets_dir.mkdir(parents=True, exist_ok=True)
     regenerate = refresh or not (json_path.exists() and triples_path.exists())
@@ -389,26 +426,47 @@ def ensure_action_artifacts(
 def generate_game_triplets(
     game: dict[str, object],
     observations: list[OCRObservation],
-    actions: list[PlayByPlayAction] | None = None,
-) -> tuple[list[str], int, int]:
+    actions: list[PlayByPlayAction],
+) -> tuple[list[str], int, int, int]:
     season_code = str(game["season_code"]).strip()
     game_code = str(game["game_code"]).strip()
     current_game_uri = game_uri(season_code, game_code)
     video_uri = f"{current_game_uri}#BroadcastVideo"
+    youtube_url = str(game.get("youtube_url", "")).strip()
+    if not re.fullmatch(r"https?://[^\s<>]+", youtube_url):
+        raise ValueError(
+            f"Invalid youtube_url for {season_code}/{game_code}: {youtube_url!r}"
+        )
+    observation_index = build_observation_index(observations)
+    matches: list[tuple[PlayByPlayAction, OCRObservation]] = []
+    unmatched_actions = 0
+    for action in actions:
+        observation, _difference = find_nearest_observation(
+            observation_index,
+            action.quarter,
+            action.quarter_seconds_remaining,
+            max_difference=synchronization_tolerance(action),
+        )
+        if observation is None:
+            unmatched_actions += 1
+        else:
+            matches.append((action, observation))
+
+    linked_uris = {observation.uri for _action, observation in matches}
+    linked_observations = [
+        observation
+        for observation in observations
+        if observation.uri in linked_uris
+    ]
+
     bball = BASKETBALL_NS
     triples = [
         triple(current_game_uri, f"{bball}hasBroadcastVideo", iri(video_uri)),
         triple(video_uri, RDF_TYPE, iri(f"{bball}BroadcastVideo")),
-        triple(video_uri, f"{bball}videoOfGame", iri(current_game_uri)),
-        triple(
-            video_uri,
-            f"{bball}youtubeVideoId",
-            literal(str(game.get("youtube_id", ""))),
-        ),
         triple(
             video_uri,
             f"{bball}youtubeURL",
-            literal(str(game.get("youtube_url", ""))),
+            iri(youtube_url),
         ),
         triple(
             video_uri,
@@ -433,7 +491,7 @@ def generate_game_triplets(
         ),
     ]
 
-    for observation in observations:
+    for observation in linked_observations:
         triples.extend([
             triple(video_uri, f"{bball}hasOCRObservation", iri(observation.uri)),
             triple(observation.uri, RDF_TYPE, iri(f"{bball}OCRObservation")),
@@ -452,45 +510,30 @@ def generate_game_triplets(
             ),
             triple(
                 observation.uri,
-                f"{bball}quarter",
+                f"{bball}ocrQuarter",
                 literal(observation.quarter),
             ),
             triple(
                 observation.uri,
-                f"{bball}clock",
+                f"{bball}ocrClock",
                 literal(observation.game_clock),
-            ),
-            triple(
-                observation.uri,
-                f"{bball}quarterSecondsRemaining",
-                literal(
-                    decimal_text(observation.quarter_seconds_remaining),
-                    f"{XSD_NS}decimal",
-                ),
             ),
         ])
 
-    matched_actions = unmatched_actions = 0
-    if actions is not None:
-        observation_index = build_observation_index(observations)
-        for action in actions:
-            observation, _difference = find_nearest_observation(
-                observation_index,
-                action.quarter,
-                action.quarter_seconds_remaining,
+    for action, observation in matches:
+        triples.append(
+            triple(
+                action.uri,
+                f"{bball}correspondsToOCRObservation",
+                iri(observation.uri),
             )
-            if observation is None:
-                unmatched_actions += 1
-                continue
-            triples.append(
-                triple(
-                    observation.uri,
-                    f"{bball}correspondsToPlayByPlayAction",
-                    iri(action.uri),
-                )
-            )
-            matched_actions += 1
-    return triples, matched_actions, unmatched_actions
+        )
+    return (
+        triples,
+        len(linked_observations),
+        len(matches),
+        unmatched_actions,
+    )
 
 
 def process_game(
@@ -504,7 +547,9 @@ def process_game(
 ) -> tuple[str, int, int, int, bool]:
     season_code = str(game.get("season_code", "")).strip()
     game_code = str(game.get("game_code", "")).strip()
-    timeline_path = resolve_repo_path(game.get("timeline_file"))
+    timeline_path = Path(str(game.get("timeline_file", ""))).expanduser()
+    if not timeline_path.is_absolute():
+        timeline_path = REPO_ROOT / timeline_path
     output_path = output_dir / f"OCRTriplets_{season_code}_{game_code}.nt"
     actions, actions_generated = ensure_action_artifacts(
         game,
@@ -522,7 +567,7 @@ def process_game(
 
     current_video_uri = f"{game_uri(season_code, game_code)}#BroadcastVideo"
     observations = load_observations(timeline_path, current_video_uri)
-    triples, matched, unmatched = generate_game_triplets(
+    triples, linked_observations, matched, unmatched = generate_game_triplets(
         game,
         observations,
         actions,
@@ -533,14 +578,15 @@ def process_game(
         handle.write("\n")
 
     print(
-        f"  -> Saved {len(observations)} OCR observations and "
-        f"{len(triples)} triples to {output_path}, {matched} actions "
-        f"synchronized and {unmatched} unmatched."
+        f"  -> Saved {linked_observations} linked OCR observations "
+        f"from {len(observations)} CSV rows and {len(triples)} triples to "
+        f"{output_path}, {matched} actions synchronized and "
+        f"{unmatched} unmatched."
     )
-    return "generated", len(observations), matched, unmatched, actions_generated
+    return "generated", linked_observations, matched, unmatched, actions_generated
 
 
-def build_argument_parser() -> argparse.ArgumentParser:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Generate RDF N-Triples from video catalog metadata and OCR timeline "
@@ -587,16 +633,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Replace an existing OCR triples file.",
     )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = build_argument_parser()
     args = parser.parse_args(argv)
     try:
         season_label_from_code(args.season_code)
-        games = select_games(
-            load_catalog(args.catalog_file),
+        games = load_selected_games(
+            args.catalog_file,
             args.season_code,
             args.game_code,
         )

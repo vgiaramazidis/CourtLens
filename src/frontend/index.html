@@ -381,8 +381,12 @@
 
         window.setYouTubeVideo = setYouTubeVideo;
 
-        function startYouTubeAt(seconds) {
-            const startSeconds = Math.max(0, Number(seconds) - currentVideoLeadSeconds);
+        function startYouTubeAt(seconds, leadSeconds = currentVideoLeadSeconds) {
+            const requestedLead = Number(leadSeconds);
+            const safeLeadSeconds = Number.isFinite(requestedLead)
+                ? Math.max(0, Math.min(15, requestedLead))
+                : currentVideoLeadSeconds;
+            const startSeconds = Math.max(0, Number(seconds) - safeLeadSeconds);
             if (!currentYouTubeVideoId || !Number.isFinite(startSeconds)) return;
             pendingVideoStart = startSeconds;
 
@@ -446,7 +450,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script src="js/api.js?v=6"></script>
-    <script src="js/court.js?v=13"></script>
+    <script src="js/court.js?v=14"></script>
     <script src="js/main.js?v=25"></script>
 </body>
 </html>

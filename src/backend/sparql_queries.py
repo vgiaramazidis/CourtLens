@@ -132,6 +132,7 @@ def get_match_playbyplay_query(game_code, season_code):
     
     SELECT ?action ?actionType ?clock ?quarter ?sequence ?teamType
            ?homeScore ?roadScore ?playerLabel ?isFastBreak ?isSecondChance ?isFromTurnover
+           ?relatedShotClock ?relatedShotQuarter
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
@@ -156,6 +157,23 @@ def get_match_playbyplay_query(game_code, season_code):
         OPTIONAL {{ 
             ?action bball:actionPlayer ?player .
             ?player rdfs:label ?playerLabel .
+        }}
+        OPTIONAL {{
+            ?relatedShot bball:hasAssist ?action ;
+                         rdf:type ?relatedShotType ;
+                         bball:clock ?relatedShotClock ;
+                         bball:quarter ?relatedShotQuarter ;
+                         bball:quarterSecondsRemaining ?relatedShotSeconds .
+            ?action bball:quarterSecondsRemaining ?assistSeconds .
+            VALUES ?relatedShotType {{
+                bball:TwoPointShotMade
+                bball:ThreePointShotMade
+                bball:FreeThrowMade
+            }}
+            FILTER(
+                ?relatedShotQuarter = ?quarter &&
+                ABS(xsd:decimal(?relatedShotSeconds) - xsd:decimal(?assistSeconds)) <= 5
+            )
         }}
 
         BIND(IF(

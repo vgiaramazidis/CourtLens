@@ -27,6 +27,88 @@ class VideoSynchronizationTests(unittest.TestCase):
         self.assertGreater(from_ot, 0)
         self.assertEqual(from_alias, from_ot)
 
+    def test_period_start_metadata_uses_first_clock_within_twelve_seconds(self):
+        with (
+            patch.object(
+                backend_app,
+                "get_video_game_config",
+                return_value={"timeline_file": "synthetic.csv"},
+            ),
+            patch.object(
+                backend_app,
+                "load_video_timeline_index",
+                return_value={"2nd": ((588.0,), (1200.0,))},
+            ),
+        ):
+            strict = backend_app.find_video_seconds("10:00", "2nd", "E2023", "39")
+            period_start = backend_app.find_video_seconds(
+                "10:00", "2nd", "E2023", "39", action_type="PeriodStart"
+            )
+
+        self.assertEqual(strict, 0)
+        self.assertEqual(period_start, 1200.0)
+
+    def test_opening_jump_ball_uses_period_start_tolerance(self):
+        with (
+            patch.object(
+                backend_app,
+                "get_video_game_config",
+                return_value={"timeline_file": "synthetic.csv"},
+            ),
+            patch.object(
+                backend_app,
+                "load_video_timeline_index",
+                return_value={"1st": ((588.0,), (900.0,))},
+            ),
+        ):
+            strict = backend_app.find_video_seconds("09:59", "1st", "E2024", "301")
+            jump_ball = backend_app.find_video_seconds(
+                "09:59", "1st", "E2024", "301", action_type="JumpBall"
+            )
+
+        self.assertEqual(strict, 0)
+        self.assertEqual(jump_ball, 900.0)
+
+    def test_assist_uses_the_linked_made_shot_clock(self):
+        row = {
+            "relatedShotClock": {"value": "08:54"},
+            "relatedShotQuarter": {"value": "1st"},
+        }
+
+        self.assertEqual(
+            backend_app.video_sync_clock_for_action(
+                "Assist", row, "08:52", "1st"
+            ),
+            ("08:54", "1st"),
+        )
+
+    def test_assist_clock_falls_back_when_the_link_is_missing(self):
+        self.assertEqual(
+            backend_app.video_sync_clock_for_action(
+                "Assist", {}, "08:52", "1st"
+            ),
+            ("08:52", "1st"),
+        )
+
+    def test_assist_gets_more_context_without_changing_other_actions(self):
+        config = {"playback_lead_seconds": 5}
+
+        self.assertEqual(backend_app.playback_lead_for_action(config, "Assist"), 9)
+        self.assertEqual(
+            backend_app.playback_lead_for_action(config, "TwoPointShotMade"), 5
+        )
+
+    def test_playbyplay_query_fetches_the_shot_linked_to_an_assist(self):
+        query = backend_app.get_match_playbyplay_query("333", "E2023")
+
+        self.assertIn("?relatedShot bball:hasAssist ?action", query)
+        self.assertIn("bball:TwoPointShotMade", query)
+        self.assertIn("bball:ThreePointShotMade", query)
+        self.assertIn("bball:FreeThrowMade", query)
+        self.assertIn("ABS(xsd:decimal(?relatedShotSeconds)", query)
+        self.assertIn("?relatedShotClock", query)
+        self.assertIn("?relatedShotQuarter", query)
+
     def test_successful_sparql_response_is_cached(self):
         with backend_app._sparql_cache_lock:
             backend_app._sparql_cache.clear()
@@ -46,6 +128,16 @@ class VideoSynchronizationTests(unittest.TestCase):
         self.assertTrue(backend_app.query_mentions_assists("Show Sloukas assists to Nunn"))
         self.assertTrue(backend_app.query_mentions_assists("Δείξε τις ασίστ του Σλούκα"))
         self.assertFalse(backend_app.query_mentions_assists("Show all Sloukas points"))
+
+    def test_ai_prompt_supports_fiba_free_throw_assists(self):
+        self.assertIn(
+            "VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }",
+            backend_app.euroleague_system_prompt,
+        )
+        self.assertIn(
+            "Το bball:FreeThrowMade μπορεί να έχει ασίστ",
+            backend_app.euroleague_system_prompt,
+        )
 
     def test_playbyplay_intents_are_classified_for_ai_overlay(self):
         cases = {
@@ -155,6 +247,9 @@ LIMIT 200
         self.assertNotIn("not-an-action-uri", query)
         self.assertNotIn("unsafe>uri", query)
         self.assertIn("bball:hasAssist ?action", query)
+        self.assertIn("bball:TwoPointShotMade", query)
+        self.assertIn("bball:ThreePointShotMade", query)
+        self.assertIn("bball:FreeThrowMade", query)
 
     def test_assist_resolution_query_requires_at_least_one_safe_uri(self):
         self.assertIsNone(backend_app.build_assist_action_resolution_query(["invalid", ""] ))

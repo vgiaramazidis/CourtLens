@@ -444,6 +444,10 @@ window.clearAiPlayByPlayFilter = function() {
     resetPlayByPlayWindow();
     renderActionTypeFilters(window.currentPlayByPlayData);
     renderPlayByPlay(window.currentPlayByPlayData);
+
+    if (typeof window.applyChartFilters === "function") {
+        window.applyChartFilters();
+    }
 };
 
 function renderPlayByPlay(actions) {

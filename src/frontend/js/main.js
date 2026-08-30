@@ -131,6 +131,22 @@ function resetShotQueryState() {
 
     if (typeof window.setYouTubeVideo === "function") window.setYouTubeVideo(null);
     showVideoStatus();
+    const courtContainer = document.getElementById("courtContainer");
+    const legendContainer = document.getElementById("legendContainer");
+    const mode = document.getElementById("mainModeSelect")?.value;
+
+    // Αν είμαστε στο γενικό mode, κρύψε το παρκέ μέχρι να γίνει αναζήτηση
+    if (mode === "euro-chart") {
+        if (courtContainer) courtContainer.style.display = "none";
+        if (legendContainer) legendContainer.style.display = "none";
+
+
+    } else if (mode === "video-shots") {
+        // Στο video mode, δείχνε το πάντα
+        if (courtContainer) courtContainer.style.display = "block";
+        if (legendContainer) legendContainer.style.display = "block";
+
+    }
 }
 
 function showAiSearchMessage(message, type = "") {
@@ -151,6 +167,10 @@ function getAiResultValue(value) {
         }
     }
     return rawValue;
+}
+
+function escapeRegularExpression(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function getAiResultLabel(column) {
@@ -247,15 +267,23 @@ function renderFriendlyPlayByPlayResults(actions) {
     return section;
 }
 
+function getAiScopePhrase() {
+    if (globalGameSelect?.value) return "in the selected game";
+    return globalSeasonSelect?.value === "ALL"
+        ? "across the selected seasons"
+        : "in the selected season";
+}
+
 function buildFriendlyDataSummary(results, booleanAnswer) {
     if (typeof booleanAnswer === "boolean") {
         return booleanAnswer
-            ? "Yes — the game data confirms that this happened."
-            : "No — the game data does not contain a matching event.";
+            ? "Yes — the selected data confirms that this happened."
+            : "No — the selected data does not contain a matching event.";
     }
     if (results.length === 0) return "";
 
     const result = results[0];
+    const scopePhrase = getAiScopePhrase();
     const player = getBindingValue(result, ["playerName", "player", "scorer", "passer", "assistingPlayerName"]);
     const percentage = getBindingValue(result, ["percentage", "shotPercentage", "fieldGoalPercentage"]);
     if (percentage) {
@@ -266,9 +294,9 @@ function buildFriendlyDataSummary(results, booleanAnswer) {
             ? (Number.isInteger(numericPercentage) ? String(numericPercentage) : numericPercentage.toFixed(1))
             : String(percentage).replace("%", "");
         if (made && attempts) {
-            return `${player || "The selected player"} made ${made} of ${attempts} attempts — ${displayPercentage}% shooting.`;
+            return `${player || "The selected player"} made ${made} of ${attempts} attempts ${scopePhrase} — ${displayPercentage}% shooting.`;
         }
-        return `${player || "The selected player"} shot ${displayPercentage}% for the requested shot type.`;
+        return `${player || "The selected player"} shot ${displayPercentage}% for the requested shot type ${scopePhrase}.`;
     }
     const metrics = [
         { keys: ["totalPoints", "points"], unit: "points", verb: "scored" },
@@ -302,8 +330,8 @@ function buildFriendlyDataSummary(results, booleanAnswer) {
             };
             const displayUnit = Number(value) === 1 ? (singularUnits[metric.unit] || metric.unit) : metric.unit;
             return player
-                ? `${player} ${metric.verb} ${value} ${displayUnit} in the selected game.`
-                : `The answer is ${value} ${displayUnit} in the selected game.`;
+                ? `${player} ${metric.verb} ${value} ${displayUnit} ${scopePhrase}.`
+                : `The answer is ${value} ${displayUnit} ${scopePhrase}.`;
         }
     }
     return "";
@@ -340,10 +368,15 @@ function renderAiSearchResponse(data, playByPlayMatchCount = null, question = ""
     header.append(headingText, countBadge);
     aiPlaySearchResult.appendChild(header);
 
-    const selectedGameLabel = globalGameSelect.options[globalGameSelect.selectedIndex]?.textContent?.replace(/^\[[^\]]+\]\s*/, "") || "Selected game";
+    const selectedGameLabel = globalGameSelect.value
+        ? globalGameSelect.options[globalGameSelect.selectedIndex]?.textContent?.replace(/^\[[^\]]+\]\s*/, "")
+        : null;
+    const selectedSeasonLabel = globalSeasonSelect.options[globalSeasonSelect.selectedIndex]?.textContent || globalSeasonSelect.value;
     const context = document.createElement("div");
     context.className = "ai-answer-context";
-    context.textContent = `${selectedGameLabel} · ${globalSeasonSelect.options[globalSeasonSelect.selectedIndex]?.textContent || globalSeasonSelect.value}`;
+    context.textContent = selectedGameLabel
+        ? `${selectedGameLabel} · ${selectedSeasonLabel}`
+        : selectedSeasonLabel;
     aiPlaySearchResult.appendChild(context);
 
     if (playByPlayMatchCount !== null) {
@@ -418,37 +451,100 @@ async function runAiPlaySearch() {
     if (!aiPlaySearchInput || !aiPlaySearchButton) return;
 
     const message = aiPlaySearchInput.value.trim();
-    const seasonCode = globalSeasonSelect.value;
-    const gameCode = globalGameSelect.value.trim();
+    let seasonCode = globalSeasonSelect.value;
+    let gameCode = globalGameSelect.value.trim();
+
+    // 1. Μεταφράζουμε το "ALL" στις συγκεκριμένες σεζόν που θέλεις
+    if (seasonCode === "ALL") {
+        seasonCode = "E2023,E2024,E2025";
+    }
+
+    // 2. Αν δεν έχει επιλεγεί αγώνας, το στέλνουμε ως null για να το δεχτεί το backend χωρίς error
+    if (gameCode === "") {
+        gameCode = null;
+    }
 
     if (!message) {
         showAiSearchMessage("Γράψε πρώτα μια ερώτηση.", "error");
         aiPlaySearchInput.focus();
         return;
     }
-    if (!seasonCode || !gameCode) {
+    if (!seasonCode || (!gameCode && mainModeSelect.value === "video-shots")) {
         showAiSearchMessage("Επίλεξε Season και Game πριν από το AI Search.", "error");
         return;
     }
 
     const activeQueryGeneration = queryGeneration;
+    const selectionKey = `${globalSeasonSelect.value}:${globalGameSelect.value.trim()}`;
     const playByPlayGameKey = `${seasonCode}:${gameCode}`;
-    const shouldLoadPlayByPlay = window.currentPlayByPlayGameKey !== playByPlayGameKey || window.currentPlayByPlayData.length === 0;
+    const shouldLoadPlayByPlay = gameCode && (window.currentPlayByPlayGameKey !== playByPlayGameKey || window.currentPlayByPlayData.length === 0);
     aiPlaySearchButton.disabled = true;
     aiPlaySearchButton.textContent = "SEARCHING...";
     aiPlaySearchResult?.setAttribute("aria-busy", "true");
-    showAiSearchMessage("The AI is searching this game's data...", "loading");
+    showAiSearchMessage("The AI is searching the selected data...", "loading");
     if (window.aiPbpActionUris instanceof Set && typeof window.clearAiPlayByPlayFilter === "function") {
         window.clearAiPlayByPlayFilter();
     }
-
+    const pbpList = document.getElementById("pbpList");
+    if (pbpList && shouldLoadPlayByPlay) {
+        pbpList.innerHTML = "<li class='pbp-filter-empty' style='color: #6c63ff; font-weight: bold;'>Αναζήτηση στο Play-by-Play... ⏱️</li>";
+    } else if (pbpList && !gameCode) {
+        pbpList.innerHTML = "<li class='pbp-filter-empty'>Choose a game to connect AI results with Play-by-Play actions.</li>";
+    }
     try {
         const [data, loadedPlayByPlay] = await Promise.all([
             fetchAiChat(message, gameCode, seasonCode),
             shouldLoadPlayByPlay ? fetchMatchPlayByPlay(gameCode, seasonCode) : Promise.resolve(null)
         ]);
-        const currentPlayByPlayGameKey = `${globalSeasonSelect.value}:${globalGameSelect.value.trim()}`;
-        if (activeQueryGeneration !== queryGeneration || mainModeSelect.value !== "video-shots" || currentPlayByPlayGameKey !== playByPlayGameKey) return;
+        const courtContainer = document.getElementById("courtContainer");
+        const legendContainer = document.getElementById("legendContainer");
+
+        if (mainModeSelect.value === "euro-chart" && window.currentShotsData.length === 0 && gameCode) {
+            try {
+                window.currentShotsData = await fetchFilteredShots(null, null, gameCode, seasonCode);
+            } catch (e) {
+                console.error("Δεν μπόρεσαν να φορτωθούν τα σουτ:", e);
+            }
+        }
+
+        // 2. Πιο "έξυπνος" έλεγχος για την εμφάνιση του παρκέ
+        if (mainModeSelect.value === "euro-chart") {
+            const kind = data ? String(data.playbyplay_action_kind || "").toLowerCase() : "";
+            const userMsg = message.toLowerCase();
+
+            // Ψάχνουμε αν το AI μας είπε "shot" Ή αν ο χρήστης έγραψε λέξεις σχετικές με σουτ στην ερώτησή του!
+            const isShotQuery = kind.includes("shot") ||
+                                userMsg.includes("shot") ||
+                                userMsg.includes("σουτ") ||
+                                userMsg.includes("σούτ") ||
+                                userMsg.includes("τρίποντ") ||
+                                userMsg.includes("3pt") ||
+                                userMsg.includes("2pt");
+
+            if (isShotQuery && gameCode) {
+                if (courtContainer) courtContainer.style.display = "block";
+                if (legendContainer) legendContainer.style.display = "block";
+
+                // Φιλτράρουμε και ζωγραφίζουμε τα σουτ που βρήκε το AI
+                if (data.action_uris && window.currentShotsData) {
+                    const aiUris = new Set(data.action_uris);
+                    const aiShots = window.currentShotsData.filter(shot => aiUris.has(shot.action_uri));
+                    if (typeof window.drawShots === "function") {
+                        window.drawShots(aiShots);
+                    }
+                }
+            } else {
+                // Αν ρωτάμε για assists, turnovers κλπ, κρύβουμε το παρκέ
+                if (courtContainer) courtContainer.style.display = "none";
+                if (legendContainer) legendContainer.style.display = "none";
+            }
+        } else {
+            // Στο video mode, δείχνουμε πάντα το παρκέ
+            if (courtContainer) courtContainer.style.display = "block";
+            if (legendContainer) legendContainer.style.display = "block";
+        }
+        const currentSelectionKey = `${globalSeasonSelect.value}:${globalGameSelect.value.trim()}`;
+        if (activeQueryGeneration !== queryGeneration || (mainModeSelect.value !== "video-shots" && mainModeSelect.value !== "euro-chart") || currentSelectionKey !== selectionKey) return;
         if (loadedPlayByPlay !== null && typeof window.setPlayByPlayActions === "function") {
             window.setPlayByPlayActions(loadedPlayByPlay);
             window.currentPlayByPlayGameKey = playByPlayGameKey;
@@ -459,7 +555,7 @@ async function runAiPlaySearch() {
         }
 
         let playByPlayMatchCount = null;
-        if (data.playbyplay_filter && typeof window.applyAiPlayByPlayFilter === "function") {
+        if (gameCode && data.playbyplay_filter && typeof window.applyAiPlayByPlayFilter === "function") {
             playByPlayMatchCount = window.applyAiPlayByPlayFilter(
                 data.action_uris || [],
                 message.length > 60 ? `${message.slice(0, 57)}...` : message,
@@ -504,34 +600,63 @@ function setShotViewMode(mode) {
 
     // Both modes share one canvas; reset only the scroll position, never move the canvas node.
     if (shotCenterArea) shotCenterArea.scrollTop = 0;
+    const courtContainer = document.getElementById("courtContainer");
+    const legendContainer = document.getElementById("legendContainer");
+
+    if (mode === "euro-chart") {
+        if (courtContainer) courtContainer.style.display = "none";
+        if (legendContainer) legendContainer.style.display = "none";
+    } else if (mode === "video-shots") {
+        if (courtContainer) courtContainer.style.display = "block";
+        if (legendContainer) legendContainer.style.display = "block";
+    }
 }
 
 function setSidebarFiltersForMode(mode) {
     const isVideoMode = mode === "video-shots";
     const isEuroChartMode = mode === "euro-chart";
     const isQuizMode = mode === "quiz-ball";
+    const isCoachSimulator = mode === "coach-simulator";
 
-    // 1. Κρύβουμε Season, Game και το κεντρικό κουμπί αν είμαστε στο Quiz
-    const displaySelects = isQuizMode ? "none" : "block";
-    if (globalSeasonSelect && globalSeasonSelect.parentElement) globalSeasonSelect.parentElement.style.display = displaySelects;
-    if (globalGameSelect && globalGameSelect.parentElement) globalGameSelect.parentElement.style.display = displaySelects;
-    if (mainActionBtn) mainActionBtn.style.display = isQuizMode ? "none" : "block";
-    if (document.getElementById("tryGameBtn")) document.getElementById("tryGameBtn").style.display = mode === "top-lineups" ? "block" : "none";
+    // 1. Εμφάνιση / Απόκρυψη Season Select (Το κρύβουμε ΜΟΝΟ στο Quiz)
+    if (globalSeasonSelect && globalSeasonSelect.parentElement) {
+        globalSeasonSelect.parentElement.style.display = isQuizMode ? "none" : "block";
+    }
 
-    // 2. Κρύβουμε όλα τα υπόλοιπα φίλτρα
-    if (playerFilterGroup) playerFilterGroup.style.display = isVideoMode || isQuizMode ? "none" : "block";
-    if (shotFiltersDivider) shotFiltersDivider.style.display = isVideoMode || isQuizMode ? "none" : "block";
+    // 2. Εμφάνιση / Απόκρυψη Game Select (Το κρύβουμε στο Quiz ΚΑΙ στο Coach Simulator)
+    if (globalGameSelect && globalGameSelect.parentElement) {
+        globalGameSelect.parentElement.style.display = (isQuizMode || isCoachSimulator) ? "none" : "block";
+    }
+
+    // 3. Εμφάνιση / Απόκρυψη των υπολοίπων (Extra) Φίλτρων
+    // Τα κρύβουμε όλα στο Video Mode, στο Quiz και στο Coach Simulator
+    const hideExtraFilters = isVideoMode || isQuizMode || isCoachSimulator;
+
+    if (playerFilterGroup) playerFilterGroup.style.display = hideExtraFilters ? "none" : "block";
+    if (shotFiltersDivider) shotFiltersDivider.style.display = hideExtraFilters ? "none" : "block";
+    if (extraFiltersContainer) extraFiltersContainer.style.display = hideExtraFilters ? "none" : "block";
+    if (timeFiltersContainer) timeFiltersContainer.style.display = hideExtraFilters ? "none" : "block";
+
+    // 4. Ειδικά για τα Shot Filters (εμφανίζονται ΜΟΝΟ στο Game Shot Search / euro-chart)
     if (shotFiltersForm) shotFiltersForm.style.display = isEuroChartMode ? "block" : "none";
-    if (extraFiltersContainer) extraFiltersContainer.style.display = isVideoMode || isQuizMode ? "none" : "block";
-    if (timeFiltersContainer) timeFiltersContainer.style.display = isVideoMode || isQuizMode ? "none" : "block";
 
+    // 5. Διαχείριση Κουμπιών Αναζήτησης / Παιχνιδιού
+    if (mainActionBtn) {
+        mainActionBtn.style.display = (isQuizMode || isCoachSimulator || isEuroChartMode) ? "none" : "block";
+    }
+
+    const tryGameBtn = document.getElementById("tryGameBtn");
+    if (tryGameBtn) {
+        tryGameBtn.style.display = isCoachSimulator ? "block" : "none";
+    }
+
+    // 6. Λογική για το "All Seasons" option
     if (optAllSeasons) {
         optAllSeasons.hidden = isVideoMode;
         optAllSeasons.disabled = isVideoMode;
     }
     if (optSelectSeason) optSelectSeason.hidden = false;
 }
-
 async function setSeasonOptionsForMode(mode) {
     if (!globalSeasonSelect) return;
     const seasonOptions = Array.from(globalSeasonSelect.options)
@@ -569,7 +694,7 @@ mainModeSelect.addEventListener("change", (e) => {
 
         // 1. Κρύβουμε όλο το Simulator block
         if (integratedSimulator) integratedSimulator.style.display = "none";
-        if (actualSimulatorUI) actualSimulatorUI.style.display = "none"; 
+        if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
 
         // 2. Επαναφέρουμε τα φίλτρα
         if (extraFilters) extraFilters.style.display = "block";
@@ -577,11 +702,11 @@ mainModeSelect.addEventListener("change", (e) => {
         if (analyticsContent) analyticsContent.style.display = "block";
         if (analyticsTitle) analyticsTitle.style.display = "block";
         if (playerFilterGroup) playerFilterGroup.style.display = "block";
-        
+
         // 3. Επαναφέρουμε τα κουμπιά
         mainActionBtn.innerText = "ΑΝΑΖΗΤΗΣΗ";
         mainActionBtn.style.backgroundColor = "#ea5314";
-        
+
         if (tryGameBtn) {
             tryGameBtn.innerText = "TRY GAME";
             tryGameBtn.style.display = e.target.value === "top-lineups" ? "block" : "none";
@@ -589,7 +714,7 @@ mainModeSelect.addEventListener("change", (e) => {
 
         // 4. Scroll πίσω στην κορυφή (στα Top Lineups)
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         // Continue with the selected section so changing mode also exits the simulator cleanly.
     }
     const mode = e.target.value;
@@ -603,9 +728,9 @@ mainModeSelect.addEventListener("change", (e) => {
     setSeasonOptionsForMode(mode);
 
     analyticsWrapper.style.display = "none";
-    
+
     analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #777; font-style: italic; font-size: 1.1rem;'>Πάτα 'ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ' για να δεις τα δεδομένα...</div>";
-    
+
     if (mode === "top-lineups") analyticsTitle.innerText = "Top Lineups";
     else if (mode === "second-chance") analyticsTitle.innerText = "Second Chance Points";
     else if (mode === "assist-duos") analyticsTitle.innerText = "Top Assist Duos";
@@ -613,7 +738,7 @@ mainModeSelect.addEventListener("change", (e) => {
     else if (mode === "defensive-anchors") analyticsTitle.innerText = "Defensive Anchors";
     else if (mode === "quiz-ball") analyticsTitle.innerText = "Quiz Ball";
     else analyticsTitle.innerText = "Αποτελέσματα Ανάλυσης";
-    
+
     const shooterFilter = document.getElementById("defensiveFiltersContainer");
     if (shooterFilter) shooterFilter.style.display = (mode === "defensive-anchors") ? "block" : "none";
 
@@ -628,17 +753,38 @@ mainModeSelect.addEventListener("change", (e) => {
         shotSearchWrapper.style.display = isGameMode ? "flex" : "";
         setShotViewMode(mode);
         mainActionBtn.innerText = isGameMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)";
-    } 
+    }
     else {
         shotSearchWrapper.style.display = "none";
         analyticsWrapper.style.display = "block";
-        shotFiltersForm.style.display = "none";
+
         mainActionBtn.innerText = "ΕΚΤΕΛΕΣΗ ΑΝΑΛΥΣΗΣ";
-        
+
         // ΝΕΟ: Έλεγχος εμφάνισης του κουμπιού Try Game και απόκρυψη του Simulator
-        if (mode === "top-lineups") {
-            if (tryGameBtn) tryGameBtn.style.display = "block"; // Εμφανίζουμε το Try Game
-            if (integratedSimulator) integratedSimulator.style.display = "none"; // Κρύβουμε το Simulator αρχικά
+        if (mode === "coach-simulator") {
+            const integratedSimulator = document.getElementById("integratedSimulator");
+            const gameInstructions = document.getElementById("gameInstructions");
+            const actualSimulatorUI = document.getElementById("actualSimulatorUI");
+
+            // Εμφανίζουμε κατευθείαν το γενικό container του Simulator
+            if (integratedSimulator) integratedSimulator.style.display = "block";
+            if (gameInstructions) gameInstructions.style.display = "block";
+            if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
+
+            // Κρύβουμε τα analytics
+            if (analyticsContent) analyticsContent.style.display = "none";
+
+            // Εμφανίζουμε το κουμπί έναρξης / νέου σεναρίου
+            if (tryGameBtn) {
+                tryGameBtn.style.display = "block";
+                tryGameBtn.innerText = "ΠΑΙΞΕ / ΝΕΟ ΣΕΝΑΡΙΟ";
+            }
+            if (mainActionBtn) mainActionBtn.style.display = "none";
+        } else {
+            // --- ΠΡΟΣΘΗΚΗ: Επαναφορά του πλαισίου για το Quiz Ball και τα υπόλοιπα ---
+            if (analyticsContent) analyticsContent.style.display = "grid";
+            const integratedSimulator = document.getElementById("integratedSimulator");
+            if (integratedSimulator) integratedSimulator.style.display = "none";
         }
         if (mode === "quiz-ball") {
             analyticsContent.innerHTML = `
@@ -724,7 +870,7 @@ async function loadGamesForSeason(seasonCode) {
         globalGameSelect.disabled = true;
         return;
     }
-    
+
     if (seasonCode === "ALL") {
         globalGameSelect.innerHTML = "<option value=''>-- Όλα τα Παιχνίδια --</option>";
         globalGameSelect.disabled = true;
@@ -747,7 +893,7 @@ async function loadGamesForSeason(seasonCode) {
         const games = (data.games || []).filter(game =>
             !availableGameCodes || availableGameCodes.has(String(game.gameCode))
         );
-        
+
         globalGameSelect.innerHTML = "<option value=''>-- Επίλεξε Αγώνα --</option>";
         if (games.length > 0) {
             games.forEach(game => {
@@ -775,11 +921,11 @@ globalGameSelect.addEventListener("change", () => resetShotQueryState());
 // === ΚΕΝΤΡΙΚΟΣ "ΑΤΡΩΤΟΣ" ΕΛΕΓΧΟΣ ΚΛΙΚ ΓΙΑ ΟΛΑ ΤΑ CHECKBOXES (EVENT DELEGATION) ===
 document.addEventListener("change", (e) => {
     // Αν το κλικ έγινε πάνω σε ΟΠΟΙΟΔΗΠΟΤΕ φίλτρο (Quarters, Παίκτες, Τύποι Σουτ)
-    if (e.target.classList.contains('quarter-cb') || 
-        e.target.classList.contains('player-cb') || 
-        e.target.classList.contains('shot-filter-cb') || 
+    if (e.target.classList.contains('quarter-cb') ||
+        e.target.classList.contains('player-cb') ||
+        e.target.classList.contains('shot-filter-cb') ||
         e.target.closest('.roster-sub')) {
-        
+
         // Ειδική λογική για τα "Select All"
         if (e.target.closest('.roster-sub')) {
             const rosterContainer = e.target.closest('.euro-roster').querySelector('.players-list');
@@ -787,7 +933,7 @@ document.addEventListener("change", (e) => {
                 rosterContainer.querySelectorAll('.player-cb').forEach(cb => cb.checked = e.target.checked);
             }
         }
-        
+
         // Τρέξε αμέσως τη Μηχανή Φιλτραρίσματος
         if (typeof window.applyChartFilters === "function") {
             window.applyChartFilters();
@@ -850,7 +996,7 @@ function buildDynamicQuarters(shotsData, preserveSelection = false) {
         bar.innerHTML = "";
         uniqueQuarters.forEach(q => {
             const qData = quartersMap.get(q);
-            
+
             // Το σκορ θα δείχνει "-" μέχρι να κάνεις import τα νέα δεδομένα από το parser.py!
             let scoreLabel = `<span style="font-size: 0.65rem; color: #777; margin-top:2px;">-</span>`;
             if (qData && (qData.maxHome > 0 || qData.maxRoad > 0)) {
@@ -862,10 +1008,10 @@ function buildDynamicQuarters(shotsData, preserveSelection = false) {
             const qBox = document.createElement("div");
             qBox.className = "quarter-box";
             qBox.style.cssText = "display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 10px;";
-            
+
             qBox.innerHTML = `
                 <div style="display:flex; align-items:center; gap:5px;">
-                    <span>${q.toUpperCase()}</span> 
+                    <span>${q.toUpperCase()}</span>
                     <input type="checkbox" class="euro-checkbox quarter-cb" value="${q}" ${isChecked ? 'checked' : ''}>
                 </div>
                 ${scoreLabel}
@@ -879,7 +1025,7 @@ function buildDynamicQuarters(shotsData, preserveSelection = false) {
 window.applyChartFilters = function() {
     if (!window.currentShotsData || window.currentShotsData.length === 0) return;
     const mode = mainModeSelect.value;
-    
+
     if (mode !== "euro-chart" && mode !== "video-shots") {
         if (typeof window.drawShots === "function") window.drawShots(window.currentShotsData);
         return;
@@ -921,7 +1067,7 @@ window.applyChartFilters = function() {
         // The selectable roster belongs to Video mode; Euro Chart uses clicked-shot lineups.
         const playerMatch = activePlayers.size === 0 || activePlayers.has(shot.playerName);
         const quarterMatch = !shot.quarter || activeQuarters.has(normalizeQuarterLabel(shot.quarter));
-        
+
         if (!playerMatch || !quarterMatch) return false;
 
         let isHome = shot.teamType === "home" || (
@@ -929,7 +1075,7 @@ window.applyChartFilters = function() {
         );
         const filters = isHome ? homeFilters : roadFilters;
 
-        const is3P = shot.action_type?.includes("ThreePoint") || shot.is3P === true; 
+        const is3P = shot.action_type?.includes("ThreePoint") || shot.is3P === true;
         const is2P = !is3P;
 
         let passesTypeFilter = true;
@@ -966,7 +1112,7 @@ mainActionBtn.addEventListener("click", async () => {
         const gameInput = document.getElementById("analyticsGameCodeInput");
         // 1. Κρύβουμε όλο το Simulator block
         if (integratedSimulator) integratedSimulator.style.display = "none";
-        if (actualSimulatorUI) actualSimulatorUI.style.display = "none"; 
+        if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
 
         // 2. Επαναφέρουμε τα φίλτρα
         if (extraFilters) extraFilters.style.display = "block";
@@ -978,7 +1124,7 @@ mainActionBtn.addEventListener("click", async () => {
         if (gameInput) gameInput.value = "";
         mainActionBtn.innerText = "ΑΝΑΖΗΤΗΣΗ";
         mainActionBtn.style.backgroundColor = "#ea5314";
-        
+
         // 4. ΣΙΓΟΥΡΗ ΕΠΑΝΑΦΟΡΑ ΤΟΥ TRY GAME
         if (tryGameBtn) {
             tryGameBtn.style.display = "block"; // Το εμφανίζουμε ΞΑΝΑ
@@ -987,7 +1133,7 @@ mainActionBtn.addEventListener("click", async () => {
 
         // 5. Scroll πίσω στην κορυφή
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         return; // Σταματάμε εδώ!
     }
 
@@ -1006,19 +1152,19 @@ mainActionBtn.addEventListener("click", async () => {
     }
     const selectedPlayer = !isVideoShotMode && playerSelectInput ? playerSelectInput.value.trim() : null;
     const selectedAssistant = !isVideoShotMode && document.getElementById("assistSelect") ? document.getElementById("assistSelect").value : null;
-    
+
     let filterType = !isVideoShotMode && document.getElementById("extraFilterType") ? document.getElementById("extraFilterType").value : null;
     let filterId = !isVideoShotMode && document.getElementById("extraFilterId") ? document.getElementById("extraFilterId").value : null;
     const quarter = !isVideoShotMode && document.getElementById("quarterSelectAnalytics") ? document.getElementById("quarterSelectAnalytics").value : null;
     const minStart = !isVideoShotMode && document.getElementById("minStart") ? document.getElementById("minStart").value : null;
     const minEnd = !isVideoShotMode && document.getElementById("minEnd") ? document.getElementById("minEnd").value : null;
-    
+
     let fouledId = document.getElementById("fouledIdInput") ? document.getElementById("fouledIdInput").value.trim() : null;
     let foulingId = document.getElementById("foulingIdInput") ? document.getElementById("foulingIdInput").value.trim() : null;
     let shooterId = document.getElementById("shooterIdInput") ? document.getElementById("shooterIdInput").value.trim() : null;
     let blockerId = document.getElementById("blockerIdInput") ? document.getElementById("blockerIdInput").value.trim() : null;
 
-    let secondChancePlayer = null; 
+    let secondChancePlayer = null;
     if (mode === "quiz-ball") {
         if (!selectedGame || !selectedSeason) {
             window.alert("Επίλεξε Season και Game για να παίξεις Quiz Ball.");
@@ -1089,6 +1235,8 @@ mainActionBtn.addEventListener("click", async () => {
                         window.quizState.isActive = false;
                         quizBtn.disabled = true;
                         quizInput.disabled = true;
+                        quizBtn.style.display= "none";
+                        quizInput.style.display= "none";
                     }
                 }
                 quizInput.value = "";
@@ -1106,8 +1254,8 @@ mainActionBtn.addEventListener("click", async () => {
         return; // Τερματίζουμε την εκτέλεση εδώ, αποφεύγοντας την κλήση των άλλων analytics queries
     }
     if (selectedPlayer && mode !== "euro-chart" && mode !== "video-shots") {
-        if (mode === "top-lineups") { if (!filterId) { filterId = selectedPlayer; filterType = "on_court"; } } 
-        else if (mode === "fouls-drawn") { if (!fouledId) fouledId = selectedPlayer; } 
+        if (mode === "top-lineups") { if (!filterId) { filterId = selectedPlayer; filterType = "on_court"; } }
+        else if (mode === "fouls-drawn") { if (!fouledId) fouledId = selectedPlayer; }
         else if (mode === "defensive-anchors") { if (!blockerId) blockerId = selectedPlayer; }
         else if (mode === "second-chance") { secondChancePlayer = selectedPlayer; }
     }
@@ -1155,15 +1303,15 @@ mainActionBtn.addEventListener("click", async () => {
                 if (opt && opt.text.includes("vs")) {
                     const matchText = opt.text.includes("] ") ? opt.text.split("] ")[1] : opt.text;
                     const teams = matchText.split(/vs/i);
-                    
+
                     const homeTeamName = (teams[0] || "HOME").trim() || "HOME";
                     const roadTeamName = (teams[1] || "ROAD").trim() || "ROAD";
-                    
+
                     document.querySelectorAll('#txtHomeTeamName, #txtHomeTeamName2, #txtHomeTeamName3, #txtHomeTeamName4, #txtHomeTeamName5').forEach(el => el.innerText = homeTeamName.toUpperCase());
                     document.querySelectorAll('#txtRoadTeamName, #txtRoadTeamName2, #txtRoadTeamName3, #txtRoadTeamName4, #txtRoadTeamName5').forEach(el => el.innerText = roadTeamName.toUpperCase());
                     document.getElementById("uiHomeTeam").innerText = homeTeamName.substring(0,3).toUpperCase();
                     document.getElementById("uiRoadTeam").innerText = roadTeamName.substring(0,3).toUpperCase();
-                    
+
                     // Αλλαγή των Titles αν υπάρχουν (homeTeamTitle)
                     const homeTitleEl = document.getElementById("homeTeamTitle");
                     if (homeTitleEl) homeTitleEl.innerText = homeTeamName.toUpperCase();
@@ -1189,9 +1337,9 @@ mainActionBtn.addEventListener("click", async () => {
                         const pName = parts[1] || parts[0];
                         // Διαβάζουμε την εικόνα κατευθείαν από το ίδιο πακέτο!
                         const pImg = (parts[2] && parts[2] !== "NO_IMG") ? parts[2] : null;
-                        
+
                         if (lineup.teamType === "home") {
-                            window.homePlayersSet.add(pName); 
+                            window.homePlayersSet.add(pName);
                             if (!window.homeRosterDetails.some(x => x.id === pId)) {
                                 window.homeRosterDetails.push({id: pId, name: pName, img: pImg});
                             }
@@ -1206,13 +1354,13 @@ mainActionBtn.addEventListener("click", async () => {
 
                 const homeScoreEl = document.getElementById("uiScoreHome");
                 if (homeScoreEl) homeScoreEl.innerText = data.homeScore || 0;
-                
+
                 const roadScoreEl = document.getElementById("uiScoreRoad");
                 if (roadScoreEl) roadScoreEl.innerText = data.roadScore || 0;
-                
+
                 buildRoster(window.homeRosterDetails, homePlayersContainer, "home");
                 buildRoster(window.roadRosterDetails, roadPlayersContainer, "road");
-                
+
                 const hsa = document.querySelector('.euro-roster.home .roster-sub input');
                 if (hsa) hsa.checked = true;
                 const rsa = document.querySelector('.euro-roster.road .roster-sub input');
@@ -1247,15 +1395,15 @@ mainActionBtn.addEventListener("click", async () => {
                 mainActionBtn.innerText = isVideoShotMode ? "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (VIDEO)" : "ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ (GAME)";
             }
         }
-    } 
+    }
     else {
         analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold;'>Φόρτωση δεδομένων...</div>";
-        
+
         try {
             if (mode === "top-lineups") {
                 const integratedSimulator = document.getElementById("integratedSimulator");
                 if (integratedSimulator) integratedSimulator.style.display = "none";
-                
+
                 if (tryGameBtn) {
                     tryGameBtn.style.display = "block";
                     tryGameBtn.innerText = " TRY GAME";
@@ -1263,28 +1411,28 @@ mainActionBtn.addEventListener("click", async () => {
 
                 analyticsTitle.innerText = "Top Lineups";
                 analyticsContent.innerHTML = "<div style='grid-column: 1 / -1; text-align: center; color: #ea5314; font-weight: bold; font-size: 1.2rem; padding: 40px;'>Φόρτωση δεδομένων...</div>";
-                
+
                 const lineups = await fetchTopLineups(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason);
                 if (!lineups || lineups.length === 0) {
                     analyticsContent.innerHTML = "<div style='grid-column: 1 / -1;'>Δεν βρέθηκαν δεδομένα.</div>";
                     return;
                 }
                 await renderTopLineups(lineups, selectedGame, selectedSeason);
-            } 
+            }
             else if (mode === "second-chance") {
-                const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason, secondChancePlayer);        
+                const players = await fetchSecondChancePoints(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason, secondChancePlayer);
                 renderPlayerCards(players, "total_points", "ΠΟΝΤΟΙ", "#27ae60");
-            } 
+            }
             else if (mode === "assist-duos") {
-                const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason);        
+                const duos = await fetchTopAssistDuos(filterType, filterId, quarter, minStart, minEnd, selectedGame, selectedSeason);
                 renderAssistDuos(duos);
             }
             else if (mode === "fouls-drawn") {
                 const players = await fetchFoulsDrawn(filterType, filterId, quarter, minStart, minEnd, fouledId, foulingId, selectedGame, selectedSeason);
                 renderPlayerCards(players, "total_fouls_drawn", "ΚΕΡΔΙΣΜΕΝΑ ΦΑΟΥΛ", "#e74c3c");
-            } 
+            }
             else if (mode === "defensive-anchors") {
-                const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, selectedGame, selectedSeason);        
+                const players = await fetchDefensiveAnchors(filterType, filterId, quarter, minStart, minEnd, shooterId, blockerId, selectedGame, selectedSeason);
                 renderPlayerCards(players, "total_blocks", "ΜΠΛΟΚ", "#34495e");
             }
         } catch (error) {
@@ -1307,7 +1455,7 @@ async function buildCurrentLineup(url, container) {
     container.innerHTML = "<div style='text-align:center;'>Φόρτωση...</div>";
     const parts = url.split("Lineup_")[1].split("_");
     container.innerHTML = "";
-    
+
     parts.forEach(playerId => {
         if(!playerId) return;
         const row = document.createElement("div");
@@ -1327,14 +1475,14 @@ async function buildCurrentLineup(url, container) {
 
 function buildRoster(playersArray, container, side) {
     container.innerHTML = "";
-    
+
     playersArray.sort((a, b) => a.name.localeCompare(b.name)).forEach((player, index) => {
         const row = document.createElement("div");
         row.className = "player-row";
-        
+
         // Χρησιμοποιούμε την εικόνα που ήρθε από το πρώτο request!
         const imgUrl = player.img || "https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png";
-        
+
         const cbHtml = `<input type="checkbox" class="euro-checkbox player-cb" value="${player.name}" checked>`;
 
         if (side === "home") {
@@ -1343,7 +1491,7 @@ function buildRoster(playersArray, container, side) {
             row.innerHTML = `${cbHtml}<img src="${imgUrl}" class="player-photo"><div class="player-info" style="align-items: flex-end; text-align: right;"><span class="player-name">${player.name}</span></div>`;
         }
         container.appendChild(row);
-        
+
         // ΔΙΑΓΡΑΦΗΚΕ το fetchPlayerDetails από εδώ. Το load πλέον είναι στιγμιαίο!
     });
 }
@@ -1352,7 +1500,7 @@ async function fetchPlayerDetails(playerId, htmlElementId, imgElementId) {
     try {
         if (playerId.includes(" ") || playerId.includes(",")) {
             let displayName = playerId;
-            if (displayName.includes(",")) displayName = displayName.split(",")[0]; 
+            if (displayName.includes(",")) displayName = displayName.split(",")[0];
             const el = document.getElementById(htmlElementId);
             if(el) el.innerText = displayName;
             return;
@@ -1360,11 +1508,11 @@ async function fetchPlayerDetails(playerId, htmlElementId, imgElementId) {
 
         const response = await fetch(`${API_BASE_URL}/api/player?player=${playerId}`);
         const data = await response.json();
-        
+
         if (data && data.player) {
             if (data.player.name) {
                 let displayName = data.player.name;
-                if (displayName.includes(",")) displayName = displayName.split(",")[0]; 
+                if (displayName.includes(",")) displayName = displayName.split(",")[0];
                 const el = document.getElementById(htmlElementId);
                 if (el) el.innerText = displayName;
             }
@@ -1385,7 +1533,7 @@ async function fetchPlayerDetails(playerId, htmlElementId, imgElementId) {
 // --- Συναρτήσεις Render Analytics ---
 function renderPlayerCards(data, statKey, statLabel, color) {
     if (!data || data.length === 0) { analyticsContent.innerHTML = "<div>Δεν βρέθηκαν δεδομένα.</div>"; return; }
-    analyticsContent.innerHTML = ""; 
+    analyticsContent.innerHTML = "";
     data.forEach((item, index) => {
         const card = document.createElement("div");
         card.style.cssText = `background:#fff; padding:20px; border-radius:12px; border-top:5px solid ${color}; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 15px rgba(0,0,0,0.05);`;
@@ -1407,7 +1555,7 @@ function renderPlayerCards(data, statKey, statLabel, color) {
 
 function renderAssistDuos(duos) {
     if (!duos || duos.length === 0) { analyticsContent.innerHTML = "<div>Δεν βρέθηκαν δεδομένα.</div>"; return; }
-    analyticsContent.innerHTML = ""; 
+    analyticsContent.innerHTML = "";
     duos.forEach((duo, index) => {
         const card = document.createElement("div");
         card.style.cssText = "background:#fff; padding:20px; border-radius:12px; border-top:5px solid #2b528a; display:flex; align-items:center; justify-content:space-between;";
@@ -1503,7 +1651,7 @@ async function renderTopLineups(lineups, gameCode = null, seasonCode = null) {
         gameCode,
         seasonCode
     );
-    analyticsContent.innerHTML = ""; 
+    analyticsContent.innerHTML = "";
     lineups.forEach((lineup, index) => {
         const card = document.createElement("div");
         card.style.cssText = "background:#fff; padding:20px; border-radius:12px; border-top:5px solid #ea5314; box-shadow:0 4px 15px rgba(0,0,0,0.05);";
@@ -1549,7 +1697,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     slots.forEach(slot => {
         slot.addEventListener('dragover', function(e) {
-            e.preventDefault(); 
+            e.preventDefault();
             this.classList.add('drag-over');
         });
 
@@ -1560,17 +1708,17 @@ document.addEventListener("DOMContentLoaded", () => {
         slot.addEventListener('drop', function(e) {
             e.preventDefault();
             this.classList.remove('drag-over');
-            
+
             if (window.draggedCard) {
                 // Εάν υπάρχει ήδη παίκτης, τον πετάμε πίσω στον πάγκο
                 const existingCard = this.querySelector('.player-card');
                 if (existingCard) {
                     rosterPool.appendChild(existingCard);
                 }
-                
+
                 // Τοποθετούμε το νέο παίκτη
                 this.appendChild(window.draggedCard);
-                
+
                 // Κρύβουμε το placeholder κείμενο (PG, SG κλπ)
                 const textNode = Array.from(this.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
                 if (textNode) textNode.remove();
@@ -1597,7 +1745,7 @@ const simBtn = document.getElementById("runSimulatorBtn");
 if (simBtn) {
     simBtn.addEventListener("click", async () => {
         const resultDiv = document.getElementById("simulatorResult");
-        
+
         // Διαβάζουμε τους παίκτες που υπάρχουν μέσα στα slots του γηπέδου
         const slotPG = document.querySelector("#slot-pg .player-card");
         const slotSG = document.querySelector("#slot-sg .player-card");
@@ -1615,17 +1763,17 @@ if (simBtn) {
         const p3 = slotSF.getAttribute("data-id");
         const p4 = slotPF.getAttribute("data-id");
         const p5 = slotC.getAttribute("data-id");
-        
+
         const gameCodeInput = document.getElementById("analyticsGameCodeInput");
         const gameCode = gameCodeInput?.value.trim() || window.currentScenario?.game_code || "";
-        
+
         resultDiv.innerHTML = `<span style="color: #f39c12; font-size: 1.2rem; font-weight: bold;">Προσομοίωση αγώνα σε εξέλιξη... 🎲</span>`;
 
         try {
             // Ζητάμε τα δεδομένα από το API (για να δούμε αν υπάρχει χημεία)
             const data = await fetchSimulatorResult(p1, p2, p3, p4, p5, gameCode);
             const scenario = window.currentScenario;
-            
+
             // 1. Υπολογισμός χρόνου και κατοχών
             const clockParts = scenario.clock.split(":");
             const remainingSeconds = parseInt(clockParts[0]) * 60 + parseInt(clockParts[1]);
@@ -1647,8 +1795,8 @@ if (simBtn) {
             let oppExpectedPoints = numPossessions * 1.0; // Βασική παραγωγή του αντιπάλου
 
             // Ρίχνουμε "ζάρια" (Τύχη από -3 έως +3 πόντους)
-            const luckDice = Math.floor(Math.random() * 7) - 3; 
-            const oppLuckDice = Math.floor(Math.random() * 5) - 2; 
+            const luckDice = Math.floor(Math.random() * 7) - 3;
+            const oppLuckDice = Math.floor(Math.random() * 5) - 2;
 
             // Προσθέτουμε τη Χημεία αν ισχύει
             const chemistryBonus = hasChemistry ? 3 : 0;
@@ -1706,130 +1854,106 @@ if (simBtn) {
 const tryGameBtn = document.getElementById("tryGameBtn");
 if (tryGameBtn) {
     tryGameBtn.addEventListener("click", async () => {
-        const integratedSimulator = document.getElementById("integratedSimulator");
-        const gameInstructions = document.getElementById("gameInstructions");
-        const actualSimulatorUI = document.getElementById("actualSimulatorUI");
-        const extraFilters = document.getElementById("extraFiltersContainer");
-        const timeFilters = document.getElementById("timeFiltersContainer");
-        const mainActionBtn = document.getElementById("mainActionBtn");
-        
-        // ----------------------------------------------------
-        // ΦΑΣΗ 1: Μπαίνει στο Mode Οδηγιών (Πατώντας TRY GAME)
-        // ----------------------------------------------------
-        if (tryGameBtn.innerText.includes("TRY GAME")) {
-            // 1. Κρύβουμε τα φίλτρα
-            if (extraFilters) extraFilters.style.display = "none";
-            if (timeFilters) timeFilters.style.display = "none";
-            if (analyticsContent) analyticsContent.style.display = "none";
-            if (analyticsTitle) analyticsTitle.style.display = "none";
+        // 1. ΕΛΕΓΧΟΣ: Έχει επιλέξει Season ο χρήστης;
+        let selectedSeason = globalSeasonSelect.value.trim();
 
-            if (playerFilterGroup) playerFilterGroup.style.display = "none";
-            // 2. Αλλάζουμε το κουμπί της Αναζήτησης σε Έξοδο
-            if (mainActionBtn) {
-                mainActionBtn.innerText = "ΕΞΟΔΟΣ ΑΠΟ GAME";
-                mainActionBtn.style.backgroundColor = "#c0392b"; 
-            }
-
-            // 3. Εμφανίζουμε ΜΟΝΟ τις οδηγίες
-            if (integratedSimulator) {
-                integratedSimulator.style.display = "block";
-                if (gameInstructions) gameInstructions.style.display = "block";
-                if (actualSimulatorUI) actualSimulatorUI.style.display = "none";
-                integratedSimulator.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-
-            // 4. Αλλάζουμε το κείμενο σε σκέτο GAME για το επόμενο κλικ
-            tryGameBtn.innerText = " GAME";
-            return; // Σταματάμε εδώ την εκτέλεση!
+        if (!selectedSeason) {
+            window.alert("Παρακαλώ επέλεξε πρώτα Season (π.χ. 2023-24) ή 'ALL SEASONS' για να παίξεις!");
+            return;
         }
 
-        // ----------------------------------------------------
-        // ΦΑΣΗ 2: Ξεκινάει η Προσομοίωση (Πατώντας GAME)
-        // ----------------------------------------------------
-        if (tryGameBtn.innerText.includes("GAME")) {
-            // 1. Κρύβουμε τις οδηγίες και το ίδιο το κουμπί
-            if (gameInstructions) gameInstructions.style.display = "none";
-            tryGameBtn.style.display = "none"; 
-            
-            // 2. Εμφανίζουμε το παρκέ (UI)
-            if (actualSimulatorUI) actualSimulatorUI.style.display = "block";
+        // Αν επέλεξε ALL SEASONS, διαλέγουμε τυχαία μία σεζόν
+        if (selectedSeason === "ALL") {
+            const availableSeasons = ["E2023", "E2024", "E2025"];
+            selectedSeason = availableSeasons[Math.floor(Math.random() * availableSeasons.length)];
+        }
 
-            // 3. Ξεκινάμε το Fetching του παιχνιδιού
-            const selectedSeason = document.getElementById("seasonSelect") ? document.getElementById("seasonSelect").value : "";
-            const simMatchupTitle = document.getElementById("simMatchupTitle");
-            const simScenarioText = document.getElementById("simScenarioText");
-            const rosterPool = document.getElementById("rosterPool");
+        const gameInstructions = document.getElementById("gameInstructions");
+        const actualSimulatorUI = document.getElementById("actualSimulatorUI");
+        const simMatchupTitle = document.getElementById("simMatchupTitle");
+        const simScenarioText = document.getElementById("simScenarioText");
+        const rosterPool = document.getElementById("rosterPool");
 
-            if (simMatchupTitle) simMatchupTitle.innerText = "Φόρτωση κρίσιμου σημείου...";
-            if (simScenarioText) simScenarioText.innerText = "Ο διαιτητής σφυρίζει Timeout...";
+        // 2. Κρύβουμε τις οδηγίες και εμφανίζουμε αμέσως το Παρκέ
+        if (gameInstructions) gameInstructions.style.display = "none";
+        if (actualSimulatorUI) actualSimulatorUI.style.display = "block";
 
-            document.querySelectorAll('.slot').forEach(slot => {
-                const existingCard = slot.querySelector('.player-card');
-                if (existingCard) existingCard.remove();
-                if (!slot.textContent.trim()) slot.textContent = slot.getAttribute("data-position");
-            });
-            document.getElementById("simulatorResult").innerHTML = "";
+        if (simMatchupTitle) simMatchupTitle.innerText = "Φόρτωση κρίσιμου σημείου...";
+        if (simScenarioText) simScenarioText.innerText = "Ο διαιτητής σφυρίζει Timeout...";
 
-            const scenario = await fetchSimulatorScenario(selectedSeason?.trim()? selectedSeason: ["E2023", "E2024", "E2025"][Math.floor(Math.random() * 3)]);
+        // Καθαρισμός προηγούμενου παιχνιδιού
+        document.querySelectorAll('.slot').forEach(slot => {
+            const existingCard = slot.querySelector('.player-card');
+            if (existingCard) existingCard.remove();
+            if (!slot.textContent.trim()) slot.textContent = slot.getAttribute("data-position");
+        });
+        document.getElementById("simulatorResult").innerHTML = "";
 
-            if (scenario && !scenario.error) {
-                window.currentScenario = scenario;
-                const gameInput = document.getElementById("analyticsGameCodeInput");
-                if (gameInput) gameInput.value = scenario.game_code;
-                const seasonSelect = document.getElementById("seasonSelect");
-                const userSelectedText = seasonSelect && seasonSelect.selectedIndex >= 0 
-                                         ? seasonSelect.options[seasonSelect.selectedIndex].text 
-                                         : "Άγνωστη Επιλογή";
-                if (simMatchupTitle) simMatchupTitle.innerText = `CRUNCH TIME: Είσαι ο Προπονητής της ${scenario.user_team}!`;
-                if (simScenarioText) {
-                    simScenarioText.innerHTML = `
-                        !-- ΝΕΟ: Εμφάνιση των λεπτομερειών της σεζόν -->
-                        <div style="color: #f39c12; font-size: 0.9rem; margin-bottom: 10px;">
-                            <em>Φίλτρο Αναζήτησης: <strong>${userSelectedText}</strong> | Σεζόν Αγώνα: <strong>${scenario.game_season_name}</strong></em>
-                        </div>
-                        <strong>Αντίπαλος:</strong> ${scenario.opponent} | <strong>4th Quarter</strong> | <strong>Χρόνος:</strong> ${scenario.clock}<br>
-                        <strong>Σκορ:</strong> ${scenario.user_score} - ${scenario.opp_score} (Υπέρ - Κατά)<br><br>
-                        Έχεις Timeout! Τοποθέτησε 5 παίκτες από τον πάγκο (ή από τις Top Lineups) στο παρκέ!
-                    `;
-                }
+        // 3. Φέρνουμε το Σενάριο
+        const scenario = await fetchSimulatorScenario(selectedSeason);
 
-                if (rosterPool) {
-                    const rosterDetails = await loadRosterPlayerDetails(
-                        scenario.roster.map(player => player.id),
-                        scenario.game_code,
-                        selectedSeason
-                    );
-                    rosterPool.innerHTML = "";
-                    scenario.roster.forEach(rosterPlayer => {
-                        const player = rosterDetails.get(rosterPlayer.id) || {
-                            id: rosterPlayer.id,
-                            name: rosterPlayer.id,
-                            img: PLAYER_PLACEHOLDER_IMAGE
-                        };
-                        const card = document.createElement("div");
-                        card.className = "player-card";
-                        card.draggable = true;
-                        card.setAttribute("data-id", player.id);
+        if (scenario && !scenario.error) {
+            window.currentScenario = scenario;
 
-                        card.innerHTML = `
-                            <img src="${player.img}" alt="${player.name}" style="pointer-events: none;">
-                            <span style="pointer-events: none;">${player.name}</span>
-                        `;
-                        rosterPool.appendChild(card);
+            const seasonNames = {
+                "E2023": "2023-24 Season",
+                "E2024": "2024-25 Season",
+                "E2025": "2025-26 Season"
+            };
 
-                        card.addEventListener('dragstart', function() {
-                            window.draggedCard = this;
-                            setTimeout(() => this.style.opacity = '0.5', 0);
-                        });
-                        card.addEventListener('dragend', function() {
-                            setTimeout(() => { this.style.opacity = '1'; window.draggedCard = null; }, 0);
-                        });
-                    });
-                }
-            } else {
-                if (simMatchupTitle) simMatchupTitle.innerText = "Σφάλμα Σεναρίου";
-                if (simScenarioText) simScenarioText.innerText = "Δεν βρέθηκαν κατάλληλα Timeouts στη βάση για αυτή τη σεζόν.";
+            const userSelectedText = globalSeasonSelect.value === "ALL"
+                ? `ALL SEASONS (Έτυχε: ${seasonNames[selectedSeason] || selectedSeason})`
+                : globalSeasonSelect.options[globalSeasonSelect.selectedIndex].text;
+
+            if (simMatchupTitle) simMatchupTitle.innerText = `CRUNCH TIME: Είσαι ο Προπονητής της ${scenario.user_team}!`;
+            if (simScenarioText) {
+                simScenarioText.innerHTML = `
+                    <div style="color: #f39c12; font-size: 0.9rem; margin-bottom: 10px;">
+                        <em>Επιλεγμένη Σεζόν: <strong>${userSelectedText}</strong></em>
+                    </div>
+                    <strong>Αντίπαλος:</strong> ${scenario.opponent} | <strong>4th Quarter</strong> | <strong>Χρόνος:</strong> ${scenario.clock}<br>
+                    <strong>Σκορ:</strong> ${scenario.user_score} - ${scenario.opp_score} (Υπέρ - Κατά)<br><br>
+                    Έχεις Timeout! Τοποθέτησε 5 παίκτες από τον πάγκο στο παρκέ!
+                `;
             }
+
+            // Φόρτωση Ρόστερ
+            if (rosterPool) {
+                const rosterDetails = await loadRosterPlayerDetails(
+                    scenario.roster.map(player => player.id),
+                    scenario.game_code,
+                    selectedSeason
+                );
+                rosterPool.innerHTML = "";
+                scenario.roster.forEach(rosterPlayer => {
+                    const player = rosterDetails.get(rosterPlayer.id) || {
+                        id: rosterPlayer.id,
+                        name: rosterPlayer.id,
+                        img: PLAYER_PLACEHOLDER_IMAGE
+                    };
+                    const card = document.createElement("div");
+                    card.className = "player-card";
+                    card.draggable = true;
+                    card.setAttribute("data-id", player.id);
+
+                    card.innerHTML = `
+                        <img src="${player.img}" alt="${player.name}" style="pointer-events: none;">
+                        <span style="pointer-events: none;">${player.name}</span>
+                    `;
+                    rosterPool.appendChild(card);
+
+                    card.addEventListener('dragstart', function() {
+                        window.draggedCard = this;
+                        setTimeout(() => this.style.opacity = '0.5', 0);
+                    });
+                    card.addEventListener('dragend', function() {
+                        setTimeout(() => { this.style.opacity = '1'; window.draggedCard = null; }, 0);
+                    });
+                });
+            }
+        } else {
+            if (simMatchupTitle) simMatchupTitle.innerText = "Σφάλμα Σεναρίου";
+            if (simScenarioText) simScenarioText.innerText = "Δεν βρέθηκαν κατάλληλα Timeouts στη βάση για αυτή τη σεζόν.";
         }
     });
 }
@@ -1845,7 +1969,26 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
         const response = await fetch(`${API_BASE_URL}/api/quiz/${category}?difficulty=${difficulty}`);
         const data = await response.json();
 
-        if (data.error) throw new Error(data.error);
+        if (!response.ok || data.error) {
+            throw new Error(
+                data.detail || data.error || `Quiz request failed (${response.status}).`
+            );
+        }
+        if (category === "who-am-i" && !Array.isArray(data.hints)) {
+            throw new Error("The quiz response did not include player hints.");
+        }
+        if (category === "who-is-missing" && !Array.isArray(data.known_players)) {
+            throw new Error("The quiz response did not include the known lineup.");
+        }
+        if (category === "fifty-fifty" && (!Array.isArray(data.options) || data.options.length < 2)) {
+            throw new Error("The quiz response did not include two answer options.");
+        }
+        if (category === "higher-or-lower" && (!data.player_a || !data.player_b)) {
+            throw new Error("The quiz response did not include both players.");
+        }
+        if (category === "top-5" && !Array.isArray(data.answers)) {
+            throw new Error("The quiz response did not include the Top 5 answers.");
+        }
 
         window.quizState.isActive = true;
         window.quizState.secretName = data.secret_player_name;
@@ -2115,9 +2258,15 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                     ${initialMessage}
                 </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="quizAnswerInput" placeholder="Μάντεψε τον παίκτη..." autocomplete="off" style="flex: 1; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem;">
-                    <button id="quizAnswerBtn" style="padding: 12px 25px; background: ${themeColor}; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">ΑΠΑΝΤΗΣΗ</button>
+                <!-- ΑΛΛΑΓΗ ΓΙΑ ΤΟ AUTOCOMPLETE -->
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="flex: 1; position: relative;">
+                        <input type="text" id="quizAnswerInput" placeholder="Μάντεψε τον παίκτη..." autocomplete="off" style="width: 100%; padding: 12px; border: 2px solid #cdd4e2; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+
+                        <!-- Η κρυφή λίστα που θα εμφανίζεται σαν το Google Search -->
+                        <div id="autocompleteList" style="position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #cdd4e2; border-top: none; border-radius: 0 0 8px 8px; z-index: 1000; max-height: 200px; overflow-y: auto; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <button id="quizAnswerBtn" style="padding: 12px 25px; background: ${themeColor}; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; height: 46px;">ΑΠΑΝΤΗΣΗ</button>
                 </div>
             </div>
         `;
@@ -2129,6 +2278,177 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
             quizInput.parentElement.style.display = "none";
         }
 
+        const autocompleteList = document.getElementById("autocompleteList");
+
+        if (category === "fifty-fifty" || category === "higher-or-lower") {
+            quizInput.parentElement.parentElement.style.display = "none";
+        }
+
+        // Λίστα με ονόματα παικτών (Εδώ μπορείς να προσθέσεις όσους θες!)
+       const euroleaguePlayers = [
+            // 1. Panathinaikos AKTOR
+            "Kendrick Nunn", "Kostas Sloukas", "Mathias Lessort", "Lorenzo Brown",
+            "Jerian Grant", "Dinos Mitoglou", "Marius Grigonis", "Juancho Hernangomez",
+            "Omer Yurtseven", "Cedi Osman", "Ioannis Papapetrou", "Panagiotis Kalaitzakis",
+            "Dimitris Moraitis", "Alexandros Samodurov", "Kostas Antetokounmpo",
+
+            // 2. Olympiacos Piraeus
+            "Sasha Vezenkov", "Evan Fournier", "Kostas Papanikolaou", "Thomas Walkup",
+            "Nikola Milutinov", "Alec Peters", "Moustapha Fall", "Shaquielle McKissic",
+            "Nigel Williams-Goss", "Luca Vildoza", "Tyler Dorsey", "Giannoulis Larentzakis",
+            "Naz Mitrou-Long", "Moses Wright", "Antonis Karagiannidis",
+
+            // 3. Real Madrid
+            "Facundo Campazzo", "Mario Hezonja", "Edy Tavares", "Dzanan Musa",
+            "Gabriel Deck", "Sergio Llull", "Serge Ibaka", "Xavier Rathan-Mayes",
+            "Usman Garuba", "Andres Feliz", "Eli Ndiaye", "Alberto Abalde", "Hugo Gonzalez",
+
+            // 4. FC Barcelona
+            "Kevin Punter", "Tomas Satoransky", "Nicolas Laprovittola", "Jan Vesely",
+            "Willy Hernangomez", "Jabari Parker", "Chimezie Metu", "Dario Brizuela",
+            "Joel Parra", "Alex Abrines", "Justin Anderson", "Dame Sarr", "Youssoupha Fall",
+
+            // 5. Fenerbahce Beko
+            "Nigel Hayes-Davis", "Wade Baldwin", "Bonzie Colson", "Nicolo Melli",
+            "Marko Guduric", "Boban Marjanovic", "Tarik Biberovic", "Sertac Sanli",
+            "Devon Hall", "Erten Gazi", "Melih Mahmutoglu", "Dyshawn Pierre",
+            "Khem Birch", "Scottie Wilbekin", "Metecan Birsen",
+
+            // 6. AS Monaco
+            "Mike James", "Elie Okobo", "Alpha Diallo", "Donatas Motiejunas",
+            "Georgios Papagiannis", "Nick Calathes", "Furkan Korkmaz", "Jaron Blossomgame",
+            "Matthew Strazel", "Terry Tarpey", "Mam Jaiteh", "Vitto Brown", "Jordan Loyd",
+
+            // 7. Anadolu Efes
+            "Shane Larkin", "Darius Thompson", "Rodrigue Beaubois", "Vincent Poirier",
+            "Rolands Smits", "PJ Dozier", "Stanley Johnson", "Derek Willis",
+            "Dogus Ozdemiroglu", "Ercan Osmani", "Erkan Yilmaz", "Justus Hollatz",
+            "Daniel Oturu", "Burak Can Yildizli",
+
+            // 8. Baskonia Vitoria-Gasteiz
+            "Markus Howard", "Chima Moneke", "Tadas Sedekerskis", "Timothe Luwawu-Cabarrot",
+            "Kamar Baldwin", "Trent Forrest", "Donta Hall", "Ognjen Jaramaz",
+            "Nikos Rogkavopoulos", "Sander Raieste", "Khalifa Diop", "Pavel Savkov",
+
+            // 9. Partizan Mozzart Bet Belgrade
+            "Carlik Jones", "Frank Ntilikina", "Iffe Lundberg", "Vanja Marinkovic",
+            "Brandon Davies", "Sterling Brown", "Isaac Bonga", "Tyrique Jones",
+            "Aleksej Pokusevski", "Mario Nakic", "Balsa Koprivica", "Arijan Lakic",
+            "Duane Washington Jr.", "Isiaha Mike",
+
+            // 10. Crvena Zvezda Meridianbet Belgrade
+            "Milos Teodosic", "Nemanja Nedovic", "Isaiah Canaan", "Joel Bolomboy",
+            "Codi Miller-McIntyre", "Nikola Kalinic", "Luka Mitrovic", "Rokas Giedraitis",
+            "Yago dos Santos", "Mike Daum", "Dejan Davidovac", "Branko Lazic",
+            "Uros Plavsic", "Ognjen Dobric",
+
+            // 11. EA7 Emporio Armani Milan
+            "Nikola Mirotic", "Shavon Shields", "Josh Nebo", "Nenad Dimitrijevic",
+            "Zach LeDay", "Fabien Causeur", "Armoni Brooks", "Leandro Bolmaro",
+            "Stefano Tonut", "Giampaolo Ricci", "Guglielmo Caruso", "Diego Flaccadori",
+            "Ousmane Diop",
+
+            // 12. Virtus Segafredo Bologna
+            "Toko Shengelia", "Daniel Hackett", "Marco Belinelli", "Isaia Cordinier",
+            "Will Clyburn", "Ante Zizic", "Matt Morgan", "Alessandro Pajola",
+            "Achille Polonara", "Devontae Cacok", "Rayjon Tucker", "Mouhamet Diouf",
+            "Andrejs Grazulis",
+
+            // 13. Paris Basketball
+            "T.J. Shorts", "Nadir Hifi", "Collin Malcolm", "Tyson Ward",
+            "Kevarrius Hayes", "Maodo Lo", "Mikael Jantunen", "Bandja Sy",
+            "Sebastjan Janc", "Yakuba Ouattara", "Leopold Cavaliere", "Enzo Shahrvin",
+
+            // 14. Maccabi Playtika Tel Aviv
+            "Tamir Blatt", "Jasiel Rivero", "Levi Randolph", "Rokas Jokubaitis",
+            "Jaylen Hoard", "Wenyen Gabriel", "Roman Sorkin", "John DiBartolomeo",
+            "Jake Cohen", "Will Rayman", "Alpha Kaba", "David DeJulius",
+
+            // 15. Zalgiris Kaunas
+            "Sylvain Francisco", "Ignas Brazdeikis", "Edgaras Ulanovas", "Alen Smailagic",
+            "Deividas Sirvydis", "Laurynas Birutis", "Lukas Lekavicius", "Brady Manek",
+            "Arnas Butkevicius", "Bryant Dunston", "Matt Mitchell", "Dovydas Giedraitis",
+
+            // 16. FC Bayern Munich
+            "Devin Booker", "Vladimir Lucic", "Shabazz Napier", "Johannes Voigtmann",
+            "Carsen Edwards", "Andreas Obst", "Nick Weiler-Babb", "Elias Harris",
+            "Niels Giffey", "Yam Madar", "Danko Brankovic", "Oscar da Silva",
+            "Ivan Kharchenkov",
+
+            // 17. ALBA Berlin
+            "Martin Hermannsson", "Louis Olinde", "Gabriele Procida", "Matteo Spagnolo",
+            "Malte Delow", "Matt Thomas", "Justin Bean", "Yanni Wetzell",
+            "Trevion Williams", "Jonas Mattisseck", "Ziga Samar", "Tim Schneider",
+            "Khalifa Koumadje",
+
+            // 18. LDLC ASVEL Villeurbanne
+            "Paris Lee", "Theo Maledon", "Joffrey Lauvergne", "Nando De Colo",
+            "Tarik Black", "Shaquille Harrison", "Mbaye Ndiaye", "Neal Sako",
+            "Edwin Jackson", "Charles Kahudi", "Melvin Ajinca", "David Lighty",
+
+            // --- EXTRA TEAMS GIA NA VGOUN 20 ---
+
+            // 19. Valencia Basket
+            "Chris Jones", "Semi Ojeleye", "Jean Montero", "Nate Sestina",
+            "Ethan Happ", "Matt Costello", "Xabi Lopez-Arostegui", "Stefan Jovic",
+            "Jaime Pradilla", "Brancou Badio", "Josep Puerto",
+
+            // 20. CSKA Moscow
+            "Melo Trimble", "Aleksa Avramovic", "Casper Ware", "Amath M'Baye",
+            "Tonye Jekiri", "Livio Jean-Charles", "Semen Antonov", "Anton Astapkovich",
+            "Ivan Ukhov", "Vladimir Karpenko"
+        ];
+
+        // Event Listener όταν ο χρήστης πληκτρολογεί
+        quizInput.addEventListener("input", function() {
+            const val = this.value.trim();
+            autocompleteList.innerHTML = ""; // Καθαρίζουμε την προηγούμενη λίστα
+
+            if (!val) {
+                autocompleteList.style.display = "none";
+                return;
+            }
+
+            // Φιλτράρουμε τους παίκτες που περιέχουν τα γράμματα που πληκτρολόγησε ο χρήστης
+            const matches = euroleaguePlayers.filter(player =>
+                player.toLowerCase().includes(val.toLowerCase())
+            );
+
+            if (matches.length > 0) {
+                autocompleteList.style.display = "block";
+                matches.forEach(match => {
+                    const item = document.createElement("div");
+                    item.style.cssText = "padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;";
+
+                    // Κάνουμε Highlight (χρωματίζουμε) τα γράμματα που έγραψε ο χρήστης
+                    const regex = new RegExp(`(${escapeRegularExpression(val)})`, "gi");
+                    item.innerHTML = match.replace(regex, `<strong style="color: ${themeColor};">$1</strong>`);
+
+                    // Όταν κάνει κλικ σε μια επιλογή
+                    item.addEventListener("click", function() {
+                        quizInput.value = match; // Βάζουμε το όνομα στο input
+                        autocompleteList.innerHTML = ""; // Καθαρίζουμε τη λίστα
+                        autocompleteList.style.display = "none"; // Κρύβουμε το dropdown
+                        quizInput.focus(); // Επαναφέρουμε τον κέρσορα στο πεδίο
+                    });
+
+                    // Εφέ Hover
+                    item.addEventListener("mouseover", () => item.style.backgroundColor = "#f4f6f8");
+                    item.addEventListener("mouseout", () => item.style.backgroundColor = "#fff");
+
+                    autocompleteList.appendChild(item);
+                });
+            } else {
+                autocompleteList.style.display = "none";
+            }
+        });
+
+        // Αν κάνει κλικ οπουδήποτε αλλού στη σελίδα, η λίστα κλείνει
+        document.addEventListener("click", function(e) {
+            if (e.target !== quizInput) {
+                autocompleteList.style.display = "none";
+            }
+        });
         const submitAnswer = () => {
             if (!window.quizState.isActive || !quizInput.value.trim()) return;
 
@@ -2161,6 +2481,8 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         window.quizState.isActive = false;
                         quizBtn.disabled = true;
                         quizInput.disabled = true;
+                        quizBtn.style.display="none";
+                        quizInput.style.display="none";
                     }
                 } else {
                     // Λάθος μαντεψιά -> Χάνεις ζωή
@@ -2187,6 +2509,8 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         window.quizState.isActive = false;
                         quizBtn.disabled = true;
                         quizInput.disabled = true;
+                        quizBtn.style.display="none";
+                        quizInput.style.display="none";
                     }
                 }
                 quizInput.value = "";
@@ -2203,6 +2527,8 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                 window.quizState.isActive = false;
                 quizBtn.disabled = true;
                 quizInput.disabled = true;
+                quizBtn.style.display= "none";
+                quizInput.style.display= "none";
             } else {
                 window.quizState.currentHintIndex++;
 
@@ -2221,6 +2547,8 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         window.quizState.isActive = false;
                         quizBtn.disabled = true;
                         quizInput.disabled = true;
+                        quizBtn.style.display= "none";
+                        quizInput.style.display= "none";
                     }
                 } else if (window.quizState.category === "who-is-missing") {
                     // Στο "Ποιος Λείπει;" δίνουμε 2 ευκαιρίες συνολικά
@@ -2237,6 +2565,8 @@ window.startQuizCategory = async function(category, difficulty,keepStreak = fals
                         window.quizState.isActive = false;
                         quizBtn.disabled = true;
                         quizInput.disabled = true;
+                        quizBtn.style.display= "none";
+                        quizInput.style.display= "none";
                     }
                 }
             }

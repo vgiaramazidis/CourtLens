@@ -173,6 +173,25 @@ class VideoSynchronizationTests(unittest.TestCase):
         self.assertNotIn("Sloukas", prompt)
         self.assertNotIn("Nunn", prompt)
 
+    def test_ai_scope_context_omits_unselected_game(self):
+        context = backend_app.build_ai_scope_context("E2024", None)
+
+        self.assertEqual(len(context), 1)
+        self.assertIn('bball:hasCode "E2024"', context[0])
+        self.assertNotIn("None", " ".join(context))
+
+    def test_ai_scope_context_uses_filter_in_for_multiple_seasons(self):
+        context = backend_app.build_ai_scope_context(
+            "E2023,E2024,E2025",
+            None,
+        )
+
+        self.assertEqual(len(context), 1)
+        self.assertIn(
+            'FILTER(?seasonCode IN ("E2023", "E2024", "E2025"))',
+            context[0],
+        )
+
     def test_percentage_ai_response_is_aggregate_and_does_not_filter_playbyplay(self):
         generated_query = """
 PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>

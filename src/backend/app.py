@@ -971,6 +971,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
    ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ?gameCode .
    ?season bball:hasCode ?seasonCode .
    Χρησιμοποίησε ΠΑΝΤΑ τους ακριβείς κωδικούς αγώνα και σεζόν που παρέχονται στο Υποχρεωτικό context του αιτήματος.
+   ΣΗΜΑΝΤΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΠΟΛΛΑΠΛΕΣ ΣΕΖΟΝ/ΑΓΩΝΕΣ: Αν ο κωδικός σεζόν (ή αγώνα) που σου δοθεί περιέχει κόμματα (π.χ. "E2023,E2024,E2025"), ΑΠΑΓΟΡΕΥΕΤΑΙ να τον ψάξεις ως ένα ενιαίο String. ΠΡΕΠΕΙ να τον χωρίσεις και να χρησιμοποιήσεις τη συνάρτηση FILTER IN.
+   Σωστό Παράδειγμα: FILTER(?seasonCode IN ("E2023", "E2024", "E2025"))
 2. Σύνδεση Ενεργειών:
    ?game bball:hasPlayByPlayAction ?action .
    ?action bball:hasPlayByPlaySequence ?order .
@@ -1043,8 +1045,40 @@ SELECT ?assistingPlayerName WHERE {
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
-    game_code: str = Field(max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
-    season_code: str = Field(max_length=20, pattern=r"^[A-Za-z0-9_-]+$")
+    game_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
+    season_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
+
+
+def build_ai_scope_context(
+    season_code: str | None,
+    game_code: str | None,
+) -> list[str]:
+    """Describe only the filters that the user actually selected."""
+    context = []
+    scopes = (
+        ("season", "seasonCode", season_code),
+        ("game", "gameCode", game_code),
+    )
+    for label, variable, raw_value in scopes:
+        values = [
+            value.strip()
+            for value in str(raw_value or "").split(",")
+            if value.strip()
+        ]
+        if not values:
+            continue
+        if len(values) == 1:
+            context.append(
+                f'Περιόρισε το query στο {label} με '
+                f'bball:hasCode "{values[0]}".'
+            )
+            continue
+        quoted_values = ", ".join(f'"{value}"' for value in values)
+        context.append(
+            f'Περιόρισε το query στα επιλεγμένα {label} codes με '
+            f'FILTER(?{variable} IN ({quoted_values})).'
+        )
+    return context
 
 
 def clean_and_validate_sparql(raw_query: str) -> str:
@@ -1220,11 +1254,15 @@ async def ai_chat_handler(request: ChatRequest):
         if cached_payload is not None:
             return cached_payload
 
-        context = [
-            f'Περιορίσε το query στη σεζόν με bball:hasCode "{request.season_code}".',
-            f'Περιορίσε το query στον αγώνα με bball:hasCode "{request.game_code}".',
-        ]
-        contextual_message = request.message + "\n\nΥποχρεωτικό context:\n- " + "\n- ".join(context)
+        context = build_ai_scope_context(
+            request.season_code,
+            request.game_code,
+        )
+        contextual_message = request.message
+        if context:
+            contextual_message += (
+                "\n\nΥποχρεωτικό context:\n- " + "\n- ".join(context)
+            )
 
         response = await client.aio.models.generate_content(
             model='gemini-3.5-flash',

@@ -254,6 +254,45 @@ def deterministic_stratified_sample(
     )
 
 
+def select_annotation_records(
+    records: Iterable[ActionRecord],
+    *,
+    season_code: str | None = None,
+    game_code: str | None = None,
+    all_actions: bool = False,
+    per_category: int = 20,
+    seed: str = "euroleague-ocr-evaluation-v1",
+) -> list[ActionRecord]:
+    """Select either a filtered sample or every action from one game."""
+    if game_code and not season_code:
+        raise ValueError("--game-code requires --season-code")
+    if all_actions and (not season_code or not game_code):
+        raise ValueError(
+            "--all-actions requires both --season-code and --game-code"
+        )
+
+    selected = [
+        record
+        for record in records
+        if (not season_code or record.season_code == season_code)
+        and (not game_code or record.game_code == game_code)
+    ]
+    if not selected:
+        scope = "/".join(value for value in (season_code, game_code) if value)
+        raise ValueError(f"No Play-by-Play actions found for {scope or 'selection'}")
+
+    if all_actions:
+        return sorted(
+            selected,
+            key=lambda record: (
+                record.season_code,
+                int(record.game_code),
+                record.event_id,
+            ),
+        )
+    return deterministic_stratified_sample(selected, per_category, seed)
+
+
 def timeline_path(timeline_dir: Path, season_code: str, game_code: str) -> Path:
     return timeline_dir / f"{season_code}_{game_code}.csv"
 
@@ -678,6 +717,19 @@ def build_parser() -> argparse.ArgumentParser:
     sample.add_argument("--reference-dir", type=Path, default=DEFAULT_PRODUCTION_DIR)
     sample.add_argument("--per-category", type=int, default=20)
     sample.add_argument("--seed", default="euroleague-ocr-evaluation-v1")
+    sample.add_argument(
+        "--season-code",
+        help="Restrict the annotation selection to one season, for example E2023",
+    )
+    sample.add_argument(
+        "--game-code",
+        help="Restrict the annotation selection to one game (requires --season-code)",
+    )
+    sample.add_argument(
+        "--all-actions",
+        action="store_true",
+        help="Select every action from one game in event order; requires season and game",
+    )
     sample.add_argument("--output", type=Path, default=DEFAULT_GROUND_TRUTH)
     sample.add_argument(
         "--force",
@@ -712,8 +764,13 @@ def main(argv: list[str] | None = None) -> int:
     all_actions_dir = args.all_actions_dir.expanduser().resolve()
     if args.command == "sample":
         records = load_action_records(catalog_path, all_actions_dir)
-        sample = deterministic_stratified_sample(
-            records, args.per_category, args.seed
+        sample = select_annotation_records(
+            records,
+            season_code=args.season_code,
+            game_code=args.game_code,
+            all_actions=args.all_actions,
+            per_category=args.per_category,
+            seed=args.seed,
         )
         output = args.output.expanduser().resolve()
         if output.exists() and not args.force:
@@ -726,8 +783,13 @@ def main(argv: list[str] | None = None) -> int:
             args.reference_dir.expanduser().resolve(),
             output,
         )
+        scope = (
+            f" for {args.season_code}/{args.game_code}"
+            if args.season_code and args.game_code
+            else ""
+        )
         print(
-            f"Saved {len(sample)} actions across "
+            f"Saved {len(sample)} actions{scope} across "
             f"{len({record.category for record in sample})} categories to {output}"
         )
         return 0

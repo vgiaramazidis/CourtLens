@@ -10,11 +10,32 @@ from src.data_pipeline.ocr_evaluation import (
     deterministic_stratified_sample,
     load_ground_truth,
     metric_summary,
+    select_annotation_records,
 )
 from src.data_pipeline.ocr_triplets import PlayByPlayAction
 
 
 class OcrEvaluationTests(unittest.TestCase):
+    @staticmethod
+    def _record(season_code: str, game_code: str, event_id: int) -> ActionRecord:
+        action_info = "2FGM"
+        return ActionRecord(
+            season_code=season_code,
+            game_code=game_code,
+            event_id=event_id,
+            action=PlayByPlayAction(
+                uri=f"game#PlayByPlay_J{event_id}",
+                quarter="1st",
+                quarter_seconds_remaining=600 - event_id,
+                action_info=action_info,
+            ),
+            action_info=action_info,
+            category=action_category(action_info),
+            pbp_quarter="1st",
+            pbp_clock="09:59",
+            youtube_url="https://www.youtube.com/watch?v=test",
+        )
+
     def test_action_categories_cover_professor_requested_groups(self):
         self.assertEqual(action_category("3FGM"), "made_field_goal")
         self.assertEqual(action_category("FTA"), "missed_free_throw")
@@ -89,6 +110,34 @@ class OcrEvaluationTests(unittest.TestCase):
         self.assertEqual(events[0].ground_truth_video_seconds, 123.5)
         self.assertEqual(pending, 1)
         self.assertEqual(excluded, 1)
+
+    def test_all_actions_selects_only_requested_game_in_event_order(self):
+        records = [
+            self._record("E2023", "333", 9),
+            self._record("E2024", "333", 1),
+            self._record("E2023", "333", 2),
+            self._record("E2023", "328", 3),
+        ]
+
+        selected = select_annotation_records(
+            records,
+            season_code="E2023",
+            game_code="333",
+            all_actions=True,
+        )
+
+        self.assertEqual([record.event_id for record in selected], [2, 9])
+        self.assertTrue(all(record.game_code == "333" for record in selected))
+
+    def test_all_actions_requires_one_complete_game_scope(self):
+        records = [self._record("E2023", "333", 1)]
+
+        with self.assertRaisesRegex(ValueError, "requires both"):
+            select_annotation_records(
+                records,
+                season_code="E2023",
+                all_actions=True,
+            )
 
 
 if __name__ == "__main__":

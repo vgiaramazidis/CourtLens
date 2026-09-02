@@ -28,6 +28,9 @@ debug_frames/
 
 # Local OCR/PDF diagnostics, downloaded videos, candidates, and run logs
 tmp/
+outputs/
+evaluation/ocr_triplets_candidate/
+*.numbers
 
 # Secrets / Environment Variables
 .env

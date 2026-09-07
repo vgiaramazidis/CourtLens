@@ -42,10 +42,17 @@ For a complete manual review of every PBP action in one game, use
 ```
 
 This repository also includes completed, formatted full-game annotation
-workbooks for `E2023/333` (534 actions) and `E2024/220` (574 rows: 573
-annotated and one excluded). The rows remain in `original_event_id` order so
-annotation follows each game chronologically. Full-game case studies are
-separate from, and do not replace, the 260-action stratified sample.
+workbooks for:
+
+- `E2023/333`: 534 annotated actions.
+- `E2024/220`: 574 rows, with 573 annotated and one excluded.
+- `E2023/170`: 733 rows, with 726 annotated and seven excluded.
+
+The seven excluded `E2023/170` rows form the single contiguous
+`J117`–`J123` sequence; the note on `J117` documents the reason for the
+whole sequence. The rows remain in `original_event_id` order so annotation
+follows each game chronologically. Full-game case studies are separate from,
+and do not replace, the 260-action stratified sample.
 
 ## 2. Annotate the video timestamp
 
@@ -95,6 +102,30 @@ Evaluate the completed `E2024/220` case study in the same way:
   --ground-truth evaluation/ground_truth/E2024_220_full_pbp_ground_truth.csv \
   --output-dir evaluation/results/E2024_220_full_game
 ```
+
+Evaluate the completed `E2023/170` case study:
+
+```bash
+.venv/bin/python src/data_pipeline/ocr_evaluation.py evaluate \
+  --ground-truth evaluation/ground_truth/E2023_170_full_pbp_ground_truth.csv \
+  --output-dir evaluation/results/E2023_170_full_game
+```
+
+### Full-game comparison
+
+| Game and system | Evaluated | Mapped | UER | MAE | Acc@1s | Acc@2s |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| E2023/333 baseline | 534 | 534 | 0.000% | 16.193s | 19.288% | 25.655% |
+| E2023/333 production | 534 | 534 | 0.000% | 16.367s | 18.914% | 24.532% |
+| E2024/220 baseline | 573 | 573 | 0.000% | 22.031s | 14.834% | 27.225% |
+| E2024/220 production | 573 | 573 | 0.000% | 21.599s | 14.834% | 27.574% |
+| E2023/170 baseline | 726 | 726 | 0.000% | 22.565s | 18.457% | 33.058% |
+| E2023/170 production | 726 | 726 | 0.000% | 22.510s | 18.871% | 31.818% |
+
+The results are mixed. Production has slightly lower MAE for `E2024/220`
+and `E2023/170`, while the baseline remains better on `E2023/333` and on
+`E2023/170` Acc@2s. Category-level and event-level results are stored in
+each game's results directory.
 
 Default systems:
 

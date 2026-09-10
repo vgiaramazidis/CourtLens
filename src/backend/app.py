@@ -11,7 +11,9 @@ from bisect import bisect_left
 from collections import OrderedDict, defaultdict
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
+import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -943,94 +945,242 @@ async def get_simulator_scenario(season_code: str = Query(...)):
     }
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "gemini").strip().lower()
+AI_SEARCH_PROMPT_VARIANT = os.getenv(
+    "AI_SEARCH_PROMPT_VARIANT", "ontology"
+).strip().lower()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
+OPENAI_MODEL = "gpt-5-mini"
+OPENAI_BASE_URL = os.getenv(
+    "OPENAI_BASE_URL", "https://api.openai.com/v1"
+).rstrip("/")
+OPENAI_TIMEOUT_SECONDS = max(1, int(os.getenv("OPENAI_TIMEOUT_SECONDS", "90")))
+OPENAI_MAX_OUTPUT_TOKENS = max(
+    1000, int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "4000"))
+)
 
 # The backend can still start without Gemini configured; /api/chat reports a clear 503 instead.
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-# 2. Το System Prompt παραμένει το ίδιο
+# Production AI Search prompts
 euroleague_system_prompt = """
-Είσαι ένας έμπειρος προγραμματιστής SPARQL και ειδικός σε σημασιολογικά μοντέλα δεδομένων για αθλητικά γεγονότα, χρησιμοποιώντας το FORTH Basketball Ontology.
-Στόχος σου είναι να μεταφράζεις τις ερωτήσεις του χρήστη ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ σε έγκυρο κώδικα SPARQL.
-Απαγορεύεται να επιστρέψεις markdown blocks (π.χ. ```sparql), HTML, ή οποιοδήποτε άλλο κείμενο.
-Να επιστρέφεις μόνο read-only SELECT ή ASK queries. Απαγορεύονται UPDATE operations και SERVICE clauses.
+You are an expert SPARQL developer specializing in semantic sports data and the FORTH Basketball Ontology.
+Translate each English user question into exactly one valid SPARQL query.
+Return only the query. Do not return Markdown fences, HTML, explanations, comments, or any other text.
+Only read-only SELECT and ASK queries are allowed. UPDATE operations and SERVICE clauses are forbidden.
 
-Να χρησιμοποιείς ΠΑΝΤΑ αυτά τα Namespaces:
+Always include these namespaces:
 PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-ΒΑΣΙΚΕΣ ΚΛΑΣΕΙΣ (rdf:type):
-- Σουτ: bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:FreeThrowMade, bball:FreeThrowMissed
-- Δημιουργία/κατοχή: bball:Assist, bball:OffensiveRebound, bball:DefensiveRebound, bball:Turnover, bball:Steal
-- Φάουλ/άμυνα: bball:FoulDrawn, bball:DefensiveFoul, bball:OffensiveFoul, bball:ShotRejected
-- Ροή αγώνα: bball:PeriodStart, bball:JumpBall
+CORE CLASSES (rdf:type):
+- Shots: bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:FreeThrowMade, bball:FreeThrowMissed
+- Creation and possession: bball:Assist, bball:OffensiveRebound, bball:DefensiveRebound, bball:Turnover, bball:Steal
+- Fouls and defense: bball:FoulDrawn, bball:DefensiveFoul, bball:OffensiveFoul, bball:BenchFoul, bball:UnsportsmanlikeFoul, bball:TechnicalFoul, bball:CoachFoul, bball:Block
+- Game flow: bball:PeriodStart, bball:JumpBall, bball:PlayerIn, bball:PlayerOut
 
-ΑΥΣΤΗΡΟ ΛΕΞΙΛΟΓΙΟ ΚΑΙ ΚΑΝΟΝΕΣ (ΜΗΝ ΕΦΕΥΡΙΣΚΕΙΣ ΙΔΙΟΤΗΤΕΣ):
-1. Δομή Αγώνα & Σεζόν:
+STRICT VOCABULARY AND QUERY RULES — NEVER INVENT PROPERTIES:
+1. Game and season structure:
    ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ?gameCode .
    ?season bball:hasCode ?seasonCode .
-   Χρησιμοποίησε ΠΑΝΤΑ τους ακριβείς κωδικούς αγώνα και σεζόν που παρέχονται στο Υποχρεωτικό context του αιτήματος.
-   ΣΗΜΑΝΤΙΚΟΣ ΚΑΝΟΝΑΣ ΓΙΑ ΠΟΛΛΑΠΛΕΣ ΣΕΖΟΝ/ΑΓΩΝΕΣ: Αν ο κωδικός σεζόν (ή αγώνα) που σου δοθεί περιέχει κόμματα (π.χ. "E2023,E2024,E2025"), ΑΠΑΓΟΡΕΥΕΤΑΙ να τον ψάξεις ως ένα ενιαίο String. ΠΡΕΠΕΙ να τον χωρίσεις και να χρησιμοποιήσεις τη συνάρτηση FILTER IN.
-   Σωστό Παράδειγμα: FILTER(?seasonCode IN ("E2023", "E2024", "E2025"))
-2. Σύνδεση Ενεργειών:
+   ?game bball:homeTeam ?homeTeam ; bball:roadTeam ?roadTeam .
+   Always use the exact game and season codes supplied in the Required request context.
+   If a season or game context contains comma-separated codes, never search for the combined string. Split the codes and use FILTER IN.
+   Correct example: FILTER(?seasonCode IN ("SEASON_CODE_1", "SEASON_CODE_2"))
+2. Action connection:
    ?game bball:hasPlayByPlayAction ?action .
    ?action bball:hasPlayByPlaySequence ?order .
-3. Στατιστικά Ενέργειας:
-   - Πόντοι: bball:pointsAwarded ?points . (Για άθροισμα ΠΑΝΤΑ: SUM(xsd:integer(?points)))
-   - Παίκτης (Δράστης): bball:actionPlayer ?player .
-   - Ομάδα (Δράστης): bball:actionTeam ?team .
-   - Ασίστ: ?shot bball:hasAssist ?assist . ?assist bball:actionPlayer ?assistingPlayer .
-   - Ζώνη Σουτ: bball:shotZone "I" .
-4. Πεντάδες στο παρκέ:
-   Χρησιμοποίησε τα bball:runningHomeTeamLineup ή bball:runningRoadTeamLineup.
+3. Action statistics:
+   - Points: bball:pointsAwarded ?points . Always aggregate points with SUM(xsd:integer(?points)).
+   - Acting player: bball:actionPlayer ?player .
+   - Acting team: bball:actionTeam ?team .
+   - Assist relation: ?shot bball:hasAssist ?assist . ?assist bball:actionPlayer ?assistingPlayer .
+   - Running score: bball:runningHomeTeamScore ?homeScore and bball:runningRoadTeamScore ?roadScore.
+     These properties belong to ?action, never to ?game. bball:homeScore and bball:roadScore do not exist.
+   - Shot zone: bball:shotZone ?shotZone. Stored values are codes "A" through "J" or an empty string, never words such as "paint" or "left corner".
+     A/B/C = close range and paint; D/E/F/G = two-point range outside the paint;
+     H = left three-point perimeter; I = right three-point perimeter; J = very long three-pointer.
+   - Exact shot position: bball:shotCoords ?coords, stored as an "x,y" string in centimeters relative to the basket center.
+     x is the horizontal axis (negative means left) and y is the distance toward the court interior.
+     Parse geometric coordinates with:
+     BIND(xsd:decimal(STRBEFORE(str(?coords), ",")) AS ?shotX)
+     BIND(xsd:decimal(STRAFTER(str(?coords), ",")) AS ?shotY)
+     For "paint", use FILTER(?shotZone IN ("A", "B", "C")). For the exact left three-point corner, use
+     FILTER(str(?shotZone) = "H" && ?shotX <= -600 && ?shotY <= 175).
+   - Action time: ?action bball:quarter ?quarter ; bball:clock ?clock .
+     ?quarter is a string: "1st", "2nd", "3rd", "4th", "1OT", "2OT", and so on; it is never numeric.
+     For the fourth quarter, use FILTER(str(?quarter) = "4th").
+     ?clock is an "MM:SS" string. Convert it to remaining seconds with:
+     BIND((xsd:integer(STRBEFORE(str(?clock), ":")) * 60 + xsd:integer(STRAFTER(str(?clock), ":"))) AS ?secondsRemaining)
+     Never use the nonexistent properties bball:period, bball:gameClock, or bball:hasQuarter.
+4. On-court lineups:
+   bball:runningHomeTeamLineup and bball:runningRoadTeamLineup always belong to ?action, never to ?game or a possession:
+   ?action bball:runningHomeTeamLineup ?homeLineup ; bball:runningRoadTeamLineup ?roadLineup .
    ?lineup bball:includesPlayer ?player .
-5. Πληροφορίες Παικτών:
-   - Ύψος: bball:hasHeight ?height . (Για μέσο όρο: AVG(xsd:float(?height)))
-   - Ηλικία/Γέννηση: bball:hasBirthDate ?date .
-6. Κατοχές (Possessions):
+   To test whether a player was on court, connect the lineup of the same scoring or shot ?action to the player through bball:includesPlayer.
+   For a starting lineup, take the lineup on the first bball:PeriodStart in the "1st" quarter. Keep only actions whose
+   runningHomeTeamLineup or runningRoadTeamLineup is exactly the same URI. Never invent Lineup properties such as
+   bball:hasPlayByPlaySequence, and never attach a running lineup directly to ?game.
+   Never assume that a named team is home or road. Resolve ?targetTeam by rdfs:label and use two explicit UNION branches.
+   Never join the player members of both lineups simultaneously.
+
+   CANONICAL PATTERN — actions while a named team's starting lineup was on court:
+   ?targetTeam rdfs:label ?targetTeamName .
+   FILTER(regex(str(?targetTeamName), '(^|[^A-Za-z0-9])TEAM_NAME([^A-Za-z0-9]|$)', 'i'))
+   ?game bball:hasPlayByPlayAction ?periodStart, ?action .
+   ?periodStart rdf:type bball:PeriodStart ; bball:quarter "1st" .
+   VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed bball:FreeThrowMade bball:FreeThrowMissed }
+   ?action rdf:type ?actionType .
+   {
+     ?game bball:homeTeam ?targetTeam .
+     ?periodStart bball:runningHomeTeamLineup ?startingLineup .
+     ?action bball:runningHomeTeamLineup ?startingLineup .
+   } UNION {
+     ?game bball:roadTeam ?targetTeam .
+     ?periodStart bball:runningRoadTeamLineup ?startingLineup .
+     ?action bball:runningRoadTeamLineup ?startingLineup .
+   }
+   If the question asks for actions while the lineup was on court, do not constrain bball:actionTeam: the actions may belong
+   to either team. Constrain bball:actionTeam to ?targetTeam only when the user explicitly requests that team's actions.
+
+   CANONICAL PATTERN — points scored by a named team while a named player was on court:
+   ?targetTeam rdfs:label ?targetTeamName .
+   ?player rdfs:label ?playerName .
+   ?action bball:actionTeam ?targetTeam ; bball:pointsAwarded ?points .
+   FILTER(xsd:integer(?points) > 0)
+   {
+     ?game bball:homeTeam ?targetTeam .
+     ?action bball:runningHomeTeamLineup ?lineup .
+   } UNION {
+     ?game bball:roadTeam ?targetTeam .
+     ?action bball:runningRoadTeamLineup ?lineup .
+   }
+   ?lineup bball:includesPlayer ?player .
+   A regex filter is mandatory for both ?targetTeamName and ?playerName. A player's presence in a lineup does not replace
+   the explicit filter for the team named by the user.
+   For total points, repeat exactly the same team/home-road/lineup logic inside the aggregate subquery. Use the same
+   variable names ?targetTeam and ?player consistently in SELECT, WHERE, and GROUP BY:
+   {
+     SELECT ?game ?targetTeam ?player (SUM(xsd:integer(?subPoints)) AS ?totalPoints) WHERE {
+       ?game bball:hasSeason ?subSeason ; bball:hasCode ?subGameCode ; bball:hasPlayByPlayAction ?subAction .
+       ?subSeason bball:hasCode ?subSeasonCode .
+       FILTER(str(?subSeasonCode) = "SEASON_CODE")
+       FILTER(str(?subGameCode) = "GAME_CODE")
+       ?targetTeam rdfs:label ?subTargetTeamName .
+       FILTER(regex(str(?subTargetTeamName), '(^|[^A-Za-z0-9])TEAM_NAME([^A-Za-z0-9]|$)', 'i'))
+       ?player rdfs:label ?subPlayerName .
+       FILTER(regex(str(?subPlayerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
+       ?subAction bball:actionTeam ?targetTeam ; bball:pointsAwarded ?subPoints .
+       FILTER(xsd:integer(?subPoints) > 0)
+       {
+         ?game bball:homeTeam ?targetTeam .
+         ?subAction bball:runningHomeTeamLineup ?subLineup .
+       } UNION {
+         ?game bball:roadTeam ?targetTeam .
+         ?subAction bball:runningRoadTeamLineup ?subLineup .
+       }
+       ?subLineup bball:includesPlayer ?player .
+     } GROUP BY ?game ?targetTeam ?player
+   }
+   "SEASON_CODE", "GAME_CODE", TEAM_NAME, and PLAYER_NAME are placeholders and must be replaced from the request context.
+   Never SELECT or GROUP BY a variable different from the one actually bound inside the subquery.
+   In this pattern, never introduce ?subTargetTeam or ?subPlayer for labels and then use ?targetTeam or ?player elsewhere.
+   That creates a Cartesian product and may time out. Use exactly ?targetTeam and ?player throughout the subquery.
+   The expression ?actionTeam = ?game/bball:homeTeam is forbidden: a property path is not a value expression inside FILTER.
+   First bind ?game bball:homeTeam ?targetTeam or ?game bball:roadTeam ?targetTeam.
+   Dummy triples such as ?team ?predicate ?value are forbidden.
+5. Player information:
+   - Height: bball:hasHeight ?height . Use AVG(xsd:float(?height)) for an average.
+   - Birth date: bball:hasBirthDate ?date .
+6. Possessions:
    ?game bball:hasPossession ?possession .
    ?possession bball:hasPossessionSequence ?seq .
-   ?possession bball:startsAfterAction ?action .
+   ?possession bball:possessionTeam ?team ;
+               bball:startsAfterAction ?startAction ;
+               bball:endsWithAction ?endAction ;
+               bball:containsAction ?containedAction .
+   ?seq is a literal sequence value, not a resource with bball:hasPlayByPlayAction.
+7. Direct relations and flags:
+   - Missed shot followed by a rebound:
+     ?action bball:leadsToRebound ?reboundAction .
+     ?reboundAction rdf:type bball:OffensiveRebound .
+   - Fast-break score: ?scoreAction bball:isFastBreak "true"^^xsd:boolean ; bball:pointsAwarded ?points .
+   - Points after a turnover: ?scoreAction bball:isFromTurnover "true"^^xsd:boolean .
+   - Turnover that starts a possession containing fast-break points:
+     ?action rdf:type bball:Turnover .
+     ?possession bball:startsAfterAction ?action ; bball:containsAction ?scoreAction .
+     ?scoreAction bball:isFastBreak "true"^^xsd:boolean ; bball:pointsAwarded ?points .
 
-ΣΥΝΔΕΣΗ ΜΕ PLAY-BY-PLAY:
-- Όταν η ερώτηση ζητά συγκεκριμένες φάσεις ή ενέργειες ενός παίκτη, το SELECT ΠΡΕΠΕΙ να περιλαμβάνει DISTINCT ?action.
-- Το ?action πρέπει να είναι ακριβώς το URI της ενέργειας που συνδέεται με ?game bball:hasPlayByPlayAction ?action.
-- ΕΙΔΙΚΑ ΓΙΑ ΑΣΙΣΤ: το ?action ΠΡΕΠΕΙ να είναι η ίδια η bball:Assist ενέργεια, όχι το σουτ. Χρησιμοποίησε:
+PLAY-BY-PLAY CONNECTION:
+- When a question requests concrete plays or a player's actions, SELECT must include DISTINCT ?action.
+- ?action must be the exact action URI connected through ?game bball:hasPlayByPlayAction ?action.
+- ASSISTS: ?action must be the bball:Assist action itself, not the shot. Use:
   ?game bball:hasPlayByPlayAction ?action .
   ?action rdf:type bball:Assist ; bball:actionPlayer ?assistingPlayer .
   VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }
   ?shot rdf:type ?madeShotType ; bball:hasAssist ?action ; bball:actionPlayer ?receivingPlayer .
-  Το bball:FreeThrowMade μπορεί να έχει ασίστ όταν η πάσα οδήγησε σε shooting foul και μπήκε τουλάχιστον μία από τις βολές.
-  Έτσι μια ερώτηση για τις assists του PLAYER_A στον PLAYER_B επιστρέφει τις Assist κάρτες του Play-by-Play και όχι τις Shot κάρτες.
-- Για πόντους χρησιμοποίησε bball:pointsAwarded ?points και FILTER(xsd:integer(?points) > 0).
-- Για rebounds χρησιμοποίησε VALUES ?actionType { bball:OffensiveRebound bball:DefensiveRebound } και ?action rdf:type ?actionType.
-- Για turnovers χρησιμοποίησε ?action rdf:type bball:Turnover.
-- Για κερδισμένα φάουλ χρησιμοποίησε ?action rdf:type bball:FoulDrawn. Μην το συγχέεις με το φάουλ που διέπραξε άλλος παίκτης.
-- Για κάθε λίστα ενεργειών πρόσθεσε, όταν είναι διαθέσιμα: ?playerName, ?points, ?quarter, ?clock, ?homeScore, ?roadScore και ?order. Χρησιμοποίησε OPTIONAL για τα πεδία που μπορεί να λείπουν.
-- Για total points, total made shots ή total missed shots επέστρεψε ΚΑΙ το σύνολο ΚΑΙ DISTINCT ?action μέσω aggregate subquery, ώστε οι σχετικές φάσεις να μπορούν να φιλτραριστούν στο Play-by-Play.
-- Μόνο για aggregates που δεν αντιστοιχούν λογικά σε λίστα φάσεων (π.χ. percentage ή average) επέστρεψε αποτέλεσμα χωρίς ?action.
-- Για συνολικούς πόντους χρησιμοποίησε (SUM(xsd:integer(?points)) AS ?totalPoints), όχι COUNT ενεργειών.
-- Για ποσοστό σουτ επέστρεψε ΠΑΝΤΑ και τα τρία πεδία ?made, ?attempts και ?percentage.
-  Παράδειγμα για δίποντα:
+  bball:FreeThrowMade may have an assist when the pass led to a shooting foul and at least one resulting free throw was made.
+  Therefore, a request for PLAYER_A's assists to PLAYER_B must return Assist cards in Play-by-Play, not Shot cards.
+- Points: use bball:pointsAwarded ?points and FILTER(xsd:integer(?points) > 0).
+- Rebounds: use VALUES ?actionType { bball:OffensiveRebound bball:DefensiveRebound } and ?action rdf:type ?actionType.
+- Turnovers: use ?action rdf:type bball:Turnover.
+- Fouls drawn: use ?action rdf:type bball:FoulDrawn. Do not confuse this with a foul committed by another player.
+- Fouls committed by a team: use VALUES ?foulType { bball:DefensiveFoul bball:OffensiveFoul bball:BenchFoul bball:UnsportsmanlikeFoul bball:TechnicalFoul bball:CoachFoul },
+  then ?action rdf:type ?foulType ; bball:actionTeam ?team and connect ?team to the game's homeTeam or roadTeam. Do not include FoulDrawn or Block.
+- Substitutions: use VALUES ?actionType { bball:PlayerIn bball:PlayerOut } and
+  ?action rdf:type ?actionType ; bball:actionPlayer ?player. The properties/classes bball:Substitution,
+  bball:SubstitutionIn, bball:SubstitutionOut, bball:playerIn, and bball:playerOut do not exist.
+- For each action list, include when available: ?playerName, ?points, ?quarter, ?clock, ?homeScore, ?roadScore, and ?order.
+  Use OPTIONAL for fields that may be absent. Scores must be read only with:
+  OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore ; bball:runningRoadTeamScore ?roadScore . }
+- For total points, total made shots, or total missed shots, return both the aggregate and DISTINCT ?action through an
+  aggregate subquery so the matching plays can filter the Play-by-Play overlay.
+- For "how many points" or "total points", the outer SELECT must contain DISTINCT ?action and ?totalPoints.
+  Calculate ?totalPoints in an inner aggregate subquery grouped by ?game and ?player, then join it to the individual scoring
+  ?action values for that same game and player. The final result must contain one row per scoring action and repeat the same
+  ?totalPoints value on every row.
+- For "how many rebounds" or another action count connected to Play-by-Play, return DISTINCT ?action and the aggregate,
+  such as ?totalRebounds. Inside the aggregate subquery, repeat the same action-type VALUES and the player, season, and game
+  filters. Variables and VALUES from the outer query are not automatically available inside a subquery.
+- For a pure ranking such as "which player had the most...", return only the player and COUNT/SUM with GROUP BY,
+  ORDER BY DESC, and LIMIT. Do not add an outer ?action just to activate the overlay because that would select an unrelated play.
+- Every comparison must appear inside FILTER(...). Wrong: ?points != 0. Correct: FILTER(xsd:integer(?points) > 0).
+- Only aggregates that do not logically map to a play list, such as percentage or average, should omit ?action.
+- For total points, use (SUM(xsd:integer(?points)) AS ?totalPoints), never COUNT actions.
+- For a shooting percentage, always return all three fields: ?made, ?attempts, and ?percentage.
+  Two-point example:
   VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed }
   ?action rdf:type ?actionType .
   BIND(IF(?actionType = bball:TwoPointShotMade, 1, 0) AS ?madeValue)
-  Στο SELECT χρησιμοποίησε (SUM(?madeValue) AS ?made), (COUNT(?action) AS ?attempts)
-  και (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage).
-  Για τρίποντα χρησιμοποίησε ThreePointShotMade/Missed και για βολές FreeThrowMade/Missed.
-  ΜΗΝ επιστρέφεις λίστα ενεργειών όταν ο χρήστης ζητά percentage· επέστρεψε aggregate αποτέλεσμα.
-- Για ερώτηση ναι/όχι χρησιμοποίησε ASK και κράτησε ακριβώς τα ίδια φίλτρα αγώνα, σεζόν και παίκτη.
+  SELECT must contain (SUM(?madeValue) AS ?made), (COUNT(?action) AS ?attempts), and
+  (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage).
+  For three-pointers, use ThreePointShotMade/Missed; for free throws, use FreeThrowMade/Missed.
+  Do not return an action list when the user requests a percentage; return the aggregate only.
+- For a yes/no question, use ASK and keep exactly the same game, season, and player filters.
 
-
-ΑΝΑΖΗΤΗΣΗ ΟΝΟΜΑΤΩΝ (ΠΑΝΤΑ ΜΕ REGEX):
+NAME LOOKUP — ALWAYS USE REGEX:
 ?player rdfs:label ?playerName .
-FILTER(regex(str(?playerName), '\\bΟΝΟΜΑ\\b', 'i'))
-ΣΗΜΑΝΤΙΚΟ: Αν ο χρήστης γράφει το όνομα ενός παίκτη με ελληνικούς χαρακτήρες, ΠΡΕΠΕΙ ΠΑΝΤΑ να το μεταγράφεις σε λατινικούς χαρακτήρες μέσα στο regex.
+FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
+Do not use word-boundary escapes. The SPARQL string parser may convert them into control characters before evaluating regex.
+The application accepts English questions, player names, and team names. Do not transliterate Greek or Greeklish input.
 
-ΠΑΡΑΔΕΙΓΜΑ:
-Ερώτηση: "Βρες ποιος παίκτης έδωσε ασίστ στο πρώτο εύστοχο τρίποντο"
-Απάντηση:
+FINAL CHECK BEFORE RETURNING THE QUERY:
+- After PREFIX declarations, the query begins with SELECT or ASK. Every SELECT query contains LIMIT.
+- No bare variable comparison exists outside FILTER.
+- After a semicolon, write only the next predicate/object, never the subject again.
+  Correct: ?x rdf:type bball:PeriodStart ; bball:quarter "1st" .
+- VALUES binds the exact variable used by the triple pattern: VALUES ?actionType { ... } followed by ?action rdf:type ?actionType.
+  Never use FILTER(?actionType IN (?differentVariable)).
+- The query contains exactly the season/game filters supplied by the Required request context.
+- When concrete or countable plays are requested, the outer SELECT includes DISTINCT ?action for the Play-by-Play overlay.
+- Only percentages, averages, and pure summary rankings may omit ?action.
+
+EXAMPLE:
+Question: "Who assisted the first made three-pointer?"
+Answer:
 PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -1043,10 +1193,271 @@ SELECT ?assistingPlayerName WHERE {
 } ORDER BY ASC(xsd:integer(?order)) LIMIT 1
 """
 
+simple_sparql_system_prompt = """
+Translate the English user question into exactly one valid, read-only SPARQL SELECT or ASK query for the FORTH Basketball Ontology.
+This baseline prompt provides only a flat vocabulary. It intentionally does not explain how the properties and classes connect and does not include query templates.
+Return only the SPARQL query, without Markdown, comments, or explanation.
+Use these prefixes:
+PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+AVAILABLE PROPERTIES:
+- rdf:type, rdfs:label, rdfs:comment, skos:altLabel, foaf:depiction
+- bball:hasBio, bball:hasWebsite, bball:teamVenue, bball:hasLeague
+- bball:eventEnded, bball:eventStarted, bball:hasExtraTime, bball:hasHeadCoach
+- bball:dnp, bball:hasCapacity, bball:hasCode, bball:gameVenue
+- bball:hasAchievements, bball:hasAddress, bball:hasAudience, bball:hasBiography
+- bball:wasBornIn, bball:hasBirthDate, bball:hasCountry, bball:hasDate
+- bball:hasHeight, bball:hasHomeTeamScore, bball:hasJerseyName, bball:hasJerseyNumber
+- bball:hasPhase, bball:hasPhaseGroup, bball:hasPlayerParticipation
+- bball:hasPlayerStatline, bball:hasPosition, bball:hasReferee
+- bball:hasRoadTeamScore, bball:hasRound, bball:hasScore, bball:hasSeason
+- bball:hasTeamBoxscore, bball:hasTeamStatline, bball:hasWeight
+- bball:homeTeam, bball:losingTeam, bball:overPlayer, bball:overTeam
+- bball:roadTeam, bball:startYear, bball:startingFive, bball:teamCountry
+- bball:winningTeam, bball:endYear, bball:lineupTeam, bball:includesPlayer
+- bball:PIR, bball:assists, bball:blocks, bball:blocksAgainst
+- bball:defensiveRebounds, bball:offensiveRebounds, bball:totalRebounds
+- bball:fieldGoalsAttempted2, bball:fieldGoalsAttempted3, bball:fieldGoalsAttemptedTotal
+- bball:fieldGoalsMade2, bball:fieldGoalsMade3, bball:fieldGoalsMadeTotal
+- bball:fieldGoalsPer, bball:fieldGoalsPer2, bball:fieldGoalsPer3
+- bball:foulsCommitted, bball:foulsReceived
+- bball:freeThrowsAttempted, bball:freeThrowsMade, bball:freeThrowsPer
+- bball:plusMinus, bball:points, bball:timePlayed, bball:turnovers, bball:steals
+- bball:quarter1points, bball:quarter2points, bball:quarter3points, bball:quarter4points
+- bball:endOfQuarter1points, bball:endOfQuarter2points, bball:endOfQuarter3points, bball:endOfQuarter4points
+- bball:belongsToPossession, bball:actionCoach, bball:actionPlayer, bball:actionTeam
+- bball:blockedBy, bball:causedByFoul, bball:causedBySteal, bball:occuredByFoul
+- bball:clock, bball:hasAssist, bball:hasPlayByPlayAction, bball:hasPlayByPlaySequence
+- bball:isFastBreak, bball:isFromTurnover, bball:isSecondChance
+- bball:leadsToRebound, bball:pointsAwarded, bball:quarter, bball:quarterSecondsRemaining
+- bball:runningHomeTeamLineup, bball:runningHomeTeamScore
+- bball:runningRoadTeamLineup, bball:runningRoadTeamScore
+- bball:shotCoords, bball:shotZone
+- bball:hasPossession, bball:containsAction, bball:endsWithAction
+- bball:possessionTeam, bball:startsAfterAction, bball:hasPossessionSequence
+- bball:correspondsToOCRObservation, bball:hasBroadcastVideo, bball:hasOCRObservation
+- bball:isVideoEnabled, bball:ocrClock, bball:ocrProfile, bball:ocrQuarter
+- bball:ocrSequence, bball:playbackLeadSeconds, bball:videoTimeSeconds, bball:youtubeURL
+
+AVAILABLE CLASSES:
+- bball:Coach, bball:League, bball:Game, bball:Country, bball:Player
+- bball:PlayerParticipation, bball:Referee, bball:Season, bball:Statline
+- bball:Team, bball:TeamBoxscore, bball:Venue, bball:Lineup, bball:Possession
+- bball:PeriodStart, bball:PeriodEnd, bball:GameEnd, bball:JumpBall
+- bball:TwoPointShotMade, bball:TwoPointShotMissed
+- bball:ThreePointShotMade, bball:ThreePointShotMissed
+- bball:FreeThrowMade, bball:FreeThrowMissed
+- bball:OffensiveRebound, bball:DefensiveRebound, bball:Assist
+- bball:Turnover, bball:Steal, bball:Block, bball:FoulDrawn
+- bball:DefensiveFoul, bball:OffensiveFoul, bball:CoachFoul, bball:BenchFoul
+- bball:TechnicalFoul, bball:UnsportsmanlikeFoul
+- bball:PlayerIn, bball:PlayerOut, bball:Timeout, bball:TimeoutTV, bball:Challenge
+- bball:BroadcastVideo, bball:OCRObservation
+
+BASELINE GUIDELINES:
+- Never use a class as a property.
+- Team, player, coach, referee, and country names are English rdfs:label values.
+- Use SELECT DISTINCT when returning resources. Use COUNT(DISTINCT ?game) when counting games.
+- Cast a denominator to xsd:double when performing division.
+- Honor the Required request context exactly.
+- Do not use UPDATE operations or SERVICE clauses.
+""".strip()
+
+AI_SEARCH_PROMPTS = {
+    "simple": simple_sparql_system_prompt,
+    "ontology": euroleague_system_prompt,
+}
+def extract_openai_output_text(payload: dict) -> str:
+    """Extract assistant text from a raw Responses API payload."""
+    direct_text = payload.get("output_text")
+    if isinstance(direct_text, str) and direct_text.strip():
+        return direct_text.strip()
+
+    parts = []
+    for item in payload.get("output", []):
+        if not isinstance(item, dict) or item.get("type") != "message":
+            continue
+        for content in item.get("content", []):
+            if not isinstance(content, dict) or content.get("type") != "output_text":
+                continue
+            text = content.get("text")
+            if isinstance(text, str):
+                parts.append(text)
+    result = "\n".join(parts).strip()
+    if not result:
+        incomplete_details = payload.get("incomplete_details") or {}
+        usage = payload.get("usage") or {}
+        output_details = usage.get("output_tokens_details") or {}
+        raise ValueError(
+            "Το OpenAI Responses API δεν επέστρεψε κείμενο "
+            f"(status={payload.get('status', 'unknown')}, "
+            f"reason={incomplete_details.get('reason', 'unknown')}, "
+            f"output_tokens={usage.get('output_tokens', 'unknown')}, "
+            "reasoning_tokens="
+            f"{output_details.get('reasoning_tokens', 'unknown')})."
+        )
+    return result
+
+
+def _non_negative_int(value) -> int:
+    try:
+        return max(0, int(value or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def extract_openai_usage(payload: dict) -> dict[str, int]:
+    """Normalize Responses API usage without changing the public frontend payload."""
+    usage = payload.get("usage") or {}
+    input_details = usage.get("input_tokens_details") or {}
+    output_details = usage.get("output_tokens_details") or {}
+    input_tokens = _non_negative_int(usage.get("input_tokens"))
+    output_tokens = _non_negative_int(usage.get("output_tokens"))
+    return {
+        "input_tokens": input_tokens,
+        "cached_input_tokens": min(
+            input_tokens, _non_negative_int(input_details.get("cached_tokens"))
+        ),
+        "output_tokens": output_tokens,
+        "reasoning_tokens": min(
+            output_tokens, _non_negative_int(output_details.get("reasoning_tokens"))
+        ),
+        "total_tokens": _non_negative_int(
+            usage.get("total_tokens", input_tokens + output_tokens)
+        ),
+    }
+
+
+def extract_gemini_usage(response) -> dict[str, int]:
+    """Normalize Gemini usage; output includes visible candidates and thoughts."""
+    usage = getattr(response, "usage_metadata", None)
+    input_tokens = _non_negative_int(getattr(usage, "prompt_token_count", 0))
+    cached_input_tokens = min(
+        input_tokens,
+        _non_negative_int(getattr(usage, "cached_content_token_count", 0)),
+    )
+    visible_output_tokens = _non_negative_int(
+        getattr(usage, "candidates_token_count", 0)
+    )
+    reasoning_tokens = _non_negative_int(getattr(usage, "thoughts_token_count", 0))
+    output_tokens = visible_output_tokens + reasoning_tokens
+    return {
+        "input_tokens": input_tokens,
+        "cached_input_tokens": cached_input_tokens,
+        "output_tokens": output_tokens,
+        "reasoning_tokens": reasoning_tokens,
+        "total_tokens": _non_negative_int(
+            getattr(usage, "total_token_count", input_tokens + output_tokens)
+        ),
+    }
+
+
+def request_openai_text(
+    message: str, system_prompt: str, model: str
+) -> tuple[str, dict[str, int]]:
+    response = requests.post(
+        f"{OPENAI_BASE_URL}/responses",
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "instructions": system_prompt,
+            "input": message,
+            # SPARQL generation needs only a short final answer. Keeping reasoning
+            # minimal prevents GPT-5 mini from spending the whole output budget
+            # on hidden reasoning before emitting the query.
+            "reasoning": {"effort": "minimal"},
+            "text": {"verbosity": "low"},
+            "max_output_tokens": OPENAI_MAX_OUTPUT_TOKENS,
+            "store": False,
+        },
+        timeout=OPENAI_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    return extract_openai_output_text(payload), extract_openai_usage(payload)
+
+
+def ai_search_configuration(
+    requested_provider: str | None,
+    requested_prompt_variant: str | None,
+    requested_openai_model: str | None,
+) -> tuple[str, str, str]:
+    provider = (requested_provider or AI_SEARCH_PROVIDER).strip().lower()
+    prompt_variant = (
+        requested_prompt_variant or AI_SEARCH_PROMPT_VARIANT
+    ).strip().lower()
+    if provider not in {"gemini", "openai"}:
+        raise ValueError("AI_SEARCH_PROVIDER must be 'gemini' or 'openai'.")
+    if prompt_variant not in AI_SEARCH_PROMPTS:
+        raise ValueError("AI_SEARCH_PROMPT_VARIANT must be 'simple' or 'ontology'.")
+    if provider == "gemini":
+        if requested_openai_model:
+            raise ValueError("openai_model can only be used with the OpenAI provider.")
+        if client is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Το Gemini AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.",
+            )
+        return provider, prompt_variant, GEMINI_MODEL
+
+    model = requested_openai_model or OPENAI_MODEL
+    if model != OPENAI_MODEL:
+        raise ValueError("openai_model must be 'gpt-5-mini'.")
+    if not OPENAI_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Το OpenAI AI Search δεν έχει ρυθμιστεί. Ορίστε το OPENAI_API_KEY.",
+        )
+    return provider, prompt_variant, model
+
+
+async def generate_ai_search_text(
+    provider: str,
+    prompt_variant: str,
+    model: str,
+    message: str,
+) -> tuple[str, dict[str, int]]:
+    system_prompt = AI_SEARCH_PROMPTS[prompt_variant]
+    if provider == "gemini":
+        response = await client.aio.models.generate_content(
+            model=model,
+            contents=message,
+            config=types.GenerateContentConfig(system_instruction=system_prompt),
+        )
+        return response.text, extract_gemini_usage(response)
+    return await asyncio.to_thread(
+        request_openai_text, message, system_prompt, model
+    )
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     game_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
     season_code: str | None = Field(default=None, max_length=50, pattern=r"^[A-Za-z0-9_,\-]+$")
+    provider: Literal["gemini", "openai"] | None = None
+    prompt_variant: Literal["simple", "ontology"] | None = None
+    openai_model: Literal["gpt-5-mini"] | None = None
+    include_query: bool = False
+
+
+def ai_search_response(payload: dict, include_query: bool) -> dict:
+    """Hide implementation details during normal frontend use."""
+    if include_query:
+        return payload
+    response = dict(payload)
+    response.pop("sparql_query", None)
+    response.pop("ai_provider", None)
+    response.pop("ai_model", None)
+    response.pop("prompt_variant", None)
+    response.pop("ai_usage", None)
+    return response
 
 
 def build_ai_scope_context(
@@ -1069,13 +1480,13 @@ def build_ai_scope_context(
             continue
         if len(values) == 1:
             context.append(
-                f'Περιόρισε το query στο {label} με '
+                f'Restrict the query to the selected {label} using '
                 f'bball:hasCode "{values[0]}".'
             )
             continue
         quoted_values = ", ".join(f'"{value}"' for value in values)
         context.append(
-            f'Περιόρισε το query στα επιλεγμένα {label} codes με '
+            f'Restrict the query to the selected {label} codes using '
             f'FILTER(?{variable} IN ({quoted_values})).'
         )
     return context
@@ -1175,7 +1586,7 @@ def classify_playbyplay_action_kind(message: str) -> str:
     return ""
 
 
-def _get_cached_ai_search(cache_key: tuple[str, str, str]) -> dict | None:
+def _get_cached_ai_search(cache_key: tuple[str, ...]) -> dict | None:
     if AI_SEARCH_CACHE_TTL_SECONDS == 0:
         return None
     now = time.monotonic()
@@ -1190,7 +1601,7 @@ def _get_cached_ai_search(cache_key: tuple[str, str, str]) -> dict | None:
         return cached[1]
 
 
-def _cache_ai_search(cache_key: tuple[str, str, str], payload: dict) -> None:
+def _cache_ai_search(cache_key: tuple[str, ...], payload: dict) -> None:
     if AI_SEARCH_CACHE_TTL_SECONDS == 0:
         return
     with _ai_search_cache_lock:
@@ -1238,21 +1649,24 @@ async def resolve_assist_action_uris(action_uris: list[str]) -> list[str]:
 
 @app.post("/api/chat")
 async def ai_chat_handler(request: ChatRequest):
-    if client is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY στο backend environment.",
-        )
-
     try:
+        provider, prompt_variant, model = ai_search_configuration(
+            request.provider,
+            request.prompt_variant,
+            request.openai_model,
+        )
         cache_key = (
+            provider,
+            model,
+            prompt_variant,
             request.season_code or "",
             request.game_code or "",
             " ".join(request.message.lower().split()),
         )
-        cached_payload = _get_cached_ai_search(cache_key)
-        if cached_payload is not None:
-            return cached_payload
+        if not request.include_query:
+            cached_payload = _get_cached_ai_search(cache_key)
+            if cached_payload is not None:
+                return ai_search_response(cached_payload, False)
 
         context = build_ai_scope_context(
             request.season_code,
@@ -1261,21 +1675,32 @@ async def ai_chat_handler(request: ChatRequest):
         contextual_message = request.message
         if context:
             contextual_message += (
-                "\n\nΥποχρεωτικό context:\n- " + "\n- ".join(context)
+                "\n\nRequired request context:\n- " + "\n- ".join(context)
             )
 
-        response = await client.aio.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=contextual_message,
-            config=types.GenerateContentConfig(
-                system_instruction=euroleague_system_prompt,
-            )
+        generated_query, ai_usage = await generate_ai_search_text(
+            provider,
+            prompt_variant,
+            model,
+            contextual_message,
         )
 
-        clean_sparql_query = clean_and_validate_sparql(response.text)
+        clean_sparql_query = clean_and_validate_sparql(generated_query)
         data = await query_sparql(clean_sparql_query, use_cache=False)
 
         if data is None:
+            if request.include_query:
+                raise HTTPException(
+                    status_code=502,
+                    detail={
+                        "message": "Η βάση SPARQL δεν απάντησε.",
+                        "sparql_query": clean_sparql_query,
+                        "ai_provider": provider,
+                        "ai_model": model,
+                        "prompt_variant": prompt_variant,
+                        "ai_usage": ai_usage,
+                    },
+                )
             raise HTTPException(status_code=502, detail="Η βάση SPARQL δεν απάντησε.")
 
         results = data.get("results", {}).get("bindings", [])
@@ -1290,15 +1715,33 @@ async def ai_chat_handler(request: ChatRequest):
         payload = {
             "results": results,
             "boolean": data.get("boolean"),
+            "sparql_query": clean_sparql_query,
+            "ai_provider": provider,
+            "ai_model": model,
+            "prompt_variant": prompt_variant,
+            "ai_usage": ai_usage,
             "playbyplay_filter": playbyplay_filter,
             "playbyplay_action_kind": playbyplay_action_kind,
             "action_uris": action_uris,
         }
-        _cache_ai_search(cache_key, payload)
-        return payload
+        if not request.include_query:
+            _cache_ai_search(cache_key, payload)
+        return ai_search_response(payload, request.include_query)
     except HTTPException:
         raise
     except ValueError as error:
+        if request.include_query and "generated_query" in locals():
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": str(error),
+                    "sparql_query": generated_query,
+                    "ai_provider": provider,
+                    "ai_model": model,
+                    "prompt_variant": prompt_variant,
+                    "ai_usage": ai_usage,
+                },
+            ) from error
         raise HTTPException(status_code=422, detail=str(error)) from error
     except Exception as e:
         print(f"AI Search failed: {e}")
@@ -1306,7 +1749,7 @@ async def ai_chat_handler(request: ChatRequest):
         if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text or "RATE LIMIT" in error_text:
             raise HTTPException(
                 status_code=429,
-                detail="Το όριο χρήσης της AI υπηρεσίας έχει εξαντληθεί. Δοκίμασε αργότερα ή έλεγξε το Gemini API quota.",
+                detail="Το όριο χρήσης της επιλεγμένης AI υπηρεσίας έχει εξαντληθεί. Δοκίμασε αργότερα ή έλεγξε το API quota.",
             ) from e
         raise HTTPException(status_code=502, detail="Αποτυχία επεξεργασίας του AI Search.") from e
 

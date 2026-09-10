@@ -1,0 +1,254 @@
+id,provider,model,prompt_variant,category,question,season_code,game_code,status,http_status,latency_ms,result_count,boolean_result,expected_playbyplay_filter,actual_playbyplay_filter,playbyplay_filter_matches_expectation,action_uri_count,query_is_read_only,query_contains_selected_scope,generated_sparql,query_correct_human,result_correct_human,review_notes,error
+Q01,gemini,gemini-3.5-flash,ontology,simple_event_retrieval,Show all made two-point and three-point shots in this game.,E2023,333,completed,200,18586.927,57,,True,True,True,57,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?action ?playerName ?points ?quarter ?clock ?homeScore ?roadScore ?order
+WHERE {
+  ?game a bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+
+  VALUES ?actionType { bball:TwoPointShotMade bball:ThreePointShotMade }
+  ?action rdf:type ?actionType .
+
+  OPTIONAL {
+    ?action bball:actionPlayer ?player .
+    ?player rdfs:label ?playerName .
+  }
+  OPTIONAL { ?action bball:pointsAwarded ?points . }
+  OPTIONAL { ?action bball:quarter ?quarter . }
+  OPTIONAL { ?action bball:clock ?clock . }
+  OPTIONAL { ?action bball:homeScore ?homeScore . }
+  OPTIONAL { ?action bball:roadScore ?roadScore . }
+  OPTIONAL { ?action bball:hasPlayByPlaySequence ?order . }
+}
+ORDER BY ASC(xsd:integer(?order))
+LIMIT 200",,,,
+Q06,gemini,gemini-3.5-flash,ontology,player_retrieval,Show all points scored by Kendrick Nunn.,E2023,333,completed,200,18320.384,11,,True,True,True,11,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?action ?playerName ?points ?quarter ?clock ?homeScore ?roadScore ?order ?totalPoints
+WHERE {
+  ?game a bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+  ?action bball:actionPlayer ?player ;
+          bball:pointsAwarded ?points .
+  FILTER(xsd:integer(?points) > 0)
+  
+  ?player rdfs:label ?playerName .
+  FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])Kendrick Nunn([^A-Za-z0-9]|$)', 'i'))
+  
+  OPTIONAL { ?action bball:quarter ?quarter }
+  OPTIONAL { ?action bball:clock ?clock }
+  OPTIONAL { ?action bball:homeScore ?homeScore }
+  OPTIONAL { ?action bball:roadScore ?roadScore }
+  OPTIONAL { ?action bball:hasPlayByPlaySequence ?order }
+  
+  {
+    SELECT ?player (SUM(xsd:integer(?subPoints)) AS ?totalPoints) WHERE {
+      ?subGame a bball:Game ;
+               bball:hasCode ""333"" ;
+               bball:hasSeason ?subSeason ;
+               bball:hasPlayByPlayAction ?subAction .
+      ?subSeason bball:hasCode ""E2023"" .
+      ?subAction bball:actionPlayer ?player ;
+                 bball:pointsAwarded ?subPoints .
+      FILTER(xsd:integer(?subPoints) > 0)
+    } GROUP BY ?player
+  }
+}
+ORDER BY ASC(xsd:integer(?order))
+LIMIT 100",,,,
+Q09,gemini,gemini-3.5-flash,ontology,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,completed,200,12960.654,1,,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT 
+  (SUM(?madeValue) AS ?made)
+  (COUNT(?action) AS ?attempts)
+  (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage)
+WHERE {
+  ?game a bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+  
+  ?action bball:actionPlayer ?player .
+  ?player rdfs:label ?playerName .
+  FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])Kostas Sloukas([^A-Za-z0-9]|$)', 'i'))
+  
+  VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed }
+  ?action rdf:type ?actionType .
+  
+  BIND(IF(?actionType = bball:TwoPointShotMade, 1, 0) AS ?madeValue)
+}
+LIMIT 200",,,,
+Q11,gemini,gemini-3.5-flash,ontology,player_assist_relation,Show the assists from Kostas Sloukas to Kendrick Nunn.,E2023,333,completed,200,14657.502,0,,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?action ?playerName ?receiverName ?points ?quarter ?clock ?homeScore ?roadScore ?order WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ""333"" .
+  ?game bball:hasPlayByPlayAction ?action .
+  
+  ?action rdf:type bball:Assist ;
+          bball:actionPlayer ?sloukas .
+  
+  ?sloukas rdfs:label ?sloukasName .
+  FILTER(regex(str(?sloukasName), '(^|[^A-Za-z0-9])Sloukas([^A-Za-z0-9]|$)', 'i'))
+  BIND(?sloukasName AS ?playerName)
+  
+  VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }
+  ?shot rdf:type ?madeShotType ;
+        bball:hasAssist ?action ;
+        bball:actionPlayer ?nunn .
+  
+  ?nunn rdfs:label ?nunnName .
+  FILTER(regex(str(?nunnName), '(^|[^A-Za-z0-9])Nunn([^A-Za-z0-9]|$)', 'i'))
+  BIND(?nunnName AS ?receiverName)
+  
+  OPTIONAL { ?shot bball:pointsAwarded ?points . }
+  OPTIONAL { ?action bball:quarter ?quarter . }
+  OPTIONAL { ?action bball:clock ?clock . }
+  OPTIONAL { ?action bball:hasPlayByPlaySequence ?order . }
+}
+ORDER BY ASC(xsd:integer(?order))
+LIMIT 200",,,,
+Q19,gemini,gemini-3.5-flash,ontology,temporal_score,Show every scoring action in the final two minutes of the fourth quarter.,E2023,333,completed,200,13049.622,8,,True,True,True,8,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT DISTINCT ?action ?playerName ?points ?quarter ?clock ?homeScore ?roadScore ?order
+WHERE {
+  ?game a bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+  
+  ?action bball:pointsAwarded ?points ;
+          bball:quarter ?quarter ;
+          bball:clock ?clock .
+          
+  FILTER(xsd:integer(?points) > 0)
+  FILTER(str(?quarter) = ""4th"")
+  
+  BIND((xsd:integer(STRBEFORE(str(?clock), "":"")) * 60 + xsd:integer(STRAFTER(str(?clock), "":""))) AS ?secondsRemaining)
+  FILTER(?secondsRemaining <= 120)
+  
+  OPTIONAL {
+    ?action bball:actionPlayer ?player .
+    ?player rdfs:label ?playerName .
+  }
+  OPTIONAL { ?action bball:hasPlayByPlaySequence ?order . }
+  OPTIONAL { ?action bball:homeScore ?homeScore . }
+  OPTIONAL { ?action bball:roadScore ?roadScore . }
+}
+ORDER BY ASC(xsd:integer(?order))
+LIMIT 200",,,,
+Q01,openai,gpt-5-mini,ontology,simple_event_retrieval,Show all made two-point and three-point shots in this game.,E2023,333,completed,200,5606.285,57,,True,True,True,57,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT DISTINCT ?action ?player ?playerName ?team ?points ?quarter ?clock ?homeScore ?roadScore ?order WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ""333"" ; bball:hasPlayByPlayAction ?action .
+  VALUES ?shotType { bball:TwoPointShotMade bball:ThreePointShotMade }
+  ?action rdf:type ?shotType .
+  OPTIONAL { ?action bball:actionPlayer ?player . ?player rdfs:label ?playerName . }
+  OPTIONAL { ?action bball:actionTeam ?team . }
+  OPTIONAL { ?action bball:pointsAwarded ?points . FILTER(xsd:integer(?points) > 0) }
+  OPTIONAL { ?action bball:quarter ?quarter ; bball:clock ?clock . 
+             BIND((xsd:integer(STRBEFORE(str(?clock), "":"")) * 60 + xsd:integer(STRAFTER(str(?clock), "":""))) AS ?secondsRemaining) }
+  OPTIONAL { ?action bball:homeTeamScore ?homeScore . }
+  OPTIONAL { ?action bball:roadTeamScore ?roadScore . }
+  OPTIONAL { ?action bball:hasPlayByPlaySequence ?order . }
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 1000",,,,
+Q06,openai,gpt-5-mini,ontology,player_retrieval,Show all points scored by Kendrick Nunn.,E2023,333,completed,200,6758.016,11,,True,True,True,11,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT DISTINCT ?action ?points ?quarter ?clock ?playerName ?homeScore ?roadScore ?order WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ""333"" ; bball:hasPlayByPlayAction ?action .
+  ?action bball:actionPlayer ?player ; bball:pointsAwarded ?points ; bball:hasPlayByPlaySequence ?order .
+  FILTER(xsd:integer(?points) > 0)
+  ?player rdfs:label ?playerName .
+  FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])Kendrick Nunn([^A-Za-z0-9]|$)', 'i'))
+  OPTIONAL { ?action bball:quarter ?quarter ; bball:clock ?clock . 
+    BIND((xsd:integer(STRBEFORE(str(?clock), "":"")) * 60 + xsd:integer(STRAFTER(str(?clock), "":""))) AS ?secondsRemaining)
+  }
+  OPTIONAL { ?action bball:homeScore ?homeScore }
+  OPTIONAL { ?action bball:roadScore ?roadScore }
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 100",,,,
+Q09,openai,gpt-5-mini,ontology,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,completed,200,5677.668,1,,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT (SUM(?madeValue) AS ?made) (COUNT(?action) AS ?attempts) (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage) WHERE {
+  ?season bball:hasCode ?seasonCode .
+  FILTER(str(?seasonCode) = ""E2023"")
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ?gameCode .
+  FILTER(str(?gameCode) = ""333"")
+  ?game bball:hasPlayByPlayAction ?action .
+  VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed }
+  ?action rdf:type ?actionType ; bball:actionPlayer ?player .
+  ?player rdfs:label ?playerName .
+  FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])Kostas Sloukas([^A-Za-z0-9]|$)', 'i'))
+  BIND(IF(?actionType = bball:TwoPointShotMade, 1, 0) AS ?madeValue)
+} LIMIT 1",,,,
+Q11,openai,gpt-5-mini,ontology,player_assist_relation,Show the assists from Kostas Sloukas to Kendrick Nunn.,E2023,333,completed,200,6404.204,0,,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT DISTINCT ?action ?assistingPlayerName ?receivingPlayerName ?points ?quarter ?clock ?homeScore ?roadScore ?order WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ""333"" ; bball:hasPlayByPlayAction ?action .
+  ?action rdf:type bball:Assist ; bball:actionPlayer ?assistingPlayer ; bball:hasPlayByPlaySequence ?order .
+  ?assistingPlayer rdfs:label ?assistingPlayerName .
+  FILTER(regex(str(?assistingPlayerName), '(^|[^A-Za-z0-9])Kostas Sloukas([^A-Za-z0-9]|$)', 'i'))
+  VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }
+  ?shot rdf:type ?madeShotType ; bball:hasAssist ?action ; bball:actionPlayer ?receivingPlayer ; bball:pointsAwarded ?points .
+  ?receivingPlayer rdfs:label ?receivingPlayerName .
+  FILTER(regex(str(?receivingPlayerName), '(^|[^A-Za-z0-9])Kendrick Nunn([^A-Za-z0-9]|$)', 'i'))
+  OPTIONAL { ?action bball:quarter ?quarter }
+  OPTIONAL { ?action bball:clock ?clock
+             BIND((xsd:integer(STRBEFORE(str(?clock), "":"")) * 60 + xsd:integer(STRAFTER(str(?clock), "":""))) AS ?secondsRemaining) }
+  OPTIONAL { ?action bball:homeScore ?homeScore }
+  OPTIONAL { ?action bball:roadScore ?roadScore }
+  FILTER(xsd:integer(?points) > 0)
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 100",,,,
+Q19,openai,gpt-5-mini,ontology,temporal_score,Show every scoring action in the final two minutes of the fourth quarter.,E2023,333,completed,200,4975.972,8,,True,True,True,8,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT DISTINCT ?action ?player ?playerName ?points ?quarter ?clock ?secondsRemaining ?homeScore ?roadScore ?order WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ""333"" ; bball:hasPlayByPlayAction ?action .
+  ?action bball:actionPlayer ?player ;
+          bball:pointsAwarded ?points ;
+          bball:quarter ?quarter ;
+          bball:clock ?clock ;
+          bball:hasPlayByPlaySequence ?order .
+  FILTER(str(?quarter) = ""4th"")
+  BIND((xsd:integer(STRBEFORE(str(?clock), "":"")) * 60 + xsd:integer(STRAFTER(str(?clock), "":""))) AS ?secondsRemaining)
+  FILTER(xsd:integer(?secondsRemaining) <= 120)
+  FILTER(xsd:integer(?points) > 0)
+  OPTIONAL { ?player rdfs:label ?playerName }
+  OPTIONAL { ?action bball:homeScore ?homeScore }
+  OPTIONAL { ?action bball:roadScore ?roadScore }
+} ORDER BY ASC(xsd:integer(?order)) LIMIT 100",,,,

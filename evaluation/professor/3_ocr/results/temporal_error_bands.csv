@@ -1,0 +1,15 @@
+system,error_band,count,percentage_of_annotated_events
+baseline,within_1_second,322,17.56683033278778
+baseline,over_1_to_2_seconds,211,11.511183851609383
+baseline,over_2_to_5_seconds,524,28.587015821058376
+baseline,over_5_to_10_seconds,189,10.310965630114566
+baseline,over_10_to_30_seconds,216,11.783960720130933
+baseline,over_30_seconds,371,20.240043644298964
+baseline,unmapped,0,0.0
+production,within_1_second,323,17.62138570649209
+production,over_1_to_2_seconds,197,10.747408619749045
+production,over_2_to_5_seconds,538,29.350791052918712
+production,over_5_to_10_seconds,197,10.747408619749045
+production,over_10_to_30_seconds,209,11.402073104200763
+production,over_30_seconds,369,20.130932896890343
+production,unmapped,0,0.0

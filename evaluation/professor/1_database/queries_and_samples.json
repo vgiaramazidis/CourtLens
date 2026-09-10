@@ -1,0 +1,397 @@
+{
+  "generated_at_utc": "2026-09-08T05:32:43.222737+00:00",
+  "endpoint": "http://93.115.20.167:8890/sparql",
+  "repetitions": 3,
+  "timeout_seconds": 60.0,
+  "query_samples": {
+    "dataset_totals": [
+      {
+        "games": "1063",
+        "actions": "566336"
+      }
+    ],
+    "games_by_season": [
+      {
+        "seasonCode": "E2023",
+        "games": "331",
+        "actions": "170669"
+      },
+      {
+        "seasonCode": "E2024",
+        "games": "330",
+        "actions": "174750"
+      },
+      {
+        "seasonCode": "E2025",
+        "games": "402",
+        "actions": "220917"
+      }
+    ],
+    "actions_by_type": [
+      {
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#PlayerIn",
+        "actions": "63022"
+      },
+      {
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#PlayerOut",
+        "actions": "63022"
+      },
+      {
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#DefensiveRebound",
+        "actions": "49723"
+      },
+      {
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#TwoPointShotMade",
+        "actions": "43798"
+      },
+      {
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#FoulDrawn",
+        "actions": "42871"
+      }
+    ],
+    "actions_per_game": [
+      {
+        "seasonCode": "E2023",
+        "gameCode": "1",
+        "actions": "496"
+      },
+      {
+        "seasonCode": "E2023",
+        "gameCode": "2",
+        "actions": "473"
+      },
+      {
+        "seasonCode": "E2023",
+        "gameCode": "3",
+        "actions": "503"
+      },
+      {
+        "seasonCode": "E2023",
+        "gameCode": "4",
+        "actions": "531"
+      },
+      {
+        "seasonCode": "E2023",
+        "gameCode": "5",
+        "actions": "539"
+      }
+    ],
+    "games_E2023": [
+      {
+        "gameCode": "333",
+        "homeLabel": "Real Madrid",
+        "awayLabel": "Panathinaikos"
+      },
+      {
+        "gameCode": "332",
+        "homeLabel": "Olympiacos",
+        "awayLabel": "Fenerbahce"
+      },
+      {
+        "gameCode": "331",
+        "homeLabel": "Panathinaikos",
+        "awayLabel": "Fenerbahce"
+      },
+      {
+        "gameCode": "330",
+        "homeLabel": "Real Madrid",
+        "awayLabel": "Olympiacos"
+      },
+      {
+        "gameCode": "329",
+        "homeLabel": "Panathinaikos",
+        "awayLabel": "Maccabi Tel Aviv"
+      }
+    ],
+    "playbyplay_E2023_333": [
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J2",
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#PeriodStart",
+        "clock": "10:00",
+        "quarter": "1st",
+        "sequence": "1",
+        "teamType": "neutral",
+        "homeScore": "0",
+        "roadScore": "0"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J3",
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#JumpBall",
+        "clock": "09:59",
+        "quarter": "1st",
+        "sequence": "2",
+        "teamType": "home",
+        "homeScore": "0",
+        "roadScore": "0"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J4",
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#ThreePointShotMade",
+        "clock": "09:34",
+        "quarter": "1st",
+        "sequence": "3",
+        "teamType": "home",
+        "homeScore": "3",
+        "roadScore": "0",
+        "playerLabel": "Eli Ndiaye",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J5",
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#Assist",
+        "clock": "09:31",
+        "quarter": "1st",
+        "sequence": "4",
+        "teamType": "home",
+        "homeScore": "3",
+        "roadScore": "0",
+        "playerLabel": "Facundo Campazzo",
+        "relatedShotClock": "09:34",
+        "relatedShotQuarter": "1st"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J6",
+        "actionType": "http://www.ics.forth.gr/isl/Basketball#ThreePointShotMade",
+        "clock": "09:12",
+        "quarter": "1st",
+        "sequence": "5",
+        "teamType": "road",
+        "homeScore": "3",
+        "roadScore": "3",
+        "playerLabel": "Jerian Grant",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0"
+      }
+    ],
+    "shots_E2023_333": [
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J10",
+        "coords": "-395,357",
+        "action_type": "http://www.ics.forth.gr/isl/Basketball#TwoPointShotMissed",
+        "home_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MAD#Lineup_003108_005791_005928_006540_009213",
+        "road_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_003842_005161_007866_011204_012774",
+        "clockTime": "08:41",
+        "quarter": "1st",
+        "playerName": "Konstantinos Mitoglou",
+        "teamType": "road",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0",
+        "homeScore": "6",
+        "roadScore": "3"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J104",
+        "coords": "-345,608",
+        "action_type": "http://www.ics.forth.gr/isl/Basketball#ThreePointShotMade",
+        "home_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MAD#Lineup_003108_004887_006540_010357_CVM",
+        "road_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_002328_003842_012712_012774",
+        "clockTime": "02:01",
+        "quarter": "1st",
+        "playerName": "Kostas Sloukas",
+        "teamType": "road",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0",
+        "homeScore": "27",
+        "roadScore": "22"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J107",
+        "coords": "-56,702",
+        "action_type": "http://www.ics.forth.gr/isl/Basketball#ThreePointShotMade",
+        "home_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MAD#Lineup_003108_004887_006540_010357_CVM",
+        "road_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_002328_003842_012712_012774",
+        "clockTime": "01:38",
+        "quarter": "1st",
+        "playerName": "Guerschon Yabusele",
+        "teamType": "home",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0",
+        "homeScore": "30",
+        "roadScore": "22"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J109",
+        "coords": "69,250",
+        "action_type": "http://www.ics.forth.gr/isl/Basketball#TwoPointShotMissed",
+        "home_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MAD#Lineup_003108_004887_006540_010357_CVM",
+        "road_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_002328_003842_012712_012774",
+        "clockTime": "01:12",
+        "quarter": "1st",
+        "playerName": "Marius Grigonis",
+        "teamType": "road",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0",
+        "homeScore": "30",
+        "roadScore": "22"
+      },
+      {
+        "action": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J12",
+        "coords": "25,708",
+        "action_type": "http://www.ics.forth.gr/isl/Basketball#ThreePointShotMissed",
+        "home_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MAD#Lineup_003108_005791_005928_006540_009213",
+        "road_lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_003842_005161_007866_011204_012774",
+        "clockTime": "08:36",
+        "quarter": "1st",
+        "playerName": "Kendrick Nunn",
+        "teamType": "road",
+        "isFastBreak": "0",
+        "isSecondChance": "0",
+        "isFromTurnover": "0",
+        "homeScore": "6",
+        "roadScore": "3"
+      }
+    ],
+    "lineups_E2023_333": [
+      {
+        "teamType": "road",
+        "homeScore": "80",
+        "roadScore": "95",
+        "players": "001926|Kostas Sloukas|https://media-cdn.cortextech.io/0a26c0f0-41a7-4ffc-8de1-e7cecbcc8338.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/18f379af-034d-490d-b43b-3bf2a47b9fcd.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/1bc678bb-0f25-4807-9a00-67ac1b13b578.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/3ff91122-533a-4c31-b30a-48ab12b02f8b.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/6eee6a67-7ce1-4c05-aae9-458bb0e691eb.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/a327f72c-65bd-4c37-a57f-423a29558493.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/ce296a41-0233-457d-bf67-9ee2ab6bedac.png@@001926|Kostas Sloukas|https://media-cdn.incrowdsports.com/ff4f77e9-8492-462b-9661-d6ca746d51c6.png@@002328|Marius Grigonis|https://media-cdn.cortextech.io/d97b2774-a6c8-41bb-b3bb-4963d81f79eb.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/03ae86f0-c1de-43b3-9ddc-9333e2df35cd.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/2371b4bf-c177-43aa-97e4-f3aa3a66e4b0.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/3247b8e5-e782-454e-adb8-ccd7e994eb96.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/34880631-ed7d-44f3-b42a-36742b2d7f9f.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/9b6b4d6f-597a-46b9-8584-31e83966f077.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/b690f116-1cf8-4879-8fd2-65b95a9ffed9.png@@002328|Marius Grigonis|https://media-cdn.incrowdsports.com/eef44d7c-36f3-4352-ab70-4d3583ab23bf.png@@003842|Mathias Lessort|https://media-cdn.cortextech.io/6c2a56e1-1c47-4771-9b90-bbcc97becc70.png@@003842|Mathias Lessort|https://media-cdn.incrowdsports.com/4a048575-66a7-4dd1-8a28-2f5df7f754b8.png@@003842|Mathias Lessort|https://media-cdn.incrowdsports.com/b283a9ed-2227-43ef-8f8c-97fdc76e8b12.png@@003842|Mathias Lessort|https://media-cdn.incrowdsports.com/c39b5527-19a2-4094-9d94-e18e55373d39.png@@003842|Mathias Lessort|https://media-cdn.incrowdsports.com/c69345b9-052a-41ed-a53d-e82d2d4c3687.png@@003842|Mathias Lessort|https://media-cdn.incrowdsports.com/cb3024fc-3af4-4665-bd51-4ecb2965ae17.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/34435fbb-b543-4cdd-84f6-62cf44448c88.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/55d22dd7-652c-427b-8f93-f4925638ae26.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/758e8658-07d3-4789-b721-cc384e1e6d93.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/87d862da-1508-45d9-a0af-84d089608cab.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/892aa367-c182-4376-a651-d922b37e68f8.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/a1819377-d80f-4d8a-bcbf-f9c67ac25bd2.png@@005161|Ioannis Papapetrou|https://media-cdn.incrowdsports.com/c28fd7fe-1733-42f9-8282-627796857287.png@@007553|Aleksander Balcerowski|https://media-cdn.incrowdsports.com/298ad210-3711-48dd-9826-c7e7a7af8a37.png@@007866|Konstantinos Mitoglou|https://media-cdn.cortextech.io/786a3466-8cef-47d3-86c6-487cc42cab85.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/2475ed3c-699f-42b4-bc71-a3786502649c.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/39fd9979-cf0c-40a2-a6e4-d1d247cbd40c.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/5c5b1aaf-6cd7-4d7c-bc81-5a2ca5391123.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/f73c5035-c3d5-4ae4-8d7c-50a3a5acf11d.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/f74bee76-7ede-4a00-bed0-10b3f276eb38.png@@007866|Konstantinos Mitoglou|https://media-cdn.incrowdsports.com/ff93a9d7-f400-4494-ae2e-72cfd057ac85.png@@007947|Luca Vildoza|https://media-cdn.cortextech.io/45cd50c3-c3b7-4cf6-92ee-f7955216e2da.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/3045ef2c-045f-416a-b3a6-b0ddc6683be1.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/632e17cf-7dac-4837-b9ad-3eab1b2f097c.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/a269118e-8c16-4c33-a450-2de9c04c41a8.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/c4d3eaa0-abbb-4d52-a810-c4db2a341dd4.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/dad5b538-3cf2-44ca-992a-b79ed24f4918.png@@007947|Luca Vildoza|https://media-cdn.incrowdsports.com/f35454b8-6ad3-4820-a3b7-bb405ec2f11b.png@@011204|Jerian Grant|https://media-cdn.cortextech.io/3ef4745b-bc65-45a0-b534-e5cea140604e.png@@011204|Jerian Grant|https://media-cdn.incrowdsports.com/3011c0c9-43b3-48ac-8277-e4f8f59b6c08.png@@011204|Jerian Grant|https://media-cdn.incrowdsports.com/463022c3-6de9-4b2b-b99c-7b96c0e0b209.png@@011204|Jerian Grant|https://media-cdn.incrowdsports.com/7def3af1-d949-4c19-9e84-0999dc029aa3.png@@011209|Panagiotis Kalaitzakis|https://media-cdn.cortextech.io/370cc8f6-6da8-4a99-bf1c-d0390cf2f6fd.png@@011209|Panagiotis Kalaitzakis|https://media-cdn.incrowdsports.com/00ad2c3b-dc73-4da7-bc3c-299973409fa4.png@@011209|Panagiotis Kalaitzakis|https://media-cdn.incrowdsports.com/57b604db-3e66-4f92-a908-7eebedfd67b8.png@@011209|Panagiotis Kalaitzakis|https://media-cdn.incrowdsports.com/59c8e70a-6d80-4d8c-9382-162194e226d0.png@@011221|Kostas Antetokounmpo|https://media-cdn.cortextech.io/a79388a1-3448-4d34-96a8-0edbb5bece72.png@@011221|Kostas Antetokounmpo|https://media-cdn.incrowdsports.com/07354706-0feb-47d0-8492-305c75f9917b.png@@011221|Kostas Antetokounmpo|https://media-cdn.incrowdsports.com/0bb5b2a2-1e74-4a09-9614-df6c89917382.png@@011221|Kostas Antetokounmpo|https://media-cdn.incrowdsports.com/101120bf-1dee-4348-90de-c630db737251.png@@011221|Kostas Antetokounmpo|https://media-cdn.incrowdsports.com/ca631eea-9f75-4c25-92fe-9241ae09ac68.png@@012712|Juancho Hernangomez|https://media-cdn.cortextech.io/12459ba1-e2c3-4832-95de-3fbe43770024.png@@012712|Juancho Hernangomez|https://media-cdn.incrowdsports.com/8beb7faa-4978-4528-aae6-70d504d3cd98.png@@012712|Juancho Hernangomez|https://media-cdn.incrowdsports.com/cdf4d0c7-5fa8-4d47-9453-723b07acc3c7.png@@012774|Kendrick Nunn|https://media-cdn.cortextech.io/6a45d41a-03f4-482a-b7ed-40adc56d5af8.png@@012774|Kendrick Nunn|https://media-cdn.incrowdsports.com/141e4124-6e7c-4d66-b1f3-132a582f117f.png@@012774|Kendrick Nunn|https://media-cdn.incrowdsports.com/78428dfc-c965-4e72-8eb6-5e362eeaa849.png"
+      },
+      {
+        "teamType": "home",
+        "homeScore": "80",
+        "roadScore": "95",
+        "players": "001392|Fabien Causeur|https://media-cdn.incrowdsports.com/104e9cff-7b0a-474d-9b92-2b150aea209f.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/1ce41466-83c9-4e36-88ac-247351d0249c.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/43d85dff-55cc-427b-8f43-d37ff4e1e652.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/71aa6118-2efb-4f0e-9f5d-5e64eba8fe3c.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/b3c95cd7-3de5-43e7-a89c-1965bcb0042d.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/c02a4dc6-4b7f-4b9e-89ae-10a8ed78fd34.png@@001392|Fabien Causeur|https://media-cdn.incrowdsports.com/da7bab9a-558a-4deb-ba17-bdfd4b23819c.png@@003108|Mario Hezonja|https://media-cdn.cortextech.io/c415b3ab-6a2d-4ff4-8504-5119fca3c9f6.png@@003108|Mario Hezonja|https://media-cdn.incrowdsports.com/03fc7874-71a9-4e26-8deb-c3410ca08fd8.png@@003108|Mario Hezonja|https://media-cdn.incrowdsports.com/3d465084-d984-4866-8cef-d137454e0e3b.png@@003108|Mario Hezonja|https://media-cdn.incrowdsports.com/66277d93-a9ba-4d7e-9f31-f41fa340f9e9.png@@003108|Mario Hezonja|https://media-cdn.incrowdsports.com/d61126dd-e3ac-46de-b012-42fd1ba92f1d.png@@003733|Alberto Abalde|https://media-cdn.cortextech.io/72807eac-571d-4e7b-ac26-93986d5d0e80.png@@003733|Alberto Abalde|https://media-cdn.incrowdsports.com/192d6d61-9180-4b9a-91c0-eff940b1f27e.png@@003733|Alberto Abalde|https://media-cdn.incrowdsports.com/2dd638e6-ce2e-4c17-a4d0-d9bec23ce617.png@@003733|Alberto Abalde|https://media-cdn.incrowdsports.com/3938872b-a28e-48ef-928c-2c394176b089.png@@003733|Alberto Abalde|https://media-cdn.incrowdsports.com/82c96970-c8f1-4ce1-a2d3-2b2dadcd8ba7.png@@003733|Alberto Abalde|https://media-cdn.incrowdsports.com/941aa428-b35b-4aff-9fbc-13bf0061d6ad.png@@004887|Vincent Poirier|https://media-cdn.cortextech.io/bce92ebe-03e1-4588-9235-65b7e965b4e4.png@@004887|Vincent Poirier|https://media-cdn.incrowdsports.com/25ec82aa-5a88-4aca-aa79-7894c4994e85.png@@004887|Vincent Poirier|https://media-cdn.incrowdsports.com/49e39a7b-cf8f-483c-ac13-3e128c08aa4a.png@@004887|Vincent Poirier|https://media-cdn.incrowdsports.com/5433e034-2047-4dc5-ab78-e10a4c119252.png@@004887|Vincent Poirier|https://media-cdn.incrowdsports.com/7780dbec-95c0-48f2-b0c1-3c36a97f57b4.png@@004887|Vincent Poirier|https://media-cdn.incrowdsports.com/d24532c7-b1b3-42b5-b5e9-232d495fce34.png@@005791|Walter Tavares|https://media-cdn.cortextech.io/90f9344a-3a6f-406e-bd33-8218abd2e8f6.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/05615f77-1d93-4104-a355-a838fa09bab3.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/0af7fd50-4e6c-4db5-9a96-fa5ab1bf13dc.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/b4070997-623b-4a6e-94bc-65fd4694b0c5.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/b56e0f74-e43b-4f98-9739-e34bae118850.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/b8e06c6f-f5de-4905-8ec6-a4ff1f351f93.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/e738f6cd-a59d-4db6-880b-e94172438169.png@@005791|Walter Tavares|https://media-cdn.incrowdsports.com/f467fd87-d323-4335-9585-9848355b00cf.png@@005928|Facundo Campazzo|https://media-cdn.cortextech.io/c5274543-662b-4958-b6fa-3bf42b944255.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/3d4b3199-c570-491d-b1cf-76f82c2e229c.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/3e8764fc-3edf-49b9-8d87-8f16757e87c8.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/4454f92d-d14f-456e-8873-458782c21b75.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/4e5450b5-1079-4fd1-abd0-00f724eefa8c.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/52cb5caa-497f-4ed9-a014-4609c370cda9.png@@005928|Facundo Campazzo|https://media-cdn.incrowdsports.com/8d9a8072-0773-4b18-bee2-b846ecc5ba6d.png@@006540|Dzanan Musa|https://media-cdn.cortextech.io/1201877a-e1b6-4687-8720-0288b59018f5.png@@006540|Dzanan Musa|https://media-cdn.incrowdsports.com/025648e3-74c6-4ccd-bc98-98006c2ba2e2.png@@006540|Dzanan Musa|https://media-cdn.incrowdsports.com/33402fc3-96cf-4e53-ac32-2a46bc19b3d1.png@@006540|Dzanan Musa|https://media-cdn.incrowdsports.com/392ce921-9b4f-4915-8a76-052b9fce9c17.png@@006540|Dzanan Musa|https://media-cdn.incrowdsports.com/6e24d642-0b45-45b6-9e40-df570b8433a8.png@@009213|Eli Ndiaye|https://media-cdn.incrowdsports.com/2ce6d0d0-375c-468c-8af4-40b1dfdcad00.png@@009213|Eli Ndiaye|https://media-cdn.incrowdsports.com/904e39c9-6169-4ed1-ab6b-1a24b94c7197.png@@009213|Eli Ndiaye|https://media-cdn.incrowdsports.com/b5594649-9637-4958-b759-afa498d86b86.png@@009213|Eli Ndiaye|https://media-cdn.incrowdsports.com/b5b76f40-0034-45bd-a5b3-fd164ffdd6c5.png@@010357|Guerschon Yabusele|https://media-cdn.incrowdsports.com/228be8f6-f04b-4c25-ab6a-1bbb93bea176.png@@010357|Guerschon Yabusele|https://media-cdn.incrowdsports.com/7836b84b-e952-47c7-9683-4f8645eea386.png@@010357|Guerschon Yabusele|https://media-cdn.incrowdsports.com/ab7df3d6-84b1-4719-a108-f8dfbae98b51.png@@010357|Guerschon Yabusele|https://media-cdn.incrowdsports.com/e6ff4dd0-f1cd-4c71-bc41-3ffdd78186d2.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/4b1bfb53-5256-49ba-8e56-bacab5e137a2.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/5bd32b76-c0ab-47fc-8c46-5512f08c962c.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/6bd64e30-96ae-4e82-89e5-45d9bc215f23.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/768eb6ac-5506-4e36-846c-acf3ac26993a.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/81ff9d74-1784-441e-addd-b9198bfdab15.png@@BMT|Rudy Fernandez|https://media-cdn.incrowdsports.com/8c746bea-0a9e-4d45-8405-48d8040fa702.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/2e15562b-41e0-443c-8ffd-595f565b48b8.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/3cfc1e00-f0b8-40fe-a130-e61d9e7ce8f7.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/a8e7f1f9-6f9f-49c3-8974-86609e17aaac.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/d605b7e7-d619-4620-93b1-5979b22592bc.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/e019f8d1-28e0-45ef-b568-83d947a4da9e.png@@CVM|Sergio Rodriguez|https://media-cdn.incrowdsports.com/fba1b859-4299-41cc-953c-27b7940fe4bd.png@@TGB|Sergio Llull|https://media-cdn.cortextech.io/38500d8f-02b6-40a7-a6b7-c9fb901a0f6e.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/1e3fd1b6-7896-4797-b818-f274d4dd3f8a.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/3036ca16-18f1-426b-a809-b07e0dd5bb31.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/59385b53-a914-4249-b46c-5252efc65096.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/a3670d67-4a1f-4d0b-b0ef-89f228eb257f.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/b13213fc-6cbe-4bcb-9e84-cfca571b37f2.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/c0c0c586-9005-47a5-970d-86b57458701d.png@@TGB|Sergio Llull|https://media-cdn.incrowdsports.com/f4cf91dc-2a3c-44aa-a23e-e9b1cbc38dde.png"
+      }
+    ],
+    "assist_duos_E2023_333": [
+      {
+        "scorer": "https://www.euroleaguebasketball.net/euroleague/players/-/003842",
+        "passer": "https://www.euroleaguebasketball.net/euroleague/players/-/011204",
+        "totalAssists": "2"
+      },
+      {
+        "scorer": "https://www.euroleaguebasketball.net/euroleague/players/-/007866",
+        "passer": "https://www.euroleaguebasketball.net/euroleague/players/-/012774",
+        "totalAssists": "2"
+      },
+      {
+        "scorer": "https://www.euroleaguebasketball.net/euroleague/players/-/009213",
+        "passer": "https://www.euroleaguebasketball.net/euroleague/players/-/005928",
+        "totalAssists": "2"
+      },
+      {
+        "scorer": "https://www.euroleaguebasketball.net/euroleague/players/-/TGB",
+        "passer": "https://www.euroleaguebasketball.net/euroleague/players/-/005928",
+        "totalAssists": "1"
+      },
+      {
+        "scorer": "https://www.euroleaguebasketball.net/euroleague/players/-/TGB",
+        "passer": "https://www.euroleaguebasketball.net/euroleague/players/-/003108",
+        "totalAssists": "1"
+      }
+    ],
+    "timeouts_E2023": [
+      {
+        "game": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/9",
+        "clock": "04:35",
+        "homeScore": "59",
+        "roadScore": "55",
+        "homeLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAM#Lineup_006643_007870_010393_010568_011982",
+        "roadLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MCO#Lineup_005985_010588_011212_011226_LCZ"
+      },
+      {
+        "game": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/9",
+        "clock": "02:11",
+        "homeScore": "61",
+        "roadScore": "63",
+        "homeLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAM#Lineup_003960_007870_010568_011982_012740",
+        "roadLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MCO#Lineup_005985_010588_011212_011226_LCZ"
+      },
+      {
+        "game": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/9",
+        "clock": "01:02",
+        "homeScore": "66",
+        "roadScore": "63",
+        "homeLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAM#Lineup_003960_007870_010568_011982_012740",
+        "roadLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MCO#Lineup_005985_010588_011226_011231_012515"
+      },
+      {
+        "game": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/9",
+        "clock": "00:07",
+        "homeScore": "70",
+        "roadScore": "63",
+        "homeLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAM#Lineup_003960_004863_006643_007870_011982",
+        "roadLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MCO#Lineup_005985_010588_011212_011226_011231"
+      },
+      {
+        "game": "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/9",
+        "clock": "00:06",
+        "homeScore": "70",
+        "roadScore": "65",
+        "homeLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAM#Lineup_003960_007870_010568_011982_012740",
+        "roadLineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/MCO#Lineup_005985_010588_011212_011226_011231"
+      }
+    ]
+  },
+  "queries": [
+    {
+      "name": "dataset_totals",
+      "category": "statistics",
+      "description": "Count distinct games and Play-by-Play actions.",
+      "sparql": "PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\nSELECT (COUNT(DISTINCT ?game) AS ?games)\n       (COUNT(DISTINCT ?action) AS ?actions)\nWHERE {\n  ?game rdf:type bball:Game ;\n        bball:hasPlayByPlayAction ?action .\n}\n"
+    },
+    {
+      "name": "games_by_season",
+      "category": "statistics",
+      "description": "Count games and actions by season.",
+      "sparql": "PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\nSELECT ?seasonCode (COUNT(DISTINCT ?game) AS ?games)\n       (COUNT(DISTINCT ?action) AS ?actions)\nWHERE {\n  ?game rdf:type bball:Game ;\n        bball:hasSeason ?season ;\n        bball:hasPlayByPlayAction ?action .\n  ?season bball:hasCode ?seasonCode .\n}\nGROUP BY ?seasonCode\nORDER BY ?seasonCode\n"
+    },
+    {
+      "name": "actions_by_type",
+      "category": "statistics",
+      "description": "Count PBP actions by RDF class.",
+      "sparql": "PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\nSELECT ?actionType (COUNT(DISTINCT ?action) AS ?actions)\nWHERE {\n  ?game rdf:type bball:Game ;\n        bball:hasPlayByPlayAction ?action .\n  ?action rdf:type ?actionType .\n}\nGROUP BY ?actionType\nORDER BY DESC(?actions)\nLIMIT 100\n"
+    },
+    {
+      "name": "actions_per_game",
+      "category": "statistics",
+      "description": "Count PBP actions for every game.",
+      "sparql": "PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\nPREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\nSELECT ?seasonCode ?gameCode (COUNT(DISTINCT ?action) AS ?actions)\nWHERE {\n  ?game rdf:type bball:Game ;\n        bball:hasCode ?gameCode ;\n        bball:hasSeason ?season ;\n        bball:hasPlayByPlayAction ?action .\n  ?season bball:hasCode ?seasonCode .\n}\nGROUP BY ?seasonCode ?gameCode\nORDER BY ?seasonCode xsd:integer(?gameCode)\nLIMIT 2000\n"
+    },
+    {
+      "name": "games_E2023",
+      "category": "application",
+      "description": "List E2023 games for the season selector.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n    \n    SELECT ?gameCode ?homeLabel ?awayLabel\n    WHERE {\n        ?game a bball:Game ;\n              bball:hasCode ?gameCode ;\n              bball:hasSeason ?season ;\n              bball:homeTeam ?homeTeam ;\n              bball:roadTeam ?roadTeam .\n              \n        ?season bball:hasCode 'E2023' .\n        \n        ?homeTeam rdfs:label ?homeLabel .\n        ?roadTeam rdfs:label ?awayLabel .\n    }\n    ORDER BY DESC(xsd:integer(?gameCode))\n    "
+    },
+    {
+      "name": "playbyplay_E2023_333",
+      "category": "application",
+      "description": "Retrieve ordered PBP actions for one complete video game.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n    \n    SELECT ?action ?actionType ?clock ?quarter ?sequence ?teamType\n           ?homeScore ?roadScore ?playerLabel ?isFastBreak ?isSecondChance ?isFromTurnover\n           ?relatedShotClock ?relatedShotQuarter\n    WHERE {\n        ?game a bball:Game ;\n              bball:hasCode '333' ;\n              bball:hasSeason ?season ;\n              bball:hasPlayByPlayAction ?action ;\n              bball:homeTeam ?homeTeam ;\n              bball:roadTeam ?roadTeam .\n              \n        ?season bball:hasCode 'E2023' .\n        \n        ?action rdf:type ?actionType ;\n                bball:clock ?clock ;\n                bball:quarter ?quarter .\n\n        OPTIONAL { ?action bball:hasPlayByPlaySequence ?sequence . }\n        OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore . }\n        OPTIONAL { ?action bball:runningRoadTeamScore ?roadScore . }\n        OPTIONAL { ?action bball:isFastBreak ?isFastBreak . }\n        OPTIONAL { ?action bball:isSecondChance ?isSecondChance . }\n        OPTIONAL { ?action bball:isFromTurnover ?isFromTurnover . }\n        OPTIONAL { ?action bball:actionTeam ?actionTeam . }\n        OPTIONAL { \n            ?action bball:actionPlayer ?player .\n            ?player rdfs:label ?playerLabel .\n        }\n        OPTIONAL {\n            ?relatedShot bball:hasAssist ?action ;\n                         rdf:type ?relatedShotType ;\n                         bball:clock ?relatedShotClock ;\n                         bball:quarter ?relatedShotQuarter ;\n                         bball:quarterSecondsRemaining ?relatedShotSeconds .\n            ?action bball:quarterSecondsRemaining ?assistSeconds .\n            VALUES ?relatedShotType {\n                bball:TwoPointShotMade\n                bball:ThreePointShotMade\n                bball:FreeThrowMade\n            }\n            FILTER(\n                ?relatedShotQuarter = ?quarter &&\n                ABS(xsd:decimal(?relatedShotSeconds) - xsd:decimal(?assistSeconds)) <= 5\n            )\n        }\n\n        BIND(IF(\n            BOUND(?actionTeam),\n            IF(?actionTeam = ?homeTeam, \"home\", IF(?actionTeam = ?roadTeam, \"road\", \"neutral\")),\n            \"neutral\"\n        ) AS ?teamType)\n    }\n    ORDER BY xsd:integer(COALESCE(?sequence, \"9999\"))\n    LIMIT 1000\n    "
+    },
+    {
+      "name": "shots_E2023_333",
+      "category": "application",
+      "description": "Retrieve shot actions and coordinates for one game.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n    \n    SELECT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?teamType ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore\n    WHERE {\n        ?game a bball:Game ;\n              bball:hasPlayByPlayAction ?action ;\n              bball:homeTeam ?homeTeam ;\n              bball:roadTeam ?roadTeam .\n    \n        ?game bball:hasSeason ?season .\n        ?season bball:hasCode 'E2023' .\n        \n        ?action rdf:type ?action_type .\n        FILTER(?action_type IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))\n        \n        ?action bball:shotCoords ?coords ;\n                bball:actionTeam ?actionTeam .\n\n        BIND(IF(?actionTeam = ?homeTeam, \"home\", \"road\") AS ?teamType)\n        \n        # \u03a0\u03a1\u039f\u03a3\u0398\u0397\u039a\u0397: \u0394\u03b7\u03bb\u03ce\u03bd\u03bf\u03c5\u03bc\u03b5 \u03c4\u03b7 \u03bc\u03b5\u03c4\u03b1\u03b2\u03bb\u03b7\u03c4\u03ae ?quarter \u03b3\u03b9\u03b1 \u03bd\u03b1 \u03b3\u03b5\u03bc\u03af\u03b6\u03b5\u03b9 \u03a0\u0391\u039d\u03a4\u0391 \u03c3\u03c4\u03bf SELECT!\n        ?action bball:quarter ?quarter .\n        \n        OPTIONAL { ?action bball:runningHomeTeamLineup ?home_lineup . }\n        OPTIONAL { ?action bball:runningRoadTeamLineup ?road_lineup . }\n        OPTIONAL { ?action bball:clock ?clockTime . }\n        OPTIONAL { ?action bball:isFastBreak ?isFastBreak . }\n        OPTIONAL { ?action bball:isSecondChance ?isSecondChance . }\n        OPTIONAL { ?action bball:isFromTurnover ?isFromTurnover . }        \n        OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore . }\n        OPTIONAL { ?action bball:runningRoadTeamScore ?roadScore . }\n        \n        ?action bball:actionPlayer ?playerNode .\n        ?playerNode rdfs:label ?playerName .\n    \n        ?game bball:hasCode '333' .\n    } LIMIT 500"
+    },
+    {
+      "name": "lineups_E2023_333",
+      "category": "application",
+      "description": "Retrieve available lineups for one game.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n    PREFIX foaf: <http://xmlns.com/foaf/0.1/>\n    \n    SELECT ?teamType ?homeScore ?roadScore (GROUP_CONCAT(DISTINCT ?playerInfo; separator=\"@@\") AS ?players)\n    WHERE {\n        ?game a bball:Game ;\n              bball:hasCode '333' ;\n              bball:hasSeason ?season ;\n              bball:hasTeamBoxscore ?boxscore .\n              \n        ?season bball:hasCode 'E2023' .\n        \n        OPTIONAL {\n            ?game bball:hasHomeTeamScore ?homeScore .\n            ?game bball:hasRoadTeamScore ?roadScore .\n        }\n        \n        # \u0391\u03bd\u03c4\u03b9\u03c3\u03c4\u03bf\u03b9\u03c7\u03af\u03b6\u03bf\u03c5\u03bc\u03b5 \u03c4\u03bf Boxscore \u03c3\u03c4\u03b7\u03bd Home \u03ae Road \u03bf\u03bc\u03ac\u03b4\u03b1\n        { \n             ?game bball:homeTeam ?team . \n             BIND(\"home\" AS ?teamType)\n        }\n        UNION\n        { \n             ?game bball:roadTeam ?team . \n             BIND(\"road\" AS ?teamType)\n        }\n        \n        # \u0394\u03b9\u03b1\u03b2\u03ac\u03b6\u03bf\u03c5\u03bc\u03b5 \u039f\u039b\u039f\u03a5\u03a3 \u03c4\u03bf\u03c5\u03c2 \u03c0\u03b1\u03af\u03ba\u03c4\u03b5\u03c2 \u03c4\u03b7\u03c2 \u03b1\u03c0\u03bf\u03c3\u03c4\u03bf\u03bb\u03ae\u03c2 \u03b1\u03c0\u03cc \u03c4\u03bf Boxscore\n        ?boxscore bball:overTeam ?team ;\n                  bball:hasPlayerParticipation ?participation .\n                  \n        ?participation bball:overPlayer ?playerNode .\n        ?playerNode rdfs:label ?playerName .\n        \n        # \u03a6\u03ad\u03c1\u03bd\u03bf\u03c5\u03bc\u03b5 \u03ba\u03b1\u03b9 \u03c4\u03b7\u03bd \u03b5\u03b9\u03ba\u03cc\u03bd\u03b1 \u03b1\u03bd \u03c5\u03c0\u03ac\u03c1\u03c7\u03b5\u03b9\n        OPTIONAL { ?playerNode foaf:depiction ?img . }\n        \n        # \u03a0\u03b1\u03ba\u03b5\u03c4\u03ac\u03c1\u03bf\u03c5\u03bc\u03b5 \u03c4\u03b1 \u03b4\u03b5\u03b4\u03bf\u03bc\u03ad\u03bd\u03b1\n        BIND(CONCAT(REPLACE(STR(?playerNode), \".*-/\", \"\"), \"|\", ?playerName, \"|\", COALESCE(STR(?img), \"NO_IMG\")) AS ?playerInfo)\n    }\n    GROUP BY ?teamType ?homeScore ?roadScore\n    "
+    },
+    {
+      "name": "assist_duos_E2023_333",
+      "category": "analytics",
+      "description": "Retrieve top passer-scorer combinations for one game.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\n    SELECT ?scorer ?passer (COUNT(?action) AS ?totalAssists)\n    WHERE {\n        ?game a bball:Game ;\n              bball:hasPlayByPlayAction ?action .\n    \n        ?game bball:hasSeason ?season .\n        ?season bball:hasCode 'E2023' .\n        ?game bball:hasCode '333' .\n        ?action bball:actionPlayer ?scorer ;\n                bball:hasAssist ?assistAction .\n        ?assistAction bball:actionPlayer ?passer .\n    \n    }\n    GROUP BY ?scorer ?passer\n    ORDER BY DESC(?totalAssists)\n    LIMIT 10\n    "
+    },
+    {
+      "name": "timeouts_E2023",
+      "category": "analytics",
+      "description": "Retrieve timeout data used by the simulator.",
+      "sparql": "\n    PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>\n    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n    \n    SELECT DISTINCT ?game ?clock ?homeScore ?roadScore ?homeLineup ?roadLineup\n    WHERE {\n        ?game bball:hasPlayByPlayAction ?action .\n        FILTER(CONTAINS(STR(?game), \"E2023\"))\n\n        ?action a ?actionType .\n        FILTER(?actionType IN (bball:Timeout, bball:TimeoutTV))\n        \n        ?action bball:quarter \"4th\" ;\n                bball:clock ?clock ;\n                bball:quarterSecondsRemaining ?seconds ;\n                bball:runningHomeTeamScore ?homeScore ;\n                bball:runningRoadTeamScore ?roadScore ;\n                bball:runningHomeTeamLineup ?homeLineup ;\n                bball:runningRoadTeamLineup ?roadLineup .\n                \n        # \u0397 \u039c\u0395\u0393\u0391\u039b\u0397 \u0391\u039b\u039b\u0391\u0393\u0397: \u039a\u03ac\u03c4\u03c9 \u03b1\u03c0\u03cc 1 \u03bb\u03b5\u03c0\u03c4\u03cc (60 \u03b4\u03b5\u03c5\u03c4.) \u0389 \u03b4\u03b9\u03b1\u03c6\u03bf\u03c1\u03ac \u03ba\u03ac\u03c4\u03c9 \u03b1\u03c0\u03cc 6 \u03c0\u03cc\u03bd\u03c4\u03bf\u03c5\u03c2\n        FILTER(xsd:integer(?seconds) <= 60 || ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) <= 6)\n    } LIMIT 200\n    "
+    }
+  ]
+}

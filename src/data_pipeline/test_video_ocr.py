@@ -1,10 +1,15 @@
+import json
+import tempfile
 import unittest
+from datetime import datetime, timezone
+from pathlib import Path
 
 from src.data_pipeline.video_ocr import (
     DEFAULT_CATALOG_FILE,
     DEFAULT_PROFILES_FILE,
     ClockTracker,
     InitialClockGate,
+    OcrRunStatistics,
     find_game_config,
     load_game_catalog,
     load_profiles,
@@ -13,6 +18,7 @@ from src.data_pipeline.video_ocr import (
     roi_pixels,
     sanitize_timeline_results,
     timeline_completeness_errors,
+    write_run_metrics,
 )
 
 
@@ -457,6 +463,41 @@ class VideoOcrConfigurationTests(unittest.TestCase):
         results.extend([(5000.0, "OT", "4:58"), (5900.0, "OT", "0.0")])
 
         self.assertEqual(timeline_completeness_errors(results), [])
+
+    def test_run_metrics_records_normalized_processing_rate(self):
+        statistics = OcrRunStatistics(
+            timeline_points=1200,
+            removed_points=3,
+            fps=25.0,
+            media_duration_seconds=7200.0,
+            scan_start_seconds=600.0,
+            scan_end_seconds=4200.0,
+            sampling_interval_seconds=1.0,
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "metrics.json"
+            write_run_metrics(
+                output,
+                season_code="E2023",
+                game_code="333",
+                profile_name="profile",
+                source="game.mp4",
+                timeline_path=Path("candidate.csv"),
+                statistics=statistics,
+                elapsed_seconds=300.0,
+                started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            )
+            payload = json.loads(output.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["run"]["scanned_video_seconds"], 3600.0)
+        self.assertEqual(
+            payload["run"]["processing_seconds_per_scanned_video_minute"],
+            5.0,
+        )
+        self.assertEqual(
+            payload["run"]["scanned_video_seconds_per_processing_second"],
+            12.0,
+        )
 
 
 if __name__ == "__main__":

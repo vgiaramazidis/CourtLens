@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "description": "Twenty natural-language questions for evaluating AI-to-SPARQL generation and returned results.",
+  "questions": [
+    {
+      "id": "Q01",
+      "category": "simple_event_retrieval",
+      "message": "Show all made two-point and three-point shots in this game.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q02",
+      "category": "simple_event_retrieval",
+      "message": "Show all turnovers in this game.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q03",
+      "category": "simple_event_retrieval",
+      "message": "Show all rebounds in the second quarter.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q04",
+      "category": "simple_event_retrieval",
+      "message": "Show all fouls committed by the home team.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q05",
+      "category": "simple_event_retrieval",
+      "message": "Show every substitution in the game.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q06",
+      "category": "player_retrieval",
+      "message": "Show all points scored by Kendrick Nunn.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q07",
+      "category": "player_retrieval",
+      "message": "Show all assists by Kostas Sloukas.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q08",
+      "category": "player_retrieval",
+      "message": "How many rebounds did Walter Tavares record?",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q09",
+      "category": "percentage",
+      "message": "What was Kostas Sloukas's two-point shooting percentage?",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": false
+    },
+    {
+      "id": "Q10",
+      "category": "percentage",
+      "message": "What was Kendrick Nunn's three-point shooting percentage?",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": false
+    },
+    {
+      "id": "Q11",
+      "category": "player_assist_relation",
+      "message": "Show the assists from Kostas Sloukas to Kendrick Nunn.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q12",
+      "category": "player_assist_relation",
+      "message": "Who assisted Kendrick Nunn most often in this game?",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": false
+    },
+    {
+      "id": "Q13",
+      "category": "shot_location",
+      "message": "Show all shots attempted from the left corner.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q14",
+      "category": "shot_location",
+      "message": "Show all made shots from the paint.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q15",
+      "category": "lineup",
+      "message": "Show the shots taken while Panathinaikos's starting lineup was on the court.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q16",
+      "category": "lineup",
+      "message": "How many points did Panathinaikos score while Kostas Sloukas was on the court?",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q17",
+      "category": "event_chain",
+      "message": "Show missed shots that were followed by an offensive rebound.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q18",
+      "category": "event_chain",
+      "message": "Show turnovers that led to fast-break points.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q19",
+      "category": "temporal_score",
+      "message": "Show every scoring action in the final two minutes of the fourth quarter.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    },
+    {
+      "id": "Q20",
+      "category": "temporal_score",
+      "message": "Show the actions that occurred while the score was tied.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "expected_playbyplay_filter": true
+    }
+  ]
+}

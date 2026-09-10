@@ -14,6 +14,263 @@ import app as backend_app
 
 
 class VideoSynchronizationTests(unittest.TestCase):
+    def test_ai_query_is_only_returned_for_evaluation_requests(self):
+        payload = {
+            "results": [],
+            "sparql_query": "SELECT * WHERE {}",
+            "ai_provider": "openai",
+            "ai_model": "gpt-5-mini",
+            "prompt_variant": "ontology",
+            "ai_usage": {"input_tokens": 10},
+        }
+
+        frontend_response = backend_app.ai_search_response(payload, False)
+        for internal_field in (
+            "sparql_query",
+            "ai_provider",
+            "ai_model",
+            "prompt_variant",
+            "ai_usage",
+        ):
+            self.assertNotIn(internal_field, frontend_response)
+        self.assertEqual(
+            backend_app.ai_search_response(payload, True)["sparql_query"],
+            payload["sparql_query"],
+        )
+        self.assertIn("sparql_query", payload)
+
+    def test_evaluation_mode_preserves_invalid_raw_model_output(self):
+        request = backend_app.ChatRequest(
+            message="Test question",
+            season_code="E2023",
+            game_code="333",
+            provider="openai",
+            prompt_variant="ontology",
+            openai_model="gpt-5-mini",
+            include_query=True,
+        )
+        usage = {
+            "input_tokens": 10,
+            "cached_input_tokens": 0,
+            "output_tokens": 5,
+            "reasoning_tokens": 0,
+            "total_tokens": 15,
+        }
+        with (
+            patch.object(
+                backend_app,
+                "ai_search_configuration",
+                return_value=("openai", "ontology", "gpt-5-mini"),
+            ),
+            patch.object(
+                backend_app,
+                "generate_ai_search_text",
+                new=AsyncMock(return_value=("not a SPARQL query", usage)),
+            ),
+        ):
+            with self.assertRaises(backend_app.HTTPException) as raised:
+                asyncio.run(backend_app.ai_chat_handler(request))
+
+        self.assertEqual(raised.exception.status_code, 422)
+        self.assertEqual(
+            raised.exception.detail["sparql_query"], "not a SPARQL query"
+        )
+        self.assertEqual(raised.exception.detail["ai_usage"], usage)
+
+    def test_openai_responses_text_is_extracted(self):
+        payload = {
+            "output": [{
+                "type": "message",
+                "content": [{"type": "output_text", "text": "SELECT ?action {}"}],
+            }]
+        }
+
+        self.assertEqual(
+            backend_app.extract_openai_output_text(payload),
+            "SELECT ?action {}",
+        )
+
+    def test_openai_mini_is_the_only_supported_openai_model(self):
+        with patch.object(backend_app, "OPENAI_API_KEY", "test-key"):
+            mini = backend_app.ai_search_configuration(
+                "openai", "ontology", "gpt-5-mini"
+            )
+
+        self.assertEqual(mini, ("openai", "ontology", "gpt-5-mini"))
+
+    def test_ontology_prompt_uses_virtuoso_safe_player_name_boundaries(self):
+        self.assertIn(
+            "(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)",
+            backend_app.euroleague_system_prompt,
+        )
+
+    def test_ai_search_prompts_and_scope_context_are_english_only(self):
+        model_facing_text = "\n".join(
+            [
+                backend_app.euroleague_system_prompt,
+                backend_app.simple_sparql_system_prompt,
+                *backend_app.build_ai_scope_context("E2023,E2024", "333"),
+            ]
+        )
+        self.assertNotRegex(model_facing_text, r"[\u0370-\u03ff\u1f00-\u1fff]")
+        self.assertIn("Required request context", backend_app.euroleague_system_prompt)
+
+    def test_simple_prompt_matches_flat_vocabulary_baseline(self):
+        prompt = backend_app.simple_sparql_system_prompt
+        self.assertIn("flat vocabulary", prompt)
+        self.assertIn("AVAILABLE PROPERTIES", prompt)
+        self.assertIn("AVAILABLE CLASSES", prompt)
+        self.assertIn("bball:hasPlayByPlayAction", prompt)
+        self.assertIn("bball:correspondsToOCRObservation", prompt)
+        self.assertIn("bball:OCRObservation", prompt)
+        self.assertNotIn("CANONICAL PATTERN", prompt)
+        self.assertNotIn("?shot bball:hasAssist ?assist", prompt)
+
+    def test_ontology_prompt_documents_real_quarter_and_clock_fields(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn('FILTER(str(?quarter) = "4th")', prompt)
+        self.assertIn("bball:clock ?clock", prompt)
+        self.assertIn("Never use the nonexistent properties", prompt)
+
+    def test_ontology_prompt_documents_action_scores_and_substitutions(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn("bball:runningHomeTeamScore ?homeScore", prompt)
+        self.assertIn("bball:runningRoadTeamScore ?roadScore", prompt)
+        self.assertIn("bball:PlayerIn bball:PlayerOut", prompt)
+        self.assertIn("bball:SubstitutionIn", prompt)
+        self.assertIn("do not exist", prompt)
+        self.assertNotIn("bball:ShotRejected", prompt)
+
+    def test_ontology_prompt_documents_lineups_rebounds_and_possessions(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn("?action bball:runningHomeTeamLineup ?homeLineup", prompt)
+        self.assertIn("bball:leadsToRebound ?reboundAction", prompt)
+        self.assertIn("bball:containsAction ?containedAction", prompt)
+        self.assertIn("not a resource with bball:hasPlayByPlayAction", prompt)
+        self.assertIn("not automatically available inside a subquery", prompt)
+        self.assertIn("For a pure ranking", prompt)
+
+    def test_ontology_prompt_has_team_agnostic_starting_lineup_pattern(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn("CANONICAL PATTERN — actions while", prompt)
+        self.assertIn("?game bball:homeTeam ?targetTeam", prompt)
+        self.assertIn("?game bball:roadTeam ?targetTeam", prompt)
+        self.assertIn(
+            "?periodStart bball:runningHomeTeamLineup ?startingLineup", prompt
+        )
+        self.assertIn(
+            "?periodStart bball:runningRoadTeamLineup ?startingLineup", prompt
+        )
+        self.assertIn("the actions may belong", prompt)
+        self.assertIn("to either team", prompt)
+
+    def test_ontology_prompt_has_team_points_during_player_lineup_pattern(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn("CANONICAL PATTERN — points scored by", prompt)
+        self.assertIn("?action bball:actionTeam ?targetTeam", prompt)
+        self.assertIn("?lineup bball:includesPlayer ?player", prompt)
+        self.assertIn(
+            "SELECT ?game ?targetTeam ?player (SUM(xsd:integer(?subPoints))",
+            prompt,
+        )
+        self.assertIn("?subLineup bball:includesPlayer ?player", prompt)
+        self.assertIn("GROUP BY ?game ?targetTeam ?player", prompt)
+        self.assertIn("regex filter is mandatory for both ?targetTeamName", prompt)
+        self.assertIn("never introduce ?subTargetTeam or ?subPlayer", prompt)
+        self.assertIn("creates a Cartesian product", prompt)
+        self.assertIn("?actionTeam = ?game/bball:homeTeam", prompt)
+        self.assertIn("Dummy triples", prompt)
+        self.assertIn("After a semicolon", prompt)
+
+    def test_ontology_prompt_documents_real_shot_zone_codes(self):
+        prompt = backend_app.euroleague_system_prompt
+        self.assertIn('A/B/C = close range and paint', prompt)
+        self.assertIn('FILTER(?shotZone IN ("A", "B", "C"))', prompt)
+        self.assertIn("?shotX <= -600 && ?shotY <= 175", prompt)
+
+    def test_openai_request_uses_responses_api_without_storing_response(self):
+        response = SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {
+                "output_text": "SELECT * WHERE {}",
+                "usage": {
+                    "input_tokens": 100,
+                    "input_tokens_details": {"cached_tokens": 25},
+                    "output_tokens": 30,
+                    "output_tokens_details": {"reasoning_tokens": 10},
+                    "total_tokens": 130,
+                },
+            },
+        )
+        with (
+            patch.object(backend_app, "OPENAI_API_KEY", "test-key"),
+            patch.object(backend_app.requests, "post", return_value=response) as post,
+        ):
+            text, usage = backend_app.request_openai_text(
+                "question", "instructions", "gpt-5-mini"
+            )
+
+        self.assertEqual(text, "SELECT * WHERE {}")
+        self.assertEqual(
+            usage,
+            {
+                "input_tokens": 100,
+                "cached_input_tokens": 25,
+                "output_tokens": 30,
+                "reasoning_tokens": 10,
+                "total_tokens": 130,
+            },
+        )
+        request = post.call_args.kwargs
+        self.assertEqual(request["json"]["model"], "gpt-5-mini")
+        self.assertFalse(request["json"]["store"])
+        self.assertEqual(request["json"]["reasoning"], {"effort": "minimal"})
+        self.assertEqual(request["json"]["text"], {"verbosity": "low"})
+        self.assertEqual(
+            request["json"]["max_output_tokens"],
+            backend_app.OPENAI_MAX_OUTPUT_TOKENS,
+        )
+        self.assertEqual(request["headers"]["Authorization"], "Bearer test-key")
+
+    def test_gemini_usage_includes_visible_output_and_thought_tokens(self):
+        response = SimpleNamespace(
+            usage_metadata=SimpleNamespace(
+                prompt_token_count=120,
+                cached_content_token_count=20,
+                candidates_token_count=40,
+                thoughts_token_count=15,
+                total_token_count=175,
+            )
+        )
+
+        self.assertEqual(
+            backend_app.extract_gemini_usage(response),
+            {
+                "input_tokens": 120,
+                "cached_input_tokens": 20,
+                "output_tokens": 55,
+                "reasoning_tokens": 15,
+                "total_tokens": 175,
+            },
+        )
+
+    def test_openai_empty_response_reports_incomplete_reason_and_usage(self):
+        payload = {
+            "status": "incomplete",
+            "incomplete_details": {"reason": "max_output_tokens"},
+            "usage": {
+                "output_tokens": 2000,
+                "output_tokens_details": {"reasoning_tokens": 2000},
+            },
+            "output": [{"type": "reasoning"}],
+        }
+
+        with self.assertRaisesRegex(
+            ValueError,
+            r"status=incomplete.*reason=max_output_tokens.*reasoning_tokens=2000",
+        ):
+            backend_app.extract_openai_output_text(payload)
+
     def test_overtime_aliases_share_one_canonical_label(self):
         self.assertEqual(backend_app.normalize_quarter("OT"), "OT")
         self.assertEqual(backend_app.normalize_quarter("1OT"), "OT")
@@ -135,7 +392,7 @@ class VideoSynchronizationTests(unittest.TestCase):
             backend_app.euroleague_system_prompt,
         )
         self.assertIn(
-            "Το bball:FreeThrowMade μπορεί να έχει ασίστ",
+            "bball:FreeThrowMade may have an assist",
             backend_app.euroleague_system_prompt,
         )
 
@@ -161,13 +418,13 @@ class VideoSynchronizationTests(unittest.TestCase):
         self.assertIn("?percentage", prompt)
         self.assertIn("TwoPointShotMade", prompt)
         self.assertIn("TwoPointShotMissed", prompt)
-        self.assertIn("percentage ή average", prompt)
+        self.assertIn("percentage or average", prompt)
         self.assertIn("DISTINCT ?action", prompt)
 
     def test_ai_prompt_uses_request_context_instead_of_one_fixed_game(self):
         prompt = backend_app.euroleague_system_prompt
 
-        self.assertIn("Υποχρεωτικό context", prompt)
+        self.assertIn("Required request context", prompt)
         self.assertNotIn('bball:hasCode "333"', prompt)
         self.assertNotIn('bball:hasCode "E2023"', prompt)
         self.assertNotIn("Sloukas", prompt)

@@ -1,0 +1,19 @@
+question_id,section,question,measurement,response_format
+1,Play-by-Play / game information,Βρες πότε μπήκαν τα σουτ του Nunn στον αγώνα.,Χρόνος εύρεσης ορθότητα και πληρότητα,Text plus elapsed seconds
+2,Play-by-Play / game information,Πόσα τρίποντα έβαλε ο Sloukas και σε ποια χρονικά σημεία του αγώνα;,Χρόνος εύρεσης και αν εντοπίστηκαν όλα τα actions,Text plus elapsed seconds
+3,Play-by-Play / game information,Ποια ήταν τα κλεψίματα της Real Madrid;,Χρόνος εύρεσης ορθότητα και πληρότητα,Text plus elapsed seconds
+4,OCR / video search,Βρες στο video το πρώτο εύστοχο σουτ του Nunn και πήγαινε στο σημείο όπου έγινε.,Χρόνος εντοπισμού και απόκλιση από το ground truth,Video timestamp plus elapsed seconds
+5,OCR / video search,Βρες στο video όλα τα τρίποντα του Sloukas.,Χρόνος εντοπισμού πληρότητα και ακρίβεια timestamps,Video timestamps plus elapsed seconds
+6,OCR / video search,Βρες στο video το τελευταίο καλάθι του ημιχρόνου.,Χρόνος εντοπισμού και ορθότητα,Video timestamp plus elapsed seconds
+7,User satisfaction,Πόσο εύκολη ήταν η χρήση της εφαρμογής για να βρείτε τις πληροφορίες που ζητήθηκαν;,Ευκολία χρήσης,Scale 1-5
+8,User satisfaction,Πόσο ικανοποιημένοι είστε από την ταχύτητα με την οποία βρίσκει η εφαρμογή τις πληροφορίες και τις φάσεις του αγώνα;,Αντιληπτή ταχύτητα,Scale 1-5
+9,User satisfaction,Πόσο χρήσιμη θεωρείτε τη δυνατότητα αυτόματου εντοπισμού φάσεων στο video μέσω OCR;,Χρησιμότητα OCR,Scale 1-5
+10,User satisfaction,Σε σχέση με το EuroLeague website και το YouTube πόσο θα προτιμούσατε την εφαρμογή για αναζήτηση πληροφοριών και φάσεων;,Προτίμηση εφαρμογής,Scale 1-5
+11,Open question,Τι σας άρεσε περισσότερο στην εφαρμογή και τι θα θέλατε να βελτιωθεί;,Ποιοτικό feedback,Free text
+D1,Participant background,Ηλικία,Δημογραφική περιγραφή,18-24 | 25-34 | 35-44 | 45-54 | 55+
+D2,Participant background,Φύλο (προαιρετικό),Δημογραφική περιγραφή,Άνδρας | Γυναίκα | Άλλο | Δεν επιθυμώ να απαντήσω
+D3,Participant background,Επίπεδο εξοικείωσης με το μπάσκετ,Εμπειρία συμμετέχοντα,Καθόλου | Λίγο | Μέτρια | Πολύ | Πολύ υψηλή
+D4,Participant background,Συχνότητα παρακολούθησης αγώνων μπάσκετ,Εμπειρία συμμετέχοντα,Σπάνια | 1-2 φορές τον μήνα | 1-2 φορές την εβδομάδα | 3+ φορές την εβδομάδα
+D5,Participant background,Εξοικείωση με την EuroLeague,Εμπειρία συμμετέχοντα,Δεν την παρακολουθώ | Περιστασιακά | Τακτικά | Πολύ συχνά
+D6,Participant background,Εμπειρία με εφαρμογές ή εργαλεία στατιστικών μπάσκετ,Εμπειρία συμμετέχοντα,Καμία | Μικρή | Μέτρια | Μεγάλη | Πολύ μεγάλη
+D7,Participant background,Πόσο συχνά αναζητάτε πληροφορίες για συγκεκριμένες φάσεις ή actions ενός αγώνα;,Συνήθεια αναζήτησης,Ποτέ | Σπάνια | Μερικές φορές | Συχνά | Πολύ συχνά

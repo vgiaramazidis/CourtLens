@@ -9,10 +9,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.metadata
 import json
+import os
+import platform
 import re
 import shutil
+import sys
+import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -269,6 +275,21 @@ def resolve_repo_path(value: str | Path) -> Path:
 
 def youtube_url_from_id(video_id: str) -> str:
     return f"https://www.youtube.com/watch?v={video_id}"
+
+
+@dataclass(frozen=True)
+class OcrRunStatistics:
+    timeline_points: int
+    removed_points: int
+    fps: float
+    media_duration_seconds: float | None
+    scan_start_seconds: float
+    scan_end_seconds: float
+    sampling_interval_seconds: float
+
+    @property
+    def scanned_video_seconds(self) -> float:
+        return max(0.0, self.scan_end_seconds - self.scan_start_seconds)
 
 
 @dataclass
@@ -842,7 +863,7 @@ def run_ocr(
     cookies_from_browser: str | None = None,
     video_file: Path | None = None,
     trace_frames: bool = False,
-) -> int:
+) -> OcrRunStatistics:
     try:
         import cv2
         import easyocr
@@ -871,6 +892,8 @@ def run_ocr(
         profile.get("sampling", {}).get("post_final_period_seconds", 900.0)
     )
     frame_step = max(1, round(fps * interval_seconds))
+    media_duration_seconds = frame_count / fps if frame_count > 0 else None
+    last_sampled_video_time = start_seconds
     confidence_threshold = float(ocr_config.get("confidence_threshold", 0.4))
     allowlist = str(ocr_config.get("allowlist", "0123456789:."))
     tracker = ClockTracker.from_profile(profile)
@@ -912,6 +935,7 @@ def run_ocr(
             cv2.imwrite(str(debug_dir / f"frame_{frame_id}.png"), processed)
 
         video_time = frame_id / fps
+        last_sampled_video_time = video_time
         readings = reader.readtext(processed, allowlist=allowlist)
         frame_trace: list[str] = []
         if not readings:
@@ -1050,7 +1074,15 @@ def run_ocr(
         f"Saved {len(results)} timeline points to {output_path} "
         f"({removed_points} conflicting/duplicate points removed)"
     )
-    return len(results)
+    return OcrRunStatistics(
+        timeline_points=len(results),
+        removed_points=removed_points,
+        fps=fps,
+        media_duration_seconds=media_duration_seconds,
+        scan_start_seconds=start_seconds,
+        scan_end_seconds=last_sampled_video_time,
+        sampling_interval_seconds=interval_seconds,
+    )
 
 
 def probe_profiles(
@@ -1122,6 +1154,88 @@ def probe_profiles(
     return matches
 
 
+def installed_package_version(*names: str) -> str | None:
+    for name in names:
+        try:
+            return importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return None
+
+
+def physical_memory_bytes() -> int | None:
+    try:
+        return int(os.sysconf("SC_PAGE_SIZE")) * int(os.sysconf("SC_PHYS_PAGES"))
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def write_run_metrics(
+    output_path: Path,
+    *,
+    season_code: str,
+    game_code: str,
+    profile_name: str,
+    source: str,
+    timeline_path: Path,
+    statistics: OcrRunStatistics,
+    elapsed_seconds: float,
+    started_at: datetime,
+) -> None:
+    """Persist reproducible end-to-end OCR timing and environment metadata."""
+    scanned_minutes = statistics.scanned_video_seconds / 60
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "format_version": 1,
+        "game": {
+            "season_code": season_code,
+            "game_code": game_code,
+            "ocr_profile": profile_name,
+            "source": source,
+            "timeline_output": str(timeline_path),
+        },
+        "run": {
+            "started_at_utc": started_at.isoformat(),
+            "processing_wall_time_seconds": elapsed_seconds,
+            "media_duration_seconds": statistics.media_duration_seconds,
+            "scan_start_seconds": statistics.scan_start_seconds,
+            "scan_end_seconds": statistics.scan_end_seconds,
+            "scanned_video_seconds": statistics.scanned_video_seconds,
+            "sampling_interval_seconds": statistics.sampling_interval_seconds,
+            "timeline_points": statistics.timeline_points,
+            "removed_points": statistics.removed_points,
+            "processing_seconds_per_scanned_video_minute": (
+                elapsed_seconds / scanned_minutes if scanned_minutes else None
+            ),
+            "scanned_video_seconds_per_processing_second": (
+                statistics.scanned_video_seconds / elapsed_seconds
+                if elapsed_seconds
+                else None
+            ),
+        },
+        "environment": {
+            "operating_system": platform.platform(),
+            "machine": platform.machine(),
+            "processor": platform.processor() or None,
+            "cpu_count": os.cpu_count(),
+            "physical_memory_bytes": physical_memory_bytes(),
+            "python_version": platform.python_version(),
+            "python_executable": Path(sys.executable).name,
+            "packages": {
+                "easyocr": installed_package_version("easyocr"),
+                "opencv": installed_package_version(
+                    "opencv-python", "opencv-python-headless"
+                ),
+                "torch": installed_package_version("torch"),
+                "yt_dlp": installed_package_version("yt-dlp"),
+            },
+        },
+    }
+    with output_path.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--season-code", default="E2023")
@@ -1134,6 +1248,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--catalog-file", type=Path, default=DEFAULT_CATALOG_FILE)
     parser.add_argument("--start-seconds", type=float)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--metrics-output",
+        type=Path,
+        help="Write end-to-end OCR timing and environment metrics as JSON",
+    )
     parser.add_argument("--debug-dir", type=Path)
     parser.add_argument("--save-debug-frames", action="store_true")
     parser.add_argument(
@@ -1208,7 +1327,9 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 print(f"{candidate_name}: {len(readings)} valid samples{': ' + preview if preview else ''}")
             return 0
-        run_ocr(
+        started_at = datetime.now(timezone.utc)
+        started_counter = time.perf_counter()
+        run_statistics = run_ocr(
             youtube_url=str(youtube_url),
             profile=profiles[str(profile_name)],
             start_seconds=start_seconds,
@@ -1219,6 +1340,26 @@ def main(argv: list[str] | None = None) -> int:
             video_file=args.video_file,
             trace_frames=args.trace_frames,
         )
+        elapsed_seconds = time.perf_counter() - started_counter
+        if args.metrics_output:
+            metrics_path = resolve_repo_path(args.metrics_output)
+            source = (
+                args.video_file.name
+                if args.video_file is not None
+                else str(youtube_url)
+            )
+            write_run_metrics(
+                metrics_path,
+                season_code=args.season_code,
+                game_code=args.game_code,
+                profile_name=str(profile_name),
+                source=source,
+                timeline_path=output_path,
+                statistics=run_statistics,
+                elapsed_seconds=elapsed_seconds,
+                started_at=started_at,
+            )
+            print(f"Saved OCR run metrics to {metrics_path}")
         return 0
     except (RuntimeError, ValueError) as exc:
         parser.exit(1, f"error: {exc}\n")

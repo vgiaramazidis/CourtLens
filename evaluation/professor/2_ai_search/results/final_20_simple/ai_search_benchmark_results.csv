@@ -15,7 +15,7 @@ SELECT DISTINCT ?shot WHERE {
   ?shot rdf:type ?type .
   VALUES ?type { bball:TwoPointShotMade bball:ThreePointShotMade }
 }
-LIMIT 200",,,,
+LIMIT 200",yes,yes,"Correct 57 made 2P/3P actions; uses ?shot instead of ?action, so the PBP overlay is not populated.",
 Q02,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show all turnovers in this game.,E2023,333,completed,200,26969.679,1600,0,1617,1373,3217,0.016953,16,"[{""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J404""}}, {""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J87""}}, {""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J178""}}, {""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J467""}}, {""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J169""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -32,7 +32,7 @@ SELECT DISTINCT ?turnover WHERE {
         bball:hasPlayByPlayAction ?turnover .
   ?turnover rdf:type bball:Turnover .
 }
-LIMIT 200",,,,
+LIMIT 200",yes,yes,"Correct 16 Turnover actions; uses ?turnover instead of ?action, so the PBP overlay is not populated.",
 Q03,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show all rebounds in the second quarter.,E2023,333,completed,200,10641.112,1601,0,2370,2099,3971,0.0237315,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -52,9 +52,52 @@ SELECT DISTINCT ?rebound WHERE {
   UNION
   { ?rebound a bball:DefensiveRebound }
 }
-LIMIT 200",,,,
-Q04,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show all fouls committed by the home team.,E2023,333,failed,502,4535.504,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
-Q05,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show every substitution in the game.,E2023,333,failed,502,3372.697,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 200",no,no,Incorrect quarter literal 2 instead of the stored '2nd'; returned 0 instead of 14 rebounds.,
+Q04,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show all fouls committed by the home team.,E2023,333,completed,200,39468.814,1602,0,2345,2037,3947,0.023508,26,"[{""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J122""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J131""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J190""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J200""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J225""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?foul WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasSeason ?season ;
+        bball:hasCode ""333"" ;
+        bball:homeTeam ?homeTeam ;
+        bball:hasPlayByPlayAction ?foul .
+  ?foul bball:actionTeam ?homeTeam ;
+        rdf:type ?foulType .
+  VALUES ?foulType {
+    bball:DefensiveFoul
+    bball:OffensiveFoul
+    bball:CoachFoul
+    bball:BenchFoul
+    bball:TechnicalFoul
+    bball:UnsportsmanlikeFoul
+  }
+}
+LIMIT 200",yes,yes,"Correct 26 home-team foul actions; uses ?foul instead of ?action, so the PBP overlay is not populated.",
+Q05,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show every substitution in the game.,E2023,333,completed,200,26773.932,1600,0,2597,2367,4197,0.025773,132,"[{""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J100""}, ""playerName"": {""type"": ""literal"", ""value"": ""Konstantinos Mitoglou""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J113""}, ""playerName"": {""type"": ""literal"", ""value"": ""Fabien Causeur""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerIn""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J114""}, ""playerName"": {""type"": ""literal"", ""value"": ""Rudy Fernandez""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerIn""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J115""}, ""playerName"": {""type"": ""literal"", ""value"": ""Mario Hezonja""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J116""}, ""playerName"": {""type"": ""literal"", ""value"": ""Dzanan Musa""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}]",,True,True,True,132,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?action ?type ?playerName
+WHERE {
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?action rdf:type ?type .
+  VALUES ?type { bball:PlayerIn bball:PlayerOut }
+  OPTIONAL {
+    ?action bball:actionPlayer ?player .
+    ?player rdfs:label ?playerName .
+  }
+}
+LIMIT 200",yes,yes,Correct 132 PlayerIn/PlayerOut actions with usable ?action URIs for the overlay.,
 Q06,gemini,gemini-3.5-flash,simple,player_retrieval,Show all points scored by Kendrick Nunn.,E2023,333,completed,200,17667.861,1601,0,1664,1346,3265,0.0173775,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -82,7 +125,7 @@ WHERE {
   ?statline rdf:type bball:Statline ;
             bball:points ?points .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect statline path; returned 0 instead of 11 Kendrick Nunn scoring actions totaling 21 points.,
 Q07,gemini,gemini-3.5-flash,simple,player_retrieval,Show all assists by Kostas Sloukas.,E2023,333,completed,200,30851.788,1603,0,2172,1895,3775,0.0219525,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w2.org/2000/01/rdf-schema#>
@@ -103,7 +146,7 @@ WHERE {
   ?player rdf:type bball:Player ;
           rdfs:label ""Kostas Sloukas"" .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect rdfs namespace (www.w2.org); returned 0 instead of 3 Kostas Sloukas assists.,
 Q08,gemini,gemini-3.5-flash,simple,player_retrieval,How many rebounds did Walter Tavares record?,E2023,333,completed,200,31336.099,1601,0,3069,2799,4670,0.0300225,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -122,9 +165,58 @@ WHERE {
   ?part bball:hasPlayerStatline ?stat .
   ?stat bball:totalRebounds ?rebounds .
 }
-LIMIT 200",,,,
-Q09,gemini,gemini-3.5-flash,simple,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,failed,502,13180.306,,,,,,,,,,False,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
-Q10,gemini,gemini-3.5-flash,simple,percentage,What was Kendrick Nunn's three-point shooting percentage?,E2023,333,failed,502,21184.125,,,,,,,,,,False,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 200",no,no,Incorrect PlayerParticipation-to-player path; returned 0 instead of 4 Walter Tavares rebounds.,
+Q09,gemini,gemini-3.5-flash,simple,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,completed,200,32606.271,1608,0,1756,1429,3364,0.018216,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?fgper2
+WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayerParticipation ?participation .
+  
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+          
+  ?participation rdf:type bball:PlayerParticipation ;
+                 bball:overPlayer ?player ;
+                 bball:hasPlayerStatline ?statline .
+                 
+  ?player rdf:type bball:Player ;
+          rdfs:label ""Kostas Sloukas"" .
+          
+  ?statline rdf:type bball:Statline ;
+            bball:fieldGoalsPer2 ?fgper2 .
+}
+LIMIT 200",no,no,Incorrect statline path; returned no percentage instead of Sloukas 2/2 two-pointers (100%).,
+Q10,gemini,gemini-3.5-flash,simple,percentage,What was Kendrick Nunn's three-point shooting percentage?,E2023,333,completed,200,41567.07,1605,0,2171,1856,3776,0.0219465,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?threePtPercentage WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayerParticipation ?participation .
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+  ?participation rdf:type bball:PlayerParticipation ;
+                 bball:overPlayer ?player ;
+                 bball:hasPlayerStatline ?statline .
+  ?player rdf:type bball:Player ;
+          rdfs:label ""Kendrick Nunn"" .
+  ?statline rdf:type bball:Statline ;
+            bball:fieldGoalsPer3 ?threePtPercentage .
+}
+LIMIT 200",no,no,Incorrect statline path; returned no percentage instead of Nunn 2/6 three-pointers (33.33%).,
 Q11,gemini,gemini-3.5-flash,simple,player_assist_relation,Show the assists from Kostas Sloukas to Kendrick Nunn.,E2023,333,completed,200,29278.319,1606,0,3532,3243,5138,0.034197,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -145,7 +237,7 @@ WHERE {
           bball:actionPlayer ?sloukas .
   ?sloukas rdfs:label ""Kostas Sloukas"" .
 }
-LIMIT 200",,,,
+LIMIT 200",yes,yes,"Correct empty result: no Sloukas-to-Nunn assist exists; uses ?assist instead of ?action, so no overlay is populated.",
 Q12,gemini,gemini-3.5-flash,simple,player_assist_relation,Who assisted Kendrick Nunn most often in this game?,E2023,333,completed,200,26308.677,1603,0,3661,3302,5264,0.0353535,1,"[{""assistCount"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""1""}, ""assisterName"": {""type"": ""literal"", ""value"": ""Mathias Lessort""}}]",,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -175,8 +267,26 @@ WHERE {
 }
 GROUP BY ?assisterName
 ORDER BY DESC(?assistCount)
-LIMIT 1",,,,
-Q13,gemini,gemini-3.5-flash,simple,shot_location,Show all shots attempted from the left corner.,E2023,333,failed,502,50023.119,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 1",yes,yes,"Correct ranking result: Mathias Lessort assisted Kendrick Nunn once, the highest total.",
+Q13,gemini,gemini-3.5-flash,simple,shot_location,Show all shots attempted from the left corner.,E2023,333,completed,200,16108.966,1602,0,1694,1435,3296,0.017649,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?shot
+WHERE {
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+  ?game rdf:type bball:Game ;
+        bball:hasSeason ?season ;
+        bball:hasCode ""333"" ;
+        bball:hasPlayByPlayAction ?shot .
+  ?shot bball:shotZone ?zone .
+  FILTER(CONTAINS(LCASE(STR(?zone)), ""left corner""))
+}
+LIMIT 200",no,no,Incorrect zone interpretation: shotZone stores codes rather than the text left corner; returned 0 instead of 2 attempts.,
 Q14,gemini,gemini-3.5-flash,simple,shot_location,Show all made shots from the paint.,E2023,333,completed,200,19665.599,1601,0,2117,1847,3718,0.0214545,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -195,8 +305,47 @@ SELECT DISTINCT ?shot WHERE {
         bball:shotZone ?zone .
   FILTER(CONTAINS(LCASE(STR(?zone)), ""paint""))
 }
-LIMIT 200",,,,
-Q15,gemini,gemini-3.5-flash,simple,lineup,Show the shots taken while Panathinaikos's starting lineup was on the court.,E2023,333,failed,502,2815.126,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 200",no,no,Incorrect zone interpretation: paint is represented by stored zone codes A/B/C; returned 0 instead of 29 made shots.,
+Q15,gemini,gemini-3.5-flash,simple,lineup,Show the shots taken while Panathinaikos's starting lineup was on the court.,E2023,333,completed,200,67542.039,1611,0,5564,5072,7175,0.0524925,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?action WHERE {
+  ?game bball:hasSeason ?season .
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasCode ""333"" .
+
+  ?team rdfs:label ?teamLabel .
+  FILTER(CONTAINS(LCASE(?teamLabel), ""panathinaikos""))
+
+  {
+    ?game bball:homeTeam ?team .
+    ?action bball:runningHomeTeamLineup ?lineup .
+  } UNION {
+    ?game bball:roadTeam ?team .
+    ?action bball:runningRoadTeamLineup ?lineup .
+  }
+
+  ?game bball:hasPlayByPlayAction ?action .
+  ?action a ?actionType .
+  FILTER(?actionType IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))
+
+  {
+    SELECT ?lineup ?game ?team (COUNT(?player) AS ?starterCount) WHERE {
+      ?game bball:hasPlayerParticipation ?pp .
+      ?pp bball:overTeam ?team .
+      ?pp bball:startingFive ?sf .
+      FILTER(?sf = true || ?sf = ""true""^^xsd:boolean)
+      ?pp bball:overPlayer ?player .
+      ?lineup bball:includesPlayer ?player .
+    } GROUP BY ?lineup ?game ?team
+  }
+  FILTER(?starterCount = 5)
+}
+LIMIT 200",no,no,Incorrect starting-lineup subquery; returned 0 instead of 25 shot actions while the Panathinaikos starting lineup was active.,
 Q16,gemini,gemini-3.5-flash,simple,lineup,How many points did Panathinaikos score while Kostas Sloukas was on the court?,E2023,333,completed,200,26935.702,1613,0,3798,3398,5411,0.0366015,1,"[{""totalPoints"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""56""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -231,7 +380,7 @@ WHERE {
   }
   ?lineup bball:includesPlayer ?sloukas .
 }
-LIMIT 200",,,,
+LIMIT 200",yes,yes,Correct aggregate total of 56 Panathinaikos points; the pure aggregate omits the 33 matching action URIs needed for the overlay.,
 Q17,gemini,gemini-3.5-flash,simple,event_chain,Show missed shots that were followed by an offensive rebound.,E2023,333,completed,200,20357.469,1604,0,2998,2695,4602,0.029388,18,"[{""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J10""}}, {""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J142""}}, {""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J19""}}, {""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J196""}}, {""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J204""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -253,8 +402,30 @@ SELECT DISTINCT ?shot WHERE {
   
   ?rebound rdf:type bball:OffensiveRebound .
 }
-LIMIT 200",,,,
-Q18,gemini,gemini-3.5-flash,simple,event_chain,Show turnovers that led to fast-break points.,E2023,333,failed,502,3272.259,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 200",yes,yes,"Correct direct leadsToRebound relation and 18 missed shots; uses ?shot instead of ?action, so no overlay is populated.",
+Q18,gemini,gemini-3.5-flash,simple,event_chain,Show turnovers that led to fast-break points.,E2023,333,completed,200,37832.932,1603,0,5075,4752,6678,0.0480795,1,"[{""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J45""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?turnover
+WHERE {
+  ?game bball:hasSeason ?season .
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasCode ""333"" .
+  ?game bball:hasPossession ?pos1 .
+  ?pos1 bball:endsWithAction ?turnover .
+  ?turnover rdf:type bball:Turnover .
+  ?game bball:hasPossession ?pos2 .
+  ?pos2 bball:startsAfterAction ?turnover .
+  ?pos2 bball:containsAction ?shot .
+  ?shot bball:isFastBreak true .
+  ?shot bball:pointsAwarded ?points .
+  FILTER(?points > 0)
+}
+LIMIT 200",yes,yes,"Correct possession-chain result, turnover J45; uses ?turnover instead of ?action, so no overlay is populated.",
 Q19,gemini,gemini-3.5-flash,simple,temporal_score,Show every scoring action in the final two minutes of the fourth quarter.,E2023,333,completed,200,20138.021,1607,0,2209,1921,3816,0.0222915,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -279,8 +450,23 @@ WHERE {
   FILTER(?sec <= 120)
   FILTER(?points > 0)
 }
-LIMIT 200",,,,
-Q20,gemini,gemini-3.5-flash,simple,temporal_score,Show the actions that occurred while the score was tied.,E2023,333,failed,502,3327.743,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+LIMIT 200",no,no,Incorrect quarter literal 4 instead of the stored '4th'; returned 0 instead of 8 scoring actions.,
+Q20,gemini,gemini-3.5-flash,simple,temporal_score,Show the actions that occurred while the score was tied.,E2023,333,completed,200,11851.275,1604,0,1607,1395,3211,0.016869,3,"[{""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J2""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J3""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J6""}}]",,True,True,True,3,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT DISTINCT ?action WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+  ?action bball:runningHomeTeamScore ?homeScore ;
+          bball:runningRoadTeamScore ?roadScore .
+  FILTER (?homeScore = ?roadScore)
+}
+LIMIT 200",yes,yes,"Correct 3 actions with equal running home and road scores, with usable overlay action URIs.",
 Q01,openai,gpt-5-mini,simple,simple_event_retrieval,Show all made two-point and three-point shots in this game.,E2023,333,completed,200,7435.548,1564,0,351,0,1915,0.001093,57,"[{""clock"": {""type"": ""literal"", ""value"": ""00:42""}, ""player"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/players/-/CVM""}, ""points"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""2""}, ""quarter"": {""type"": ""literal"", ""value"": ""1st""}, ""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J130""}, ""shotType"": {""type"": ""literal"", ""value"": ""2PT""}, ""team"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/teams/-/MAD""}}, {""clock"": {""type"": ""literal"", ""value"": ""08:23""}, ""player"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/players/-/009213""}, ""points"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""2""}, ""quarter"": {""type"": ""literal"", ""value"": ""1st""}, ""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J14""}, ""shotType"": {""type"": ""literal"", ""value"": ""2PT""}, ""team"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/teams/-/MAD""}}, {""clock"": {""type"": ""literal"", ""value"": ""09:41""}, ""player"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/players/-/001926""}, ""points"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""2""}, ""quarter"": {""type"": ""literal"", ""value"": ""2nd""}, ""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J160""}, ""shotType"": {""type"": ""literal"", ""value"": ""2PT""}, ""team"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/teams/-/PAN""}}, {""clock"": {""type"": ""literal"", ""value"": ""08:10""}, ""player"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/players/-/001392""}, ""points"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""2""}, ""quarter"": {""type"": ""literal"", ""value"": ""2nd""}, ""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J171""}, ""shotType"": {""type"": ""literal"", ""value"": ""2PT""}, ""team"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/teams/-/MAD""}}, {""clock"": {""type"": ""literal"", ""value"": ""07:52""}, ""player"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/players/-/012712""}, ""points"": {""datatype"": ""http://www.w3.org/2001/XMLSchema#integer"", ""type"": ""typed-literal"", ""value"": ""2""}, ""quarter"": {""type"": ""literal"", ""value"": ""2nd""}, ""shot"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J174""}, ""shotType"": {""type"": ""literal"", ""value"": ""2PT""}, ""team"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/teams/-/PAN""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -310,7 +496,7 @@ WHERE {
   OPTIONAL { ?shot bball:quarter ?quarter . }
   OPTIONAL { ?shot bball:pointsAwarded ?points . }
 }
-LIMIT 200",,,,
+LIMIT 200",yes,yes,"Correct 57 made 2P/3P actions; uses ?shot instead of ?action, so the PBP overlay is not populated.",
 Q02,openai,gpt-5-mini,simple,simple_event_retrieval,Show all turnovers in this game.,E2023,333,completed,200,5549.445,1558,1408,299,0,1857,0.0006707,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -331,7 +517,7 @@ WHERE {
               bball:actionTeam ?actionTeam ;
               bball:hasPossession ?game .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect possession/action graph and unnecessary label requirement; returned 0 instead of 16 turnovers.,
 Q03,openai,gpt-5-mini,simple,simple_event_retrieval,Show all rebounds in the second quarter.,E2023,333,completed,200,5448.912,1559,1408,311,0,1870,0.00069495,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -355,7 +541,7 @@ WHERE {
            bball:belongsToPossession ?game .
   BIND(""2"" AS ?quarter)
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect rebound relation and quarter representation; returned 0 instead of 14 second-quarter rebounds.,
 Q04,openai,gpt-5-mini,simple,simple_event_retrieval,Show all fouls committed by the home team.,E2023,333,completed,200,10286.053,1561,1408,343,0,1904,0.00075945,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -380,7 +566,7 @@ WHERE {
   FILTER(?actionTeam = ?home)
   BIND(?foul AS ?foul)
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect foul relation and game-action binding; returned 0 instead of 26 home-team fouls.,
 Q05,openai,gpt-5-mini,simple,simple_event_retrieval,Show every substitution in the game.,E2023,333,completed,200,6030.673,1558,1408,347,0,1905,0.0007667,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -403,7 +589,7 @@ WHERE {
   OPTIONAL { ?sub bball:overPlayer ?playerIn. FILTER EXISTS { ?sub a bball:PlayerIn } }
   FILTER EXISTS { ?game bball:hasPlayByPlayAction ?sub }
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Requires one action to be both PlayerOut and PlayerIn; returned 0 instead of 132 substitution actions.,
 Q06,openai,gpt-5-mini,simple,player_retrieval,Show all points scored by Kendrick Nunn.,E2023,333,completed,200,4962.695,1560,1408,270,0,1830,0.0006132,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -420,7 +606,7 @@ SELECT DISTINCT ?points WHERE {
   ?player rdfs:label ""Kendrick Nunn"".
   ?ps bball:points ?points.
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect boxscore/statline graph; returned 0 instead of 11 Nunn scoring actions totaling 21 points.,
 Q07,openai,gpt-5-mini,simple,player_retrieval,Show all assists by Kostas Sloukas.,E2023,333,completed,200,5242.107,1561,1408,307,0,1868,0.00068745,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -444,7 +630,7 @@ WHERE {
   ?player rdfs:label ""Kostas Sloukas"" .
   ?game bball:hasPlayByPlayAction ?assist .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrectly requires pointsAwarded on Assist actions; returned 0 instead of 3 Sloukas assists.,
 Q08,openai,gpt-5-mini,simple,player_retrieval,How many rebounds did Walter Tavares record?,E2023,333,completed,200,4695.515,1561,1408,266,0,1827,0.00060545,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -463,7 +649,7 @@ SELECT DISTINCT ?totalRebounds WHERE {
       bball:totalRebounds ?totalRebounds .
   ?player rdfs:label ""Walter Tavares"" .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect boxscore/statline player links; returned 0 instead of 4 Tavares rebounds.,
 Q09,openai,gpt-5-mini,simple,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,completed,200,7139.535,1564,1408,371,0,1935,0.0008162,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -489,7 +675,7 @@ WHERE {
   BIND(xsd:double(COALESCE(?att2, 0)) AS ?att2)
   FILTER(?att2 > 0)
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect participation/statline path and variable rebinding; returned no result instead of 100%.,
 Q10,openai,gpt-5-mini,simple,percentage,What was Kendrick Nunn's three-point shooting percentage?,E2023,333,completed,200,5730.477,1562,1408,336,0,1898,0.0007457,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -505,7 +691,7 @@ SELECT DISTINCT ?threePer WHERE {
   BIND( (xsd:double(?fg3m) / xsd:double(?fg3a)) * 100 AS ?threePer )
   FILTER(xsd:double(?fg3a) > 0)
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect participation/statline properties; returned no result instead of 33.33%.,
 Q11,openai,gpt-5-mini,simple,player_assist_relation,Show the assists from Kostas Sloukas to Kendrick Nunn.,E2023,333,completed,200,5653.355,1565,1408,343,0,1908,0.00076045,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -530,7 +716,7 @@ WHERE {
           rdf:type bball:Player .
   OPTIONAL { ?game bball:hasBroadcastVideo ?video . }
 }
-LIMIT 200",,,,
+LIMIT 200",no,yes,"The empty result is factually correct, but the query reverses/mis-models the hasAssist relation.",
 Q12,openai,gpt-5-mini,simple,player_assist_relation,Who assisted Kendrick Nunn most often in this game?,E2023,333,completed,200,5164.387,1562,1408,293,0,1855,0.0006597,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -550,7 +736,7 @@ WHERE {
 }
 GROUP BY ?assistant
 ORDER BY DESC(?assists)
-LIMIT 1",,,,
+LIMIT 1",no,no,Incorrect sequence and hasAssist relation direction; returned 0 instead of Mathias Lessort with 1 assist.,
 Q13,openai,gpt-5-mini,simple,shot_location,Show all shots attempted from the left corner.,E2023,333,completed,200,5807.836,1560,1408,371,0,1931,0.0008152,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -569,7 +755,7 @@ SELECT DISTINCT ?shot ?shotLabel ?player ?playerLabel ?game WHERE {
   OPTIONAL { ?player rdfs:label ?playerLabel }
   FILTER NOT EXISTS { ?shot a bball:DefensiveRebound } 
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect possession graph and textual zone filter; returned 0 instead of 2 left-corner attempts.,
 Q14,openai,gpt-5-mini,simple,shot_location,Show all made shots from the paint.,E2023,333,completed,200,6759.047,1559,1408,384,0,1943,0.00084095,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -595,35 +781,42 @@ WHERE {
   ?ps bball:hasGame ?game .
   FILTER(CONTAINS(LCASE(STR(?shotZone)), ""paint""))
 }
-LIMIT 200",,,,
-Q15,openai,gpt-5-mini,simple,lineup,Show the shots taken while Panathinaikos's starting lineup was on the court.,E2023,333,failed,502,39123.575,1568,1408,495,0,2063,0.0010652,,,,True,,,,,,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+LIMIT 200",no,no,Incorrect possession graph and textual paint filter; returned 0 instead of 29 made paint shots.,
+Q15,openai,gpt-5-mini,simple,lineup,Show the shots taken while Panathinaikos's starting lineup was on the court.,E2023,333,completed,200,10602.782,1568,0,573,0,2141,0.001538,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-SELECT DISTINCT ?shot ?shotType ?player ?time ?quarter ?shotZone WHERE {
+SELECT DISTINCT ?shot ?shotType ?player ?clock ?quarter ?game
+WHERE {
   ?season a bball:Season ; bball:hasCode ""E2023"" .
   ?game a bball:Game ; bball:hasCode ""333"" ; bball:hasSeason ?season .
-  ?game bball:hasPlayByPlaySequence ?seq .
-  ?seq bball:containsAction ?action .
-  ?action a ?shotType .
-  FILTER(?shotType IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:FreeThrowMade, bball:FreeThrowMissed))
-  ?action bball:actionPlayer ?player ;
-          bball:clock ?time ;
-          bball:quarter ?quarter ;
-          bball:shotZone ?shotZone .
-  ?game bball:startingFive ?lineup .
-  ?lineup bball:lineupTeam ?team .
-  ?team rdfs:label ""Panathinaikos"" .
-  ?lineup bball:includesPlayer ?p1 , ?p2 , ?p3 , ?p4 , ?p5 .
-  # ensure the shot occurred while all five starters were on court: shot's possession contains running lineup matching starters
-  ?action bball:belongsToPossession ?poss .
-  ?poss bball:runningHomeTeamLineup ?runningLineup .
-  ?runningLineup bball:includesPlayer ?p1 , ?p2 , ?p3 , ?p4 , ?p5 .
-  BIND(?action AS ?shot)
-} ORDER BY ?quarter ?time
-LIMIT 200",,,,Η βάση SPARQL δεν απάντησε.
+  ?lineup a bball:Lineup ; bball:lineupTeam ?team ; bball:startingFive ?lineupPlayers ; bball:hasTeamBoxscore ?tbs .
+  ?team a bball:Team ; rdfs:label ""Panathinaikos"" .
+  # startingFive assumed to link to players via rdf:member or includesPlayer; try includesPlayer
+  ?lineupPlayers rdf:rest*/rdf:first ?starter .
+  ?starter a bball:Player .
+  # shots (TwoPoint/ThreePoint/FreeThrow made/missed) as bball actions tied to possessions and occurring during lineup's running period
+  ?shot a ?shotType .
+  FILTER(?shotType IN (bball:TwoPointShotMade,bball:TwoPointShotMissed,bball:ThreePointShotMade,bball:ThreePointShotMissed,bball:FreeThrowMade,bball:FreeThrowMissed))
+  ?shot bball:actionPlayer ?player ;
+        bball:clock ?clock ;
+        bball:quarter ?quarter ;
+        bball:belongsToPossession ?poss .
+  ?poss bball:possessionTeam ?team .
+  # ensure the possession occurred while the lineup was running: lineup provides runningHomeTeamLineup or runningRoadTeamLineup linking to lineup and game
+  {
+    ?game bball:runningHomeTeamLineup ?lineup .
+    ?team rdfs:label ""Panathinaikos"" .
+  } UNION {
+    ?game bball:runningRoadTeamLineup ?lineup .
+    ?team rdfs:label ""Panathinaikos"" .
+  }
+  # ensure player is one of the starters on court when shot occurred
+  ?lineup bball:includesPlayer ?player .
+}
+LIMIT 200",no,no,Incorrect lineup/player-list and possession model; returned 0 instead of 25 matching shots.,
 Q16,openai,gpt-5-mini,simple,lineup,How many points did Panathinaikos score while Kostas Sloukas was on the court?,E2023,333,completed,200,9289.395,1571,1408,444,0,2015,0.00096395,1,[{}],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -651,7 +844,7 @@ SELECT (SUM(xsd:double(?pts)) AS ?pointsWhileOnCourt) WHERE {
   # ensure season relation
   ?game bball:hasSeason ?season .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,"Incorrect team, participation, and possession model; returned an unbound aggregate instead of 56 points.",
 Q17,openai,gpt-5-mini,simple,event_chain,Show missed shots that were followed by an offensive rebound.,E2023,333,completed,200,6245.009,1562,1408,372,0,1934,0.0008177,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -676,7 +869,7 @@ WHERE {
   ?offRebound bball:startsAfterAction ?missedShot .
   ?game bball:hasSeason ?season .
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Malformed and incorrect event-chain graph; returned 0 instead of 18 missed-shot/offensive-rebound links.,
 Q18,openai,gpt-5-mini,simple,event_chain,Show turnovers that led to fast-break points.,E2023,333,completed,200,5901.742,1560,1408,373,0,1933,0.0008192,0,[],,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -703,7 +896,7 @@ WHERE {
   BIND(?turnover AS ?turnover)
   BIND(?game AS ?game)
 }
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect turnover-to-possession chain; returned 0 instead of turnover J45.,
 Q19,openai,gpt-5-mini,simple,temporal_score,Show every scoring action in the final two minutes of the fourth quarter.,E2023,333,completed,200,6897.337,1565,1408,426,0,1991,0.00092645,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -726,7 +919,7 @@ SELECT DISTINCT ?action ?label ?quarter ?quarterSecondsRemaining ?pointsAwarded 
   FILTER(bound(?quarterSecondsRemaining) && xsd:decimal(?quarterSecondsRemaining) <= 120)
   ?game bball:hasPlayByPlaySequence ?possession .
 } ORDER BY ?quarterSecondsRemaining
-LIMIT 200",,,,
+LIMIT 200",no,no,Incorrect possession graph and quarter literal; returned 0 instead of 8 fourth-quarter scoring actions.,
 Q20,openai,gpt-5-mini,simple,temporal_score,Show the actions that occurred while the score was tied.,E2023,333,completed,200,5274.363,1562,1408,283,0,1845,0.0006397,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -743,4 +936,4 @@ SELECT DISTINCT ?action ?clock ?quarter ?homeScore ?roadScore WHERE {
           bball:runningRoadTeamScore ?roadScore .
   FILTER(xsd:integer(?homeScore) = xsd:integer(?roadScore))
 } ORDER BY ?quarter ?clock
-LIMIT 200",,,,
+LIMIT 200",no,no,Missing game-season binding and incorrect sequence graph; returned 0 instead of 3 tied-score actions.,

@@ -1,0 +1,177 @@
+id,provider,model,prompt_variant,category,question,season_code,game_code,status,http_status,latency_ms,input_tokens,cached_input_tokens,output_tokens,reasoning_tokens,total_tokens,estimated_standard_cost_usd,result_count,result_preview_json,boolean_result,expected_playbyplay_filter,actual_playbyplay_filter,playbyplay_filter_matches_expectation,action_uri_count,query_is_read_only,query_contains_selected_scope,generated_sparql,query_correct_human,result_correct_human,review_notes,error
+Q04,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show all fouls committed by the home team.,E2023,333,completed,200,39468.814,1602,0,2345,2037,3947,0.023508,26,"[{""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J122""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J131""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J190""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J200""}}, {""foul"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J225""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?foul WHERE {
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasSeason ?season ;
+        bball:hasCode ""333"" ;
+        bball:homeTeam ?homeTeam ;
+        bball:hasPlayByPlayAction ?foul .
+  ?foul bball:actionTeam ?homeTeam ;
+        rdf:type ?foulType .
+  VALUES ?foulType {
+    bball:DefensiveFoul
+    bball:OffensiveFoul
+    bball:CoachFoul
+    bball:BenchFoul
+    bball:TechnicalFoul
+    bball:UnsportsmanlikeFoul
+  }
+}
+LIMIT 200",,,,
+Q05,gemini,gemini-3.5-flash,simple,simple_event_retrieval,Show every substitution in the game.,E2023,333,completed,200,26773.932,1600,0,2597,2367,4197,0.025773,132,"[{""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J100""}, ""playerName"": {""type"": ""literal"", ""value"": ""Konstantinos Mitoglou""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J113""}, ""playerName"": {""type"": ""literal"", ""value"": ""Fabien Causeur""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerIn""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J114""}, ""playerName"": {""type"": ""literal"", ""value"": ""Rudy Fernandez""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerIn""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J115""}, ""playerName"": {""type"": ""literal"", ""value"": ""Mario Hezonja""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J116""}, ""playerName"": {""type"": ""literal"", ""value"": ""Dzanan Musa""}, ""type"": {""type"": ""uri"", ""value"": ""http://www.ics.forth.gr/isl/Basketball#PlayerOut""}}]",,True,True,True,132,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?action ?type ?playerName
+WHERE {
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?action rdf:type ?type .
+  VALUES ?type { bball:PlayerIn bball:PlayerOut }
+  OPTIONAL {
+    ?action bball:actionPlayer ?player .
+    ?player rdfs:label ?playerName .
+  }
+}
+LIMIT 200",,,,
+Q09,gemini,gemini-3.5-flash,simple,percentage,What was Kostas Sloukas's two-point shooting percentage?,E2023,333,completed,200,32606.271,1608,0,1756,1429,3364,0.018216,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?fgper2
+WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayerParticipation ?participation .
+  
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+          
+  ?participation rdf:type bball:PlayerParticipation ;
+                 bball:overPlayer ?player ;
+                 bball:hasPlayerStatline ?statline .
+                 
+  ?player rdf:type bball:Player ;
+          rdfs:label ""Kostas Sloukas"" .
+          
+  ?statline rdf:type bball:Statline ;
+            bball:fieldGoalsPer2 ?fgper2 .
+}
+LIMIT 200",,,,
+Q10,gemini,gemini-3.5-flash,simple,percentage,What was Kendrick Nunn's three-point shooting percentage?,E2023,333,completed,200,41567.07,1605,0,2171,1856,3776,0.0219465,0,[],,False,False,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT ?threePtPercentage WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayerParticipation ?participation .
+  ?season rdf:type bball:Season ;
+          bball:hasCode ""E2023"" .
+  ?participation rdf:type bball:PlayerParticipation ;
+                 bball:overPlayer ?player ;
+                 bball:hasPlayerStatline ?statline .
+  ?player rdf:type bball:Player ;
+          rdfs:label ""Kendrick Nunn"" .
+  ?statline rdf:type bball:Statline ;
+            bball:fieldGoalsPer3 ?threePtPercentage .
+}
+LIMIT 200",,,,
+Q13,gemini,gemini-3.5-flash,simple,shot_location,Show all shots attempted from the left corner.,E2023,333,failed,502,8783.614,,,,,,,,,,True,,,,,,,,,,Αποτυχία επεξεργασίας του AI Search.
+Q15,gemini,gemini-3.5-flash,simple,lineup,Show the shots taken while Panathinaikos's starting lineup was on the court.,E2023,333,completed,200,67542.039,1611,0,5564,5072,7175,0.0524925,0,[],,True,True,True,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?action WHERE {
+  ?game bball:hasSeason ?season .
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasCode ""333"" .
+
+  ?team rdfs:label ?teamLabel .
+  FILTER(CONTAINS(LCASE(?teamLabel), ""panathinaikos""))
+
+  {
+    ?game bball:homeTeam ?team .
+    ?action bball:runningHomeTeamLineup ?lineup .
+  } UNION {
+    ?game bball:roadTeam ?team .
+    ?action bball:runningRoadTeamLineup ?lineup .
+  }
+
+  ?game bball:hasPlayByPlayAction ?action .
+  ?action a ?actionType .
+  FILTER(?actionType IN (bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:ThreePointShotMade, bball:ThreePointShotMissed))
+
+  {
+    SELECT ?lineup ?game ?team (COUNT(?player) AS ?starterCount) WHERE {
+      ?game bball:hasPlayerParticipation ?pp .
+      ?pp bball:overTeam ?team .
+      ?pp bball:startingFive ?sf .
+      FILTER(?sf = true || ?sf = ""true""^^xsd:boolean)
+      ?pp bball:overPlayer ?player .
+      ?lineup bball:includesPlayer ?player .
+    } GROUP BY ?lineup ?game ?team
+  }
+  FILTER(?starterCount = 5)
+}
+LIMIT 200",,,,
+Q18,gemini,gemini-3.5-flash,simple,event_chain,Show turnovers that led to fast-break points.,E2023,333,completed,200,37832.932,1603,0,5075,4752,6678,0.0480795,1,"[{""turnover"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J45""}}]",,True,False,False,0,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+SELECT DISTINCT ?turnover
+WHERE {
+  ?game bball:hasSeason ?season .
+  ?season bball:hasCode ""E2023"" .
+  ?game bball:hasCode ""333"" .
+  ?game bball:hasPossession ?pos1 .
+  ?pos1 bball:endsWithAction ?turnover .
+  ?turnover rdf:type bball:Turnover .
+  ?game bball:hasPossession ?pos2 .
+  ?pos2 bball:startsAfterAction ?turnover .
+  ?pos2 bball:containsAction ?shot .
+  ?shot bball:isFastBreak true .
+  ?shot bball:pointsAwarded ?points .
+  FILTER(?points > 0)
+}
+LIMIT 200",,,,
+Q20,gemini,gemini-3.5-flash,simple,temporal_score,Show the actions that occurred while the score was tied.,E2023,333,completed,200,11851.275,1604,0,1607,1395,3211,0.016869,3,"[{""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J2""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J3""}}, {""action"": {""type"": ""uri"", ""value"": ""https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J6""}}]",,True,True,True,3,True,True,"PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT DISTINCT ?action WHERE {
+  ?game rdf:type bball:Game ;
+        bball:hasCode ""333"" ;
+        bball:hasSeason ?season ;
+        bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode ""E2023"" .
+  ?action bball:runningHomeTeamScore ?homeScore ;
+          bball:runningRoadTeamScore ?roadScore .
+  FILTER (?homeScore = ?roadScore)
+}
+LIMIT 200",,,,

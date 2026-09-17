@@ -24,11 +24,11 @@ Both providers support the same two prompt variants:
 questions completed for both Gemini and GPT-5 Mini.
 
 `results/final_20_simple/` currently combines the complementary runs produced
-by Vasilis and Teo. It contains 31 completed requests: 12/20 Gemini and 19/20
-GPT-5 Mini. Eight Gemini questions (`Q04`, `Q05`, `Q09`, `Q10`, `Q13`, `Q15`,
-`Q18`, `Q20`) and OpenAI `Q15` still require targeted retries. Do not use this
-partial run for the final prompt comparison until those nine rows are replaced
-and all completed rows receive manual semantic review.
+by Vasilis and Teo. All 40 requests completed and received manual semantic
+review. With the flat-vocabulary prompt, Gemini produced 10/20 correct queries
+and results, while GPT-5 Mini produced 1/20 correct queries and 2/20 correct
+results. Overlay compatibility was 7/20 for each provider. These results are
+the finalized simple-prompt baseline for comparison with the ontology prompt.
 
 ## Configure and start the backend
 

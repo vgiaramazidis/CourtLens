@@ -5,7 +5,7 @@ For the professor, use only the four numbered folders inside `professor/`:
 | Folder | What it contains | Status |
 | --- | --- | --- |
 | `1_database/` | Dataset statistics, representative SPARQL queries/results, and response times | Complete |
-| `2_ai_search/` | Twenty natural-language benchmark questions and the Gemini/OpenAI comparison protocol | Ontology run complete; simple run currently blocked by provider quotas |
+| `2_ai_search/` | Twenty natural-language benchmark questions and the Gemini/OpenAI comparison protocol | Complete; both prompts and both providers manually reviewed |
 | `3_ocr/` | Final OCR report, human ground truth, per-action results, efficiency, failure analysis, and RDF triples | Complete |
 | `4_user_evaluation/` | The professor's 10 tasks/questions, one open question, protocol, and response sheet | Ready; participant collection pending |
 
@@ -17,8 +17,7 @@ The main OCR/RDF delivery ZIP is available at:
 
 ## What remains
 
-1. Run the AI Search benchmark after configuring `GEMINI_API_KEY`, `OPENAI_API_KEY`, or both, and manually mark query/result correctness.
-2. Complete the user study with real participants.
+1. Complete the user study with real participants.
 
 The OCR and database evaluations do not require additional work.
 

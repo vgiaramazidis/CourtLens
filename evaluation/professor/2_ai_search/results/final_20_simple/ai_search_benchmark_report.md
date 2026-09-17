@@ -1,22 +1,22 @@
 # AI Search benchmark
 
-Generated: 2026-09-11T10:16:45.435807+00:00
+Generated: 2026-09-17T08:13:28.533783+00:00
 
 API: `http://127.0.0.1:8000/api/chat`  
-Questions: `C:\Users\teo\Desktop\Ptihiaki\EuroleagueProject\evaluation\professor\2_ai_search\benchmark_questions.json`
+Questions: `/Users/vgiaramazidis/EuroleagueProject/evaluation/professor/2_ai_search/benchmark_questions.json`
 
-Completed: 12/40 across 2 configurations.
+Completed: 31/40 across 2 configurations.
 
-Estimated standard API cost: `$0.364538`. This estimate uses recorded token usage; free-tier credits or provider billing adjustments can make the charged amount lower.
+Estimated standard API cost: `$0.322508`. This estimate uses recorded token usage; free-tier credits or provider billing adjustments can make the charged amount lower.
 
-Warning: 4 failed requests have no usage metadata, so the cost total excludes them. Provider failures before generation normally report no billable tokens.
+Warning: 8 failed requests have no usage metadata, so the cost total excludes them. Provider failures before generation normally report no billable tokens.
 
 ## Results by configuration
 
 | Provider | Model | Prompt | Completed | Read-only | Scoped | Overlay match | Query correct | Result correct | Input tokens | Output tokens | Est. cost | Mean latency |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| gemini | gemini-3.5-flash | simple | 12/20 | 12/12 | 12/12 | 2/12 | 0/0 | 0/0 | 22459 | 36761 | $0.364538 | 22340.8ms |
-| openai | gpt-5-mini | simple | 0/20 | 0/0 | 0/0 | 0/0 | 0/0 | 0/0 | 0 | 0 | $0.000000 | — |
+| gemini | gemini-3.5-flash | simple | 12/20 | 12/12 | 12/12 | 2/12 | 0/0 | 0/0 | 19248 | 30875 | $0.306747 | 24142.8ms |
+| openai | gpt-5-mini | simple | 19/20 | 19/19 | 19/19 | 7/19 | 0/0 | 0/0 | 31242 | 6985 | $0.015761 | 6290.2ms |
 ## Question coverage
 
 | Category | Questions |

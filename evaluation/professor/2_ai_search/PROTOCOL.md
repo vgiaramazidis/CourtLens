@@ -23,11 +23,12 @@ Both providers support the same two prompt variants:
 `results/final_20_ontology/` is the completed 40-request comparison: all 20
 questions completed for both Gemini and GPT-5 Mini.
 
-`results/final_20_simple/` currently records a quota-blocked run for diagnostic
-purposes only. Only two Gemini questions completed; the remaining Gemini and
-all OpenAI requests were rejected by provider quota limits. Do not use that run
-for the final prompt comparison. Replace it with a fresh 40-request run after
-both quotas are available.
+`results/final_20_simple/` currently combines the complementary runs produced
+by Vasilis and Teo. It contains 31 completed requests: 12/20 Gemini and 19/20
+GPT-5 Mini. Eight Gemini questions (`Q04`, `Q05`, `Q09`, `Q10`, `Q13`, `Q15`,
+`Q18`, `Q20`) and OpenAI `Q15` still require targeted retries. Do not use this
+partial run for the final prompt comparison until those nine rows are replaced
+and all completed rows receive manual semantic review.
 
 ## Configure and start the backend
 

@@ -1,16 +1,66 @@
-# EuroleagueProject
+# CourtLens
+
+## Frontend
+
+Start the backend as described below, then serve the English-only frontend:
+
+```bash
+python3 -m http.server 3000 --directory src/frontend
+```
+
+Open `http://localhost:3000` rather than opening `index.html` directly.
+The fixed light interface has three primary sections:
+
+- **Explore**: AI Search, shot locations, result tables, and player/team analysis.
+- **Video Analysis**: available YouTube games, synchronized shots and Play-by-Play,
+  with AI Search filtering the matching actions.
+- **Games**: Coach Challenge and all five Quiz Ball modes.
+
+Season/game selections belong to each workspace. Navigating between sections
+clears queries and results and cancels pending requests. Mobile navigation uses
+three bottom tabs; tables and court views have a local display switch.
+
+Frontend and related backend regression checks:
+
+```bash
+node --test src/frontend/tests/state.test.cjs
+.venv/bin/python -m unittest src.backend.test_english_ui src.backend.test_coach_scope src.backend.test_video_sync src.backend.test_ai_search_evaluation
+```
 
 ## Backend AI configuration
 
-The AI Search credential must be supplied through the environment and must
-never be committed to the repository:
+Keep AI credentials in a local `.env` file. The repository ignores `.env`, so
+real keys must never be added to `.env.example` or committed.
+
+Install dotenv support once and create the local configuration file:
 
 ```bash
-export GEMINI_API_KEY="your-api-key"
-.venv/bin/uvicorn app:app --app-dir src/backend --reload --port 8000
+.venv/bin/pip install python-dotenv
+cp .env.example .env
 ```
 
-Without `GEMINI_API_KEY`, the rest of the backend starts normally and AI Search
+Open `.env` and replace the two placeholders:
+
+```dotenv
+GEMINI_API_KEY=your-real-gemini-key
+OPENAI_API_KEY=your-real-openai-key
+AI_SEARCH_PROVIDER=gemini
+AI_SEARCH_PROMPT_VARIANT=ontology
+```
+
+The frontend model selector displays only providers whose key is present. Start
+the backend without exporting the keys manually:
+
+```bash
+.venv/bin/uvicorn app:app \
+  --app-dir src/backend \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --reload \
+  --env-file .env
+```
+
+Without either API key, the rest of the backend starts normally and AI Search
 returns a configuration error. If a key has ever been committed, revoke it in
 the provider console and create a replacement before running the backend.
 

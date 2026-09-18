@@ -429,12 +429,12 @@ async def get_shots(
         action_type_full = result.get("action_type", {}).get("value", "")
         action_type = action_type_full.split("#")[-1]
 
-        home_lineup = result.get("home_lineup", {}).get("value", "Άγνωστη πεντάδα")
-        road_lineup = result.get("road_lineup", {}).get("value", "Άγνωστη πεντάδα")
+        home_lineup = result.get("home_lineup", {}).get("value", "Unknown lineup")
+        road_lineup = result.get("road_lineup", {}).get("value", "Unknown lineup")
 
         play_time = result.get("clockTime", {}).get("value", "")
         quarter_val = normalize_quarter(result.get("quarter", {}).get("value", ""))
-        player_name = result.get("playerName", {}).get("value", "Άγνωστος Παίκτης")
+        player_name = result.get("playerName", {}).get("value", "Unknown player")
         fast_break = get_bool(result, "isFastBreak")
         second_chance = get_bool(result, "isSecondChance")
         from_turnover = get_bool(result, "isFromTurnover")
@@ -778,7 +778,7 @@ async def get_points_off_turnovers():
 
     for row in bindings:
         team_url = row.get("team", {}).get("value", "")
-        team_code = team_url.split("/")[-1] if team_url else "Άγνωστη"
+        team_code = team_url.split("/")[-1] if team_url else "Unknown"
 
         results.append({
             "team": team_code,
@@ -814,9 +814,10 @@ async def run_simulator(
     p4: str = Query(...),
     p5: str = Query(...),
     game_code: str = Query(None),
-    quarter: str = Query(None)
+    quarter: str = Query(None),
+    season_code: str = Query(None)
 ):
-    query = get_simulator_crunch_time_query(game_code, quarter, [p1, p2, p3, p4, p5])
+    query = get_simulator_crunch_time_query(game_code, quarter, [p1, p2, p3, p4, p5], season_code)
     data = await query_sparql(query)
 
     if not data:
@@ -872,7 +873,7 @@ async def get_game_roster(game_code: str = Query(...)):
                     if pid:
                         player_ids.add(pid)
 
-    roster = [{"id": pid, "name": "Φόρτωση..."} for pid in player_ids]
+    roster = [{"id": pid, "name": "Loading…"} for pid in player_ids]
     return {"roster": roster}
 
 @app.get("/api/simulator/scenario")
@@ -890,7 +891,7 @@ async def get_simulator_scenario(season_code: str = Query(...)):
 
     game_uri = random_timeout.get("game", {}).get("value", "")
     game_code = game_uri.split("/")[-1]
-    game_season_name = game_uri.split("/")[-4] if len(game_uri.split("/")) > 4 else "Άγνωστη Σεζόν"
+    game_season_name = game_uri.split("/")[-4] if len(game_uri.split("/")) > 4 else "Unknown season"
     clock = random_timeout.get("clock", {}).get("value", "00:00")
     home_score = random_timeout.get("homeScore", {}).get("value", "0")
     road_score = random_timeout.get("roadScore", {}).get("value", "0")
@@ -918,7 +919,7 @@ async def get_simulator_scenario(season_code: str = Query(...)):
     opp_score = road_score if is_home else home_score
 
     # 4. Φέρνουμε ΜΟΝΟ τους δικούς σου παίκτες (όσους έπαιξαν σε αυτό το ματς)
-    roster_query = get_team_roster_query(game_code, user_team)
+    roster_query = get_team_roster_query(game_code, user_team, season_code)
     roster_data = await query_sparql(roster_query)
 
     player_ids = set()
@@ -938,6 +939,8 @@ async def get_simulator_scenario(season_code: str = Query(...)):
         "game_season_name": game_season_name,
         "user_team": user_team,
         "opponent": opponent,
+        "user_team_name": random_timeout.get("homeLabel" if is_home else "awayLabel", {}).get("value", user_team),
+        "opponent_name": random_timeout.get("awayLabel" if is_home else "homeLabel", {}).get("value", opponent),
         "user_score": user_score,
         "opp_score": opp_score,
         "clock": clock,
@@ -1294,7 +1297,7 @@ def extract_openai_output_text(payload: dict) -> str:
         usage = payload.get("usage") or {}
         output_details = usage.get("output_tokens_details") or {}
         raise ValueError(
-            "Το OpenAI Responses API δεν επέστρεψε κείμενο "
+            "The OpenAI Responses API did not return text "
             f"(status={payload.get('status', 'unknown')}, "
             f"reason={incomplete_details.get('reason', 'unknown')}, "
             f"output_tokens={usage.get('output_tokens', 'unknown')}, "
@@ -1404,7 +1407,7 @@ def ai_search_configuration(
         if client is None:
             raise HTTPException(
                 status_code=503,
-                detail="Το Gemini AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.",
+                detail="Gemini AI Search is unavailable. Configure GEMINI_API_KEY on the server.",
             )
         return provider, prompt_variant, GEMINI_MODEL
 
@@ -1414,9 +1417,38 @@ def ai_search_configuration(
     if not OPENAI_API_KEY:
         raise HTTPException(
             status_code=503,
-            detail="Το OpenAI AI Search δεν έχει ρυθμιστεί. Ορίστε το OPENAI_API_KEY.",
+            detail="OpenAI Search is unavailable. Configure OPENAI_API_KEY on the server.",
         )
     return provider, prompt_variant, model
+
+
+def available_ai_search_models() -> list[dict[str, str | bool]]:
+    """Return only AI models whose provider key is configured."""
+    models = []
+    if GEMINI_API_KEY and client is not None:
+        models.append({
+            "provider": "gemini",
+            "model": GEMINI_MODEL,
+            "label": f"Gemini ({GEMINI_MODEL})",
+            "is_default": AI_SEARCH_PROVIDER == "gemini",
+        })
+    if OPENAI_API_KEY:
+        models.append({
+            "provider": "openai",
+            "model": OPENAI_MODEL,
+            "label": "GPT-5 Mini",
+            "is_default": AI_SEARCH_PROVIDER == "openai",
+        })
+
+    if models and not any(model["is_default"] for model in models):
+        models[0]["is_default"] = True
+    return models
+
+
+@app.get("/api/chat/models")
+async def ai_chat_models():
+    """Expose configured model choices without exposing API keys."""
+    return {"models": available_ai_search_models()}
 
 
 async def generate_ai_search_text(
@@ -1509,7 +1541,7 @@ def clean_and_validate_sparql(raw_query: str) -> str:
         query_body = query_body[prefix_match.end():].lstrip()
 
     if not re.match(r"^(SELECT|ASK)\b", query_body, flags=re.IGNORECASE):
-        raise ValueError("Το AI query πρέπει να είναι read-only SELECT ή ASK.")
+        raise ValueError("The AI query must be a read-only SELECT or ASK query.")
 
     forbidden = re.search(
         r"\b(LOAD|CLEAR|DROP|CREATE|ADD|MOVE|COPY|INSERT|DELETE|WITH|SERVICE)\b",
@@ -1517,7 +1549,7 @@ def clean_and_validate_sparql(raw_query: str) -> str:
         flags=re.IGNORECASE,
     )
     if forbidden:
-        raise ValueError(f"Μη επιτρεπτή SPARQL εντολή: {forbidden.group(1).upper()}")
+        raise ValueError(f"Disallowed SPARQL command: {forbidden.group(1).upper()}")
 
     if re.match(r"^SELECT\b", query_body, flags=re.IGNORECASE) and not re.search(r"\bLIMIT\s+\d+\b", query, flags=re.IGNORECASE):
         query = f"{query}\nLIMIT 200"
@@ -1693,7 +1725,7 @@ async def ai_chat_handler(request: ChatRequest):
                 raise HTTPException(
                     status_code=502,
                     detail={
-                        "message": "Η βάση SPARQL δεν απάντησε.",
+                        "message": "The basketball database did not respond.",
                         "sparql_query": clean_sparql_query,
                         "ai_provider": provider,
                         "ai_model": model,
@@ -1701,7 +1733,7 @@ async def ai_chat_handler(request: ChatRequest):
                         "ai_usage": ai_usage,
                     },
                 )
-            raise HTTPException(status_code=502, detail="Η βάση SPARQL δεν απάντησε.")
+            raise HTTPException(status_code=502, detail="The basketball database did not respond.")
 
         results = data.get("results", {}).get("bindings", [])
         playbyplay_filter = query_selects_playbyplay_actions(clean_sparql_query)
@@ -1749,15 +1781,33 @@ async def ai_chat_handler(request: ChatRequest):
         if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text or "RATE LIMIT" in error_text:
             raise HTTPException(
                 status_code=429,
-                detail="Το όριο χρήσης της επιλεγμένης AI υπηρεσίας έχει εξαντληθεί. Δοκίμασε αργότερα ή έλεγξε το API quota.",
+                detail="The selected AI provider has reached its usage limit. Try another provider or try again later.",
             ) from e
-        raise HTTPException(status_code=502, detail="Αποτυχία επεξεργασίας του AI Search.") from e
+        raise HTTPException(status_code=502, detail="AI Search could not complete this request.") from e
+
+
+def parse_english_quiz_response(response_text):
+    """Keep generated quiz copy in the site's single supported language."""
+    payload = json.loads(response_text.replace("```json", "").replace("```", "").strip())
+    def check(value):
+        if isinstance(value, str) and re.search(r"[\u0370-\u03ff\u1f00-\u1fff]", value):
+            raise ValueError("The quiz provider returned a non-English question. Please try again.")
+        if isinstance(value, dict):
+            for item in value.values():
+                check(item)
+        elif isinstance(value, list):
+            for item in value:
+                check(item)
+    if not isinstance(payload, dict):
+        raise ValueError("The quiz provider returned an incomplete question. Please try again.")
+    check(payload)
+    return payload
 
 
 @app.get("/api/quiz/who-am-i")
 async def generate_who_am_i(difficulty: str = Query("medium")):
     if client is None:
-        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.")
+        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure GEMINI_API_KEY on the server.")
 
     # 1. Βρίσκουμε ένα τυχαίο παιχνίδι (π.χ. από το 1 έως το 300) για να τραβήξουμε ένα ρόστερ
     import random
@@ -1785,7 +1835,7 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
             break
 
     if not player_ids:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν παίκτες στη βάση δεδομένων αυτή τη στιγμή.")
+        raise HTTPException(status_code=404, detail="No players could be found in the database. Please try again.")
 
     # 2. Επιλέγουμε τυχαίο παίκτη και τραβάμε το βιογραφικό του
     secret_player_id = random.choice(list(player_ids))
@@ -1794,20 +1844,15 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
 
     # 3. Prompt στο Gemini (ενσωματώνουμε τη ΔΥΣΚΟΛΙΑ!)
     prompt = f"""
-    Παίζουμε το παιχνίδι 'Ποιος Είμαι;'. Ο μυστικός παίκτης μπάσκετ έχει αυτά τα στοιχεία από τη βάση:
+    Write exclusively in English. We are playing 'Who am I?'.
+    The secret basketball player's database biography is:
     {player_bio}
-
-    Ο χρήστης επέλεξε επίπεδο δυσκολίας: {difficulty.upper()}.
-    Φτιάξε 3 στοιχεία (hints) για να τον μαντέψει ο χρήστης. Προσάρμοσε τα στοιχεία ανάλογα με τη δυσκολία:
-    - Αν είναι EASY: Δώσε πολύ γνωστά στοιχεία (π.χ. τωρινή ομάδα, Εθνικότητα, γνωστό ρεκόρ).
-    - Αν είναι MEDIUM: Μέτρια στοιχεία (π.χ. θέση, προηγούμενες ομάδες).
-    - Αν είναι HARD: Πολύ ψαγμένα στατιστικά, ακριβές ύψος ή άγνωστες λεπτομέρειες.
-
-    Επίστρεψε ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ ένα έγκυρο JSON (χωρίς markdown, χωρίς ```json), με την εξής ακριβώς δομή:
-    {{
-        "secret_player_name": "Ονοματεπώνυμο Παίκτη (όπως προκύπτει από τα δεδομένα)",
-        "hints": ["Εδώ το πρώτο στοιχείο", "Εδώ το δεύτερο στοιχείο", "Εδώ το τρίτο στοιχείο"]
-    }}
+    Difficulty: {difficulty.upper()}.
+    Create three factual clues using only the supplied data. Never reveal the name in a clue.
+    Easy: recognizable team, nationality, or position. Medium: less obvious biography.
+    Hard: more specific details supported by this biography. Do not invent records or achievements.
+    Return only valid JSON, without Markdown:
+    {{"secret_player_name": "Full player name from the data", "hints": ["First clue in English", "Second clue in English", "Third clue in English"]}}
     """
 
     try:
@@ -1818,18 +1863,18 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
         )
         # Καθαρίζουμε τυχόν markdown formatting (```json ... ```)
         clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(clean_json)
+        return parse_english_quiz_response(clean_json)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Αποτυχία δημιουργίας κουίζ: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Quiz generation failed: {str(e)}")
 
 @app.get("/api/quiz/who-is-missing")
 async def generate_who_is_missing(difficulty: str = Query("medium")):
     if client is None:
-        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί. Ορίστε το GEMINI_API_KEY.")
+        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure GEMINI_API_KEY on the server.")
 
     import random
     lineup_players = []
-    matchup_text = "Άγνωστος Αγώνας"
+    matchup_text = "Unknown game"
     season_text = ""
 
     # 1. Διαλέγουμε τυχαία σεζόν
@@ -1851,7 +1896,7 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
         home_team = random_game_row.get("homeLabel", {}).get("value", "Home Team")
         away_team = random_game_row.get("awayLabel", {}).get("value", "Road Team")
 
-        roster_query = get_game_roster_query(game_code)
+        roster_query = get_game_roster_query(game_code, random_season_code)
         roster_data = query_sparql_requests(roster_query)
 
         bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
@@ -1873,7 +1918,7 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
                 break
 
     if len(lineup_players) != 5:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκε έγκυρη πεντάδα στη βάση.")
+        raise HTTPException(status_code=404, detail="No complete five-player lineup was found. Please try again.")
 
     # 4. Τραβάμε τα ονόματα των 5 παικτών από τη βάση
     player_names = []
@@ -1893,22 +1938,14 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
     # 6. Prompt στο Gemini
     import json
     prompt = f"""
-    Παίζουμε το παιχνίδι 'Ποιος Λείπει;'. Έχουμε μια πραγματική πεντάδα από αγώνα Euroleague.
-    Οι 4 γνωστοί παίκτες στο παρκέ είναι οι: {', '.join(known_players)}.
-    Ο 5ος παίκτης που λείπει (μυστικός) είναι ο: {secret_player}.
-
-    Ο χρήστης επέλεξε επίπεδο δυσκολίας: {difficulty.upper()}.
-    Δώσε ΜΟΝΟ ΕΝΑ στοιχείο (hint) για να τον βοηθήσεις, προσαρμοσμένο στη δυσκολία:
-    - Αν είναι EASY: Πες την ομάδα του, τη θέση του ή κάτι πασίγνωστο (π.χ. 'Είναι ο βασικός Point Guard του Παναθηναϊκού').
-    - Αν είναι MEDIUM: Δώσε την εθνικότητά του ή μια πρώην ομάδα του.
-    - Αν είναι HARD: Κάνε το πολύ αινιγματικό (π.χ. κάποιο στατιστικό ρεκόρ ή κάτι δευτερεύον).
-
-    Επίστρεψε ΑΥΣΤΗΡΑ ΚΑΙ ΜΟΝΟ ένα έγκυρο JSON:
-    {{
-        "secret_player_name": "{secret_player}",
-        "known_players": {json.dumps(known_players, ensure_ascii=False)},
-        "hint": "Εδώ το κείμενο της βοήθειας (1-2 προτάσεις)"
-    }}
+    Write exclusively in English. We are playing 'Who is missing?'.
+    Four players in a real EuroLeague lineup: {', '.join(known_players)}.
+    The secret fifth player is {secret_player}. Difficulty: {difficulty.upper()}.
+    Give one short clue without revealing the answer. Use only the supplied names;
+    do not invent statistics, nationality, or biographical facts not supplied here.
+    A clue about the spelling or initials is acceptable. Easy clues can be more direct.
+    Preserve the secret and known player names exactly. Return only valid JSON:
+    {{"secret_player_name": "{secret_player}", "known_players": {json.dumps(known_players, ensure_ascii=False)}, "hint": "One short English clue"}}
     """
 
     try:
@@ -1917,28 +1954,30 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
             contents=prompt
         )
         clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        result_data = json.loads(clean_json)
+        result_data = parse_english_quiz_response(clean_json)
 
         # Προσθέτουμε τα metadata του αγώνα στο τελικό JSON
+        result_data["secret_player_name"] = secret_player
+        result_data["known_players"] = known_players
         result_data["matchup"] = matchup_text
         result_data["season"] = f"Euroleague Season {season_text}"
 
         return result_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Αποτυχία: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
 @app.get("/api/quiz/higher-or-lower")
 async def generate_higher_or_lower(difficulty: str = Query("medium")):
     if client is None:
-        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
 
     import random
     import itertools
 
     categories = [
-        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
-        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
-        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"}
+        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
+        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
+        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"}
     ]
     selected_category = random.choice(categories)
 
@@ -1979,12 +2018,12 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
         away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
 
         target_quarter = None
-        quarter_text = "συνολικά στο ματς"
+        quarter_text = "across the full game"
         is_quarter = False
 
         if random.random() < 0.40:
             target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
-            quarter_text = f"μόνο κατά τη διάρκεια του {target_quarter} δεκαλέπτου"
+            quarter_text = f"during the {target_quarter} quarter only"
             is_quarter = True
 
         stat_query = selected_category["func"](
@@ -2041,51 +2080,46 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
                 break
 
     if not player_a or not player_b:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν στατιστικά. Δοκίμασε ξανά!")
+        raise HTTPException(status_code=404, detail="No suitable player statistics were found. Please try again.")
 
     import json
     prompt = f"""
-    Φτιάξε μια ατμοσφαιρική περιγραφή αγώνα Euroleague σε στυλ σπορτκάστερ.
-    Το στατιστικό που εξετάζουμε είναι: '{selected_category['name']}'.
-    Το χρονικό πλαίσιο είναι: {quarter_text}.
-
-    Ο παίκτης {player_a['name']} είχε {player_a['stat']} {selected_category['name']} {quarter_text}.
-    Ο παίκτης {player_b['name']} είχε {player_b['stat']} {selected_category['name']} {quarter_text} (ΜΗΝ αποκαλύψεις το νούμερο του {player_b['name']}).
-    Ο αγώνας ήταν {matchup_text}.
-
-    Η δυσκολία της ερώτησης είναι {difficulty.upper()}. Δώσε έμφαση στη δράση (play-by-play αίσθηση) και ρώτα στο τέλος αν ο {player_b['name']} είχε ΠΕΡΙΣΣΟΤΕΡΑ ή ΛΙΓΟΤΕΡΑ από τον {player_a['name']} ΣΤΟ ΣΥΓΚΕΚΡΙΜΕΝΟ ΧΡΟΝΙΚΟ ΠΛΑΙΣΙΟ.
-
-    Επίστρεψε ΑΥΣΤΗΡΑ ΕΝΑ JSON:
+    Write exclusively in English. Create a concise EuroLeague 'Higher or lower' question.
+    Category: {selected_category['name']}. Time frame: {quarter_text}.
+    {player_a['name']} recorded {player_a['stat']}; {player_b['name']} recorded {player_b['stat']}.
+    Game: {matchup_text}. Difficulty: {difficulty.upper()}.
+    Ask whether player B recorded more or fewer than player A in this exact time frame.
+    Do not reveal player B's number in question_text. Use only these facts.
+    Return only valid JSON, without Markdown:
     {{
-        "question_text": "Η περιγραφή του σπορτκάστερ (μέχρι 2-3 προτάσεις)...",
+        "question_text": "One or two sentences in English",
         "player_a": {{"name": "{player_a['name']}", "stat": {player_a['stat']}}},
         "player_b": {{"name": "{player_b['name']}", "stat": {player_b['stat']}}},
         "category_name": "{selected_category['name']} ({quarter_text})",
-        "matchup": "{matchup_text}",
-        "season": "Euroleague Season {season_text}"
+        "matchup": "{matchup_text}", "season": "EuroLeague Season {season_text}"
     }}
     """
 
     try:
         response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
         clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        return json.loads(clean_json)
+        return parse_english_quiz_response(clean_json)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Αποτυχία: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
 
 @app.get("/api/quiz/top-5")
 async def generate_top_5(difficulty: str = Query("medium")):
     if client is None:
-        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
 
     import random
 
     categories = [
-        {"id": "assist_duos", "name": "Κορυφαία Δίδυμα (Ασίστ - Σκόρερ)", "func": get_top_assist_duos_query, "stat_key": "totalAssists", "stat_label": "Ασίστ"},
-        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks", "stat_label": "Μπλοκ"},
-        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn", "stat_label": "Φάουλ"},
-        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints", "stat_label": "Πόντοι"},
-        {"id": "fast_break", "name": "Πόντοι Αιφνιδιασμού", "func": get_fast_break_specialists_query, "stat_key": "fastBreakPoints", "stat_label": "Πόντοι"}
+        {"id": "assist_duos", "name": "passing pairs (passer and scorer)", "func": get_top_assist_duos_query, "stat_key": "totalAssists", "stat_label": "assists"},
+        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks", "stat_label": "blocks"},
+        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn", "stat_label": "fouls"},
+        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints", "stat_label": "points"},
+        {"id": "fast_break", "name": "fast-break points", "func": get_fast_break_specialists_query, "stat_key": "fastBreakPoints", "stat_label": "points"}
     ]
 
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
@@ -2104,7 +2138,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
         # Λογική Δυσκολίας
         if difficulty == "easy":
             # Ολόκληρη η σεζόν
-            question_context = f"στη σεζόν {season_text}"
+            question_context = f"in the {season_text} season"
         elif difficulty == "medium" or difficulty == "hard":
             # Πρέπει να βρούμε ένα τυχαίο ματς
             games_query = get_games_list_query(random_season_code)
@@ -2118,10 +2152,10 @@ async def generate_top_5(difficulty: str = Query("medium")):
             away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
 
             if difficulty == "medium":
-                question_context = f"στον αγώνα {home_team} - {away_team} ({season_text})"
+                question_context = f"in {home_team} vs {away_team} ({season_text})"
             else:
                 target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
-                question_context = f"στο {target_quarter} δεκάλεπτο του αγώνα {home_team} - {away_team} ({season_text})"
+                question_context = f"in the {target_quarter} quarter of {home_team} vs {away_team} ({season_text})"
 
         # Εκτέλεση του query
         if selected_category["id"] == "fast_break":
@@ -2166,13 +2200,13 @@ async def generate_top_5(difficulty: str = Query("medium")):
             break
 
     if len(top_5_results) < 5:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκαν 5 αποτελέσματα με αυτά τα κριτήρια.")
+        raise HTTPException(status_code=404, detail="Five results could not be found for these criteria. Please try again.")
 
     # Προετοιμασία της ερώτησης
     if selected_category["id"] == "assist_duos":
-        question_text = f"Ποια είναι τα Top 5 δίδυμα (Πασέρ & Σκόρερ) {question_context};"
+        question_text = f"Which five passing pairs (passer and scorer) led {question_context}?"
     else:
-        question_text = f"Ποιοι είναι οι Top 5 παίκτες σε {selected_category['name']} {question_context};"
+        question_text = f"Who were the top five players for {selected_category['name']} {question_context}?"
 
     return {
         "question_text": question_text,
@@ -2184,17 +2218,17 @@ async def generate_top_5(difficulty: str = Query("medium")):
 @app.get("/api/quiz/fifty-fifty")
 async def generate_fifty_fifty(difficulty: str = Query("medium")):
     if client is None:
-        raise HTTPException(status_code=503, detail="Το AI Search δεν έχει ρυθμιστεί.")
+        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
 
     import random
 
     # --- ΠΡΟΣΘΗΚΗ: Top Assist Duos και Top Lineups ---
     categories = [
-        {"id": "blocks", "name": "Κοψίματα (Blocks)", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
-        {"id": "fouls", "name": "Κερδισμένα Φάουλ", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
-        {"id": "second_chance", "name": "Πόντοι 2ης Ευκαιρίας", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"},
-        {"id": "assist_duos", "name": "Συνεργασίες (Ασίστ & Σκόρερ)", "func": get_top_assist_duos_query, "stat_key": "totalAssists"},
-        {"id": "top_lineups", "name": "Πόντοι Πεντάδας", "func": get_top_lineups_query, "stat_key": "totalPoints"}
+        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
+        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
+        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"},
+        {"id": "assist_duos", "name": "assists between a passer and scorer", "func": get_top_assist_duos_query, "stat_key": "totalAssists"},
+        {"id": "top_lineups", "name": "points scored by a five-player lineup", "func": get_top_lineups_query, "stat_key": "totalPoints"}
     ]
 
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
@@ -2216,15 +2250,15 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         target_quarter = None
         filter_type = None
         filter_id = None
-        context_text = f"στον αγώνα {home_team} - {away_team}"
+        context_text = f"in {home_team} vs {away_team}"
 
         if difficulty in ["medium", "hard"]:
             target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
-            context_text += f", στο {target_quarter} δεκάλεπτο"
+            context_text += f", in the {target_quarter} quarter"
 
         # Το on_court filter δεν έχει νόημα όταν ψάχνουμε ολόκληρες πεντάδες ή δίδυμα
         if difficulty == "hard" and selected_category["id"] not in ["assist_duos", "top_lineups"]:
-            roster_query = get_game_roster_query(game_code)
+            roster_query = get_game_roster_query(game_code, random_season_code)
             roster_data = query_sparql_requests(roster_query)
             r_bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
             p_ids = set()
@@ -2240,7 +2274,7 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
                 on_court_name = filter_id
                 if res and res.get("results", {}).get("bindings"):
                     on_court_name = res["results"]["bindings"][0].get("name", {}).get("value", filter_id)
-                context_text += f", όσο βρισκόταν στο παρκέ ο {on_court_name}"
+                context_text += f", while {on_court_name} was on court"
 
         stat_query = selected_category["func"](
             game_code=game_code,
@@ -2272,18 +2306,18 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         if selected_category["id"] == "assist_duos":
             scorer_pid = selected_stat_row.get("scorer", {}).get("value", "").split("/")[-1]
             passer_pid = selected_stat_row.get("passer", {}).get("value", "").split("/")[-1]
-            player_name = f"το δίδυμο {get_name(passer_pid)} (Πασέρ) & {get_name(scorer_pid)} (Σκόρερ)"
+            player_name = f"the pair {get_name(passer_pid)} (passer) and {get_name(scorer_pid)} (scorer)"
         elif selected_category["id"] == "top_lineups":
             lineup_uri = selected_stat_row.get("lineup", {}).get("value", "")
             if "#Lineup_" in lineup_uri:
                 pids = [p for p in lineup_uri.split("#Lineup_")[1].split("_") if p]
                 names = [get_name(p) for p in pids]
-                player_name = f"η πεντάδα ({', '.join(names)})"
+                player_name = f"the five-player lineup ({', '.join(names)})"
             else:
-                player_name = "η συγκεκριμένη πεντάδα"
+                player_name = "the selected five-player lineup"
         else:
             pid = selected_stat_row.get("player", {}).get("value", "").split("/")[-1]
-            player_name = f"ο παίκτης {get_name(pid)}"
+            player_name = f"the player {get_name(pid)}"
 
         correct_val = stat_val
         # Στις πεντάδες, τα νούμερα πόντων μπορεί να είναι μεγάλα, άρα βάζουμε +/- 1 ή 2 πόντους διαφορά
@@ -2297,21 +2331,16 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
 
         import json
         prompt = f"""
-        Γράψε ΜΙΑ ΜΟΝΟ σύντομη και ενθουσιώδη ερώτηση παρουσιαστή για το παιχνίδι "50/50".
-        Το υποκείμενο είναι: {player_name}.
-        Η στατιστική κατηγορία είναι: {selected_category['name']}.
-        Το πλαίσιο του αγώνα είναι: {context_text}.
-
-        Η ερώτηση πρέπει να είναι άμεση (π.χ. Πόσα κοψίματα έκανε ο Τάδε στον αγώνα Δείνα στο 2ο δεκάλεπτο;)
-        Επίστρεψε ΑΥΣΤΗΡΑ ΕΝΑ JSON:
-        {{
-            "question_text": "Η ερώτηση..."
-        }}
+        Write exclusively in English. Write one short, direct question for '50/50'.
+        Subject: {player_name}. Category: {selected_category['name']}.
+        Context: {context_text}. Ask for the numeric statistic without revealing it.
+        Use only the supplied facts. Return only valid JSON, without Markdown:
+        {{"question_text": "One short question in English"}}
         """
         try:
             response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
             clean_json = response.text.replace("```json", "").replace("```", "").strip()
-            result_data = json.loads(clean_json)
+            result_data = parse_english_quiz_response(clean_json)
 
             result_data["options"] = options
             result_data["correct_index"] = correct_index
@@ -2321,7 +2350,7 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         except Exception:
             continue
 
-    raise HTTPException(status_code=404, detail="Δεν βρέθηκαν κατάλληλα δεδομένα. Δοκίμασε ξανά!")
+    raise HTTPException(status_code=404, detail="No suitable question data was found. Please try again.")
 
 # --- Block εκτέλεσης ---
 if __name__ == "__main__":

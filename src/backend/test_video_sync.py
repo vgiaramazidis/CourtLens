@@ -98,6 +98,33 @@ class VideoSynchronizationTests(unittest.TestCase):
 
         self.assertEqual(mini, ("openai", "ontology", "gpt-5-mini"))
 
+    def test_available_ai_search_models_only_exposes_configured_providers(self):
+        with (
+            patch.object(backend_app, "GEMINI_API_KEY", "gemini-key"),
+            patch.object(backend_app, "client", object()),
+            patch.object(backend_app, "OPENAI_API_KEY", ""),
+            patch.object(backend_app, "AI_SEARCH_PROVIDER", "openai"),
+        ):
+            models = backend_app.available_ai_search_models()
+
+        self.assertEqual(len(models), 1)
+        self.assertEqual(models[0]["provider"], "gemini")
+        self.assertTrue(models[0]["is_default"])
+        self.assertNotIn("api_key", models[0])
+
+    def test_available_ai_search_models_marks_configured_default(self):
+        with (
+            patch.object(backend_app, "GEMINI_API_KEY", "gemini-key"),
+            patch.object(backend_app, "client", object()),
+            patch.object(backend_app, "OPENAI_API_KEY", "openai-key"),
+            patch.object(backend_app, "AI_SEARCH_PROVIDER", "openai"),
+        ):
+            models = backend_app.available_ai_search_models()
+
+        self.assertEqual([model["provider"] for model in models], ["gemini", "openai"])
+        self.assertFalse(models[0]["is_default"])
+        self.assertTrue(models[1]["is_default"])
+
     def test_ontology_prompt_uses_virtuoso_safe_player_name_boundaries(self):
         self.assertIn(
             "(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)",

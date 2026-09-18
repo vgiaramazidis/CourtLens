@@ -781,7 +781,8 @@ def get_fast_break_specialists_query():
 
 
 
-def get_game_roster_query(game_code):
+def get_game_roster_query(game_code, season_code=None):
+    season_filter = f"?game bball:hasSeason ?season . ?season bball:hasCode '{season_code}' ." if season_code else ""
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     SELECT DISTINCT ?homeLineup ?roadLineup
@@ -790,40 +791,45 @@ def get_game_roster_query(game_code):
               bball:hasCode '{game_code}' ;
               bball:hasPlayByPlayAction ?action .
         
+        {season_filter}
+
         ?action bball:runningHomeTeamLineup ?homeLineup ;
                 bball:runningRoadTeamLineup ?roadLineup .
     }}
     """
 
-def get_simulator_crunch_time_query(game_code, quarter, players_list):
+def get_simulator_crunch_time_query(game_code, quarter, players_list, season_code=None):
     filters = ""
     for pid in players_list:
-        filters += f"FILTER(CONTAINS(STR(?lineup), '{pid}'))\n        "
+        filters += f"?lineup bball:includesPlayer <https://www.euroleaguebasketball.net/euroleague/players/-/{pid}> .\n        "
 
     query = f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-    SELECT ?actionTeamURI ?lineup (SUM(xsd:integer(?points)) AS ?totalPoints)
+    SELECT ?actionTeam ?lineupTeam ?lineup (SUM(xsd:integer(?points)) AS ?totalPoints)
     WHERE {{
         ?game a bball:Game .
-        FILTER(CONTAINS(STR(?game), "/{game_code}"))
         
         ?game bball:hasPlayByPlayAction ?action .
         ?action bball:pointsAwarded ?points ;
-                bball:actionTeam ?actionTeamURI .
+                bball:actionTeam ?actionTeam .
     """
+    if game_code:
+        query += f"\n        ?game bball:hasCode '{game_code}' .\n"
+    if season_code:
+        query += f"\n        ?game bball:hasSeason ?season . ?season bball:hasCode '{season_code}' .\n"
     if quarter:
         query += f"\n        ?action bball:quarter '{quarter}' .\n"
 
     query += f"""
-        {{ ?action bball:runningHomeTeamLineup ?lineup . }}
+        {{ ?action bball:runningHomeTeamLineup ?lineup . ?game bball:homeTeam ?lineupTeam . }}
         UNION
-        {{ ?action bball:runningRoadTeamLineup ?lineup . }}
+        {{ ?action bball:runningRoadTeamLineup ?lineup . ?game bball:roadTeam ?lineupTeam . }}
 
         {filters}
     }}
-    GROUP BY ?actionTeamURI ?lineup
+    GROUP BY ?actionTeam ?lineupTeam ?lineup
     """
     return query
 
@@ -831,11 +837,14 @@ def get_timeouts_query(season_code):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT DISTINCT ?game ?clock ?homeScore ?roadScore ?homeLineup ?roadLineup
+    SELECT DISTINCT ?game ?clock ?homeScore ?roadScore ?homeLineup ?roadLineup ?homeLabel ?awayLabel
     WHERE {{
         ?game bball:hasPlayByPlayAction ?action .
         FILTER(CONTAINS(STR(?game), "{season_code}"))
+        OPTIONAL {{ ?game bball:homeTeam ?homeTeam . ?homeTeam rdfs:label ?homeLabel . }}
+        OPTIONAL {{ ?game bball:roadTeam ?awayTeam . ?awayTeam rdfs:label ?awayLabel . }}
 
         ?action a ?actionType .
         FILTER(?actionType IN (bball:Timeout, bball:TimeoutTV))
@@ -853,7 +862,8 @@ def get_timeouts_query(season_code):
     }} LIMIT 200
     """
 
-def get_team_roster_query(game_code, team_code):
+def get_team_roster_query(game_code, team_code, season_code=None):
+    season_filter = f"?game bball:hasSeason ?season . ?season bball:hasCode '{season_code}' ." if season_code else ""
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     SELECT DISTINCT ?lineup
@@ -861,6 +871,8 @@ def get_team_roster_query(game_code, team_code):
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
               bball:hasPlayByPlayAction ?action .
+
+        {season_filter}
 
         # Ψάχνουμε ΑΥΣΤΗΡΑ μόνο τις πεντάδες της συγκεκριμένης ομάδας στον συγκεκριμένο αγώνα
         {{ 

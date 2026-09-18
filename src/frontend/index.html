@@ -1,392 +1,61 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Euroleague Analytics Dashboard</title>
-    <link rel="icon" href="data:,"> 
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-    <link rel="stylesheet" href="css/styles.css?v=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="CourtLens: EuroLeague shot analysis, synchronized game video, and basketball intelligence.">
+  <title>CourtLens · Explore</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/styles.css?v=35">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script defer src="js/api.js?v=35"></script><script defer src="js/state.js?v=35"></script><script defer src="js/video.js?v=35"></script><script defer src="js/court.js?v=35"></script><script defer src="js/player-names.js?v=35"></script><script defer src="js/main.js?v=35"></script>
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <header class="site-header">
+    <a class="wordmark" href="#explore" aria-label="CourtLens, Explore"><span class="basketball-mark" aria-hidden="true"></span>CourtLens</a>
+    <nav class="primary-nav" aria-label="Primary navigation"><a href="#explore" data-section="explore" aria-current="page"><span class="nav-icon" aria-hidden="true">⌕</span>Explore</a><a href="#video" data-section="video"><span class="nav-icon" aria-hidden="true">▷</span>Video Analysis</a><a href="#games" data-section="games"><span class="nav-icon" aria-hidden="true">◉</span>Games</a></nav>
+    <button class="text-button help-button" id="helpButton">Glossary</button>
+  </header>
+  <main id="mainContent" tabindex="-1">
+    <p id="localFileNotice" class="notice" hidden>You are viewing a local file. <a href="http://localhost:3000/">Open the running application</a> to connect searches, videos, and games to the data service.</p>
+    <section id="analysisSection" aria-labelledby="pageTitle">
+      <div class="page-intro"><p class="eyebrow" id="pageEyebrow">EUROLEAGUE ANALYSIS</p><h1 id="pageTitle">Explore</h1><p id="pageDescription">Search players, teams, and possessions across EuroLeague seasons.</p></div>
+      <div id="scopeDock"></div>
+      <div id="gameHeading" class="game-heading" hidden></div><div id="workspaceStatus" class="notice" role="status" hidden></div><button id="retryGamesButton" class="secondary-button" hidden>Retry loading games</button>
+      <div class="workspace-grid" id="workspaceGrid" data-mobile-view="results">
+        <section id="aiSearchPanel" class="search-panel" aria-label="AI Search"><form id="searchForm"><label for="aiPlaySearchInput" id="searchLabel">AI Search</label><div class="search-row"><span aria-hidden="true" class="search-symbol">⌕</span><input id="aiPlaySearchInput" type="search" maxlength="1000" placeholder="Ask about a player, team, or game" required autocomplete="off" aria-describedby="aiSearchNote"><button id="aiPlaySearchButton" class="primary-button">Search</button></div><div id="searchScopeDock"><div class="scope-bar" id="scopeBar"><label>Season<select id="seasonSelect"><option value="ALL">All available seasons</option><option value="E2023">2023–24</option><option value="E2024">2024–25</option><option value="E2025">2025–26</option></select></label><label>Game<select id="gameSelect" disabled><option value="">All games</option></select></label><button id="clearSearchButton" type="button" class="text-button">Reset workspace</button><span id="scopeStatus" class="muted" role="status"></span></div></div><div class="search-meta"><p id="aiSearchNote">Search across all available seasons, or narrow your question to a game.</p><details class="search-options"><summary>Search options</summary><label for="aiModelSelect">AI provider</label><select id="aiModelSelect" disabled><option value="">Loading providers…</option></select><small id="aiModelStatus" role="status"></small></details></div></form><section id="analysisTools" class="analysis-tools" aria-label="Structured analysis">
+          <form id="analysisForm"><div class="analysis-picker"><label>Structured analysis<select id="analysisType"><option value="shots">Shot locations</option><option value="lineups">Five-player groups</option><option value="assist-duos">Passing pairs</option><option value="second-chance">Second-chance points</option><option value="fouls-drawn">Fouls drawn</option><option value="defensive-anchors">Blocked shots</option></select></label><button type="button" id="openAnalysisFilters" class="secondary-button">Filters<span id="analysisFilterCount"></span></button><button class="primary-button" id="runAnalysis">Run analysis</button></div>
+          <p id="analysisFilterSummary" class="filter-summary" hidden></p>
+          <dialog id="advancedFilters" class="filter-dialog" aria-labelledby="analysisFilterTitle"><div class="filter-dialog-header"><div><p class="eyebrow">STRUCTURED ANALYSIS</p><h2 id="analysisFilterTitle">Analysis filters</h2></div><button type="button" data-close-dialog="advancedFilters" class="text-button">Close</button></div><p id="analysisFilterError" role="alert" class="notice error" hidden></p><p class="muted">Refine the selected analysis. For AI Search, describe these conditions in your question.</p><section class="filter-section"><h3>Players</h3><div class="filter-fields"><label>Player / shooter<input id="playerFilter" list="playerOptions" placeholder="Any player"></label><label>Assisting player<input id="assistFilter" list="playerOptions" placeholder="Any passer"></label><label>Player committing foul<input id="foulingPlayer" list="playerOptions" placeholder="Any player"></label><label>Blocking player<input id="blockingPlayer" list="playerOptions" placeholder="Any player"></label></div></section><section class="filter-section"><h3>Game clock</h3><div class="filter-fields"><label>Period<select id="analysisQuarter"><option value="">All periods</option><option value="1st">First quarter</option><option value="2nd">Second quarter</option><option value="3rd">Third quarter</option><option value="4th">Fourth quarter</option><option value="OT">Overtime</option></select></label><label>Minutes remaining from<input id="clockFrom" type="number" min="0" max="10" step="1" placeholder="10"></label><label>Minutes remaining to<input id="clockTo" type="number" min="0" max="10" step="1" placeholder="0"></label></div></section><section class="filter-section"><h3>Context</h3><div class="filter-fields"><label>Context<select id="presenceFilter"><option value="">Any</option><option value="on_court">On court</option><option value="referee">Referee</option></select></label><label>Player or referee<input id="presencePlayer" list="playerOptions" placeholder="Player ID"></label><label>Lineup URI<input id="lineupFilter" placeholder="Optional exact lineup URI"></label></div></section><datalist id="playerOptions"></datalist><div class="filter-dialog-footer"><button type="button" id="resetAnalysisFilters" class="text-button">Reset filters</button><button type="button" data-close-dialog="advancedFilters" class="primary-button">Done</button></div></dialog></form></section><div id="aiPlaySearchResult" class="answer" role="status" aria-live="polite" hidden></div></section>
+        <div class="mobile-view-switch" id="mobileViewSwitch" role="group" aria-label="Results display" hidden><button data-view="results" aria-pressed="true">Results</button><button data-view="court" aria-pressed="false">3D Court</button></div>
+        <section id="videoPanel" class="video-panel" aria-label="Game video" hidden><div id="videoContainer"><div id="player"></div><div id="youtubePlayerNotice" class="youtube-player-notice" role="status"><span id="youtubePlayerNoticeText"></span> <a id="youtubePlayerNoticeLink" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube</a></div></div><div class="video-caption"><span>Full game · YouTube</span><label class="check-label"><input id="followVideo" type="checkbox">Follow video in Play-by-Play</label></div></section>
+        <section id="evidencePanel" class="evidence-panel" aria-labelledby="evidenceTitle" hidden><div class="section-heading"><div><p class="eyebrow">THE NUMBERS BEHIND THE ANSWER</p><h2 id="evidenceTitle">Results</h2></div><button id="exportButton" class="text-button">Export CSV</button></div><p id="tableNote" class="muted"></p><div id="resultTable" class="table-scroll" tabindex="0" aria-label="Search result table. Scroll horizontally for more columns."></div><button id="moreResults" class="secondary-button" hidden>Show more results</button></section>
+        <section id="courtPanel" class="court-panel" aria-labelledby="courtTitle" hidden><div class="section-heading"><h2 id="courtTitle">Shot locations</h2><button id="resetCourt" class="text-button">Reset view</button></div><div id="shotFilters" class="court-filter-bar">
+          <div class="court-filter-row"><label>Team<select id="shotTeam"><option value="">Both teams</option><option value="home">Home team</option><option value="road">Away team</option></select></label><label>Result<select id="shotResult"><option value="">Made + missed</option><option value="made">Made</option><option value="missed">Missed</option></select></label><button id="openCourtFilters" class="secondary-button" type="button">More filters<span id="shotFilterCount"></span></button></div>
+          <fieldset class="period-filter"><legend>Period</legend><div id="quarterFilters" class="check-group"></div></fieldset>
+        </div><div id="courtContainer" role="img" aria-label="Interactive 3D shot court. The same shots are available as text in Results or Play-by-Play."></div><div class="court-legend"><span><i class="made-dot"></i>Made</span><span><i class="miss-dot"></i>Missed</span><span id="courtCount" class="muted"></span></div><div class="court-selection-bar"><p id="courtFocusNote" class="court-note" role="status">Select a shot to isolate it. Drag to rotate; scroll to zoom.</p><button id="clearShotSelection" class="text-button" type="button" hidden>Clear selection</button></div><div class="court-buttons" role="group" aria-label="Court camera"><button id="rotateCourt" class="text-button">Rotate view</button><button id="zoomInCourt" class="text-button" aria-label="Zoom court in">Zoom +</button><button id="zoomOutCourt" class="text-button" aria-label="Zoom court out">Zoom −</button><button id="topCourt" class="text-button">Top view</button></div><div id="selectedShot" class="selected-shot" hidden></div><details id="lineupDetails" hidden><summary>Players on court at this moment</summary><div id="lineupContent" class="lineup-content"></div></details></section>
+        <section id="pbpPanel" class="pbp-panel" aria-labelledby="pbpTitle" hidden><div class="section-heading"><h2 id="pbpTitle">Play-by-Play</h2><button id="clearAiFilter" class="text-button" hidden>Show all actions</button></div><p class="muted" id="pbpSummary">Select an action to explore the moment.</p><div class="pbp-controls"><label>Period<select id="pbpQuarter"><option value="">All periods</option></select></label><details><summary>Action types</summary><div id="pbpActionFilters" class="check-group"></div><button id="allActionTypes" class="text-button">Select all</button></details></div><ol id="pbpList" class="pbp-list"></ol><button id="moreActions" class="secondary-button" hidden>Show more actions</button></section>
+      </div>
+      <section id="exploreSuggestions" class="suggestions" aria-labelledby="suggestionTitle"><div><p class="eyebrow">SUGGESTED QUERIES</p><h2 id="suggestionTitle">Start a search</h2><p>Use a suggested query or enter your own.</p></div><div class="prompt-list"><button data-prompt="Who scored the most three-pointers in the selected seasons?"><span>Shooting</span>Three-point leaders</button><button data-prompt="Which player pairs recorded the most assists in the selected seasons?"><span>Teamwork</span>Leading assist combinations</button><button data-prompt="Which players recorded the most blocks in the selected seasons?"><span>Defense</span>Blocked-shot leaders</button></div></section>
 
-    <header>
-        <h1>Euroleague Analytics Dashboard</h1>
-    </header>
-
-    <div class="dashboard-container">
-        
-        <!-- ΑΡΙΣΤΕΡΗ ΜΠΑΡΑ ΦΙΛΤΡΩΝ -->
-        <aside class="panel filters-panel">
-            <div class="form-group">
-                <label class="mode-filter-label">Επιλογή Λειτουργίας:</label>
-                <select id="mainModeSelect">
-                    <option value="euro-chart">- General AI Play Search</option>
-                    <option value="video-shots">- 3D Shot Search (Video)</option>
-                    <option value="coach-simulator">- Coach Simulator</option>
-                    <option value="quiz-ball">- Quiz Ball</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="season-filter-label">Season:</label>
-                <select id="globalSeasonSelect">
-                    <option value="" id="optSelectSeason">-- Select Season --</option>
-                    <option value="ALL" id="optAllSeasons">ALL SEASONS</option>
-                    <option value="E2023">2023-24 Season</option>
-                    <option value="E2024">2024-25 Season</option>
-                    <option value="E2025">2025-26 Season</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Game:</label>
-                <select id="globalGameSelect">
-                    <option value="">-- Επίλεξε Αγώνα --</option>
-                </select>
-            </div>
-            <button id="mainActionBtn" class="action-btn">ΑΝΑΖΗΤΗΣΗ ΣΟΥΤ</button>
-            <button id="tryGameBtn" class="action-btn">TRY GAME</button>
-        </aside>
-
-        <!-- ΚΕΝΤΡΟ: Δυναμικό Πάνελ -->
-        <main class="panel center-panel">
-            
-            <!-- ΚΟΙΝΟ 3D SHOT VIEW: το mode αλλάζει τα sidebars και το video panel -->
-            <div id="shotSearchWrapper">
-                <div class="euro-roster home video-shots-only">
-                    <div class="roster-header home-bg" id="homeTeamTitle">HOME TEAM</div>
-                    <div class="roster-sub">
-                        <span>SELECT ALL</span> <input type="checkbox" class="euro-checkbox" checked>
-                    </div>
-                    <div class="players-list" id="homePlayersContainer">
-                        <div class="selection-placeholder">Επίλεξε Game...</div>
-                    </div>
-                </div>
-
-                <div class="current-lineup-panel euro-chart-only">
-                    <h4 class="lineup-heading home-lineup-heading">Current Home Lineup</h4>
-                    <div class="players-list" id="currentHomeLineup"><div class="lineup-placeholder">Click a shot...</div></div>
-                </div>
-
-                <div class="euro-center-area" id="shotCenterArea">
-                    <div class="score-board video-shots-only">
-                        <span class="team-name" id="uiHomeTeam">HOME</span>
-                        <div class="score-box">
-                            <span id="uiScoreHome">0</span> <span class="score-separator">-</span> <span id="uiScoreRoad">0</span>
-                        </div>
-                        <span class="team-name" id="uiRoadTeam">ROAD</span>
-                    </div>
-
-                    <div class="quarters-bar video-shots-only">
-                        <div class="quarter-box"><span>1ST QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
-                        <div class="quarter-box"><span>2ND QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
-                        <div class="quarter-box"><span>3RD QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
-                        <div class="quarter-box"><span>4TH QT</span> <input type="checkbox" class="euro-checkbox" checked></div>
-                    </div>
-
-                    <div id="videoStatusMessage" class="video-status-message video-shots-only" role="status" aria-live="polite"></div>
-
-                    <div class="video-player-section video-shots-only">
-                        <div id="videoContainer">
-                            <div id="player"></div>
-                            <div id="youtubePlayerNotice" class="youtube-player-notice" role="status">
-                                <span id="youtubePlayerNoticeText"></span>
-                                <a id="youtubePlayerNoticeLink" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="court-container-inner" id="courtContainer"></div>
-
-                    <div class="legend" id="legendContainer">
-                        <span id="missLegendMarker"></span> MISSED SHOT
-                        <span id="madeLegendMarker"></span> MADE SHOT
-                    </div>
-                    <div id="pbpContainer" >
-                        <h4 class="pbp-heading">Play-by-Play</h4>
-                        <div id="pbpActionFilters" class="pbp-filter-bar"></div>
-                        <ul id="pbpList"></ul>
-                    </div>
-
-                    <div id="aiSearchPanel" class="ai-search-panel ">
-                        <label class="ai-search-label" for="aiPlaySearchInput"><span>✦</span> AI PLAY SEARCH</label>
-                        <div class="ai-search-row">
-                            <input id="aiPlaySearchInput" type="search" maxlength="1000" placeholder="Ask about a play, player, quarter, or shot..." autocomplete="off" aria-describedby="aiSearchNote">
-                            <button id="aiPlaySearchButton" type="button">AI SEARCH</button>
-                        </div>
-                        <small id="aiSearchNote" class="ai-search-note">Search a season or choose a game to connect matching results with its Play-by-Play.</small>
-                        <div id="aiPlaySearchResult" class="ai-search-result" role="status" aria-live="polite"></div>
-                    </div>
-
-                    <div class="shot-type-filters-grid" id="shotfiltersContainer">
-                        <!-- Home Toggles (Πορτοκαλί) -->
-                        <div class="team-filters-column">
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblHomeFastBreak">FAST BREAK POINTS</span><br><small id="txtHomeTeamName">HOME TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="fastbreak" checked><span class="slider home-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblHomeTurnover">POINTS OFF TURNOVER</span><br><small id="txtHomeTeamName2">HOME TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="turnover" checked><span class="slider home-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblHomeSecondChance">SECOND CHANCE POINTS</span><br><small id="txtHomeTeamName3">HOME TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="secondchance" checked><span class="slider home-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span>2-POINT SHOTS</span><br><small id="txtHomeTeamName4">HOME TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="2pt" checked><span class="slider home-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span>3-POINT SHOTS</span><br><small id="txtHomeTeamName5">HOME TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb home-filter" data-type="3pt" checked><span class="slider home-slider"></span></label>
-                            </div>
-                        </div>
-
-                        <!-- Road Toggles (Μωβ) -->
-                        <div class="team-filters-column">
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblRoadFastBreak">FAST BREAK POINTS</span><br><small id="txtRoadTeamName">ROAD TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="fastbreak" checked><span class="slider road-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblRoadTurnover">POINTS OFF TURNOVER</span><br><small id="txtRoadTeamName2">ROAD TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="turnover" checked><span class="slider road-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span id="lblRoadSecondChance">SECOND CHANCE POINTS</span><br><small id="txtRoadTeamName3">ROAD TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="secondchance" checked><span class="slider road-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span>2-POINT SHOTS</span><br><small id="txtRoadTeamName4">ROAD TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="2pt" checked><span class="slider road-slider"></span></label>
-                            </div>
-                            <div class="filter-toggle-row">
-                                <div class="filter-label-text"><span>3-POINT SHOTS</span><br><small id="txtRoadTeamName5">ROAD TEAM</small></div>
-                                <label class="switch"><input type="checkbox" class="shot-filter-cb road-filter" data-type="3pt" checked><span class="slider road-slider"></span></label>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="euro-roster road video-shots-only">
-                    <div class="roster-header road-bg" id="roadTeamTitle">ROAD TEAM</div>
-                    <div class="roster-sub">
-                        <input type="checkbox" class="euro-checkbox" checked> <span>SELECT ALL</span>
-                    </div>
-                    <div class="players-list" id="roadPlayersContainer">
-                        <div class="selection-placeholder">Επίλεξε Game...</div>
-                    </div>
-                </div>
-
-                <div class="current-lineup-panel euro-chart-only">
-                    <h4 class="lineup-heading road-lineup-heading">Current Road Lineup</h4>
-                    <div class="players-list" id="currentRoadLineup"><div class="lineup-placeholder">Click a shot...</div></div>
-                </div>
-            </div>
-
-            <!-- ΛΕΙΤΟΥΡΓΙΑ 3: ΑΝΑΛΥΣΕΙΣ -->
-            <div id="analyticsWrapper">
-                <div id="integratedSimulator">
-                    <!-- 1. ΤΟ ΚΕΙΜΕΝΟ ΟΔΗΓΙΩΝ (Εμφανίζεται πρώτο) -->
-                    <div id="gameInstructions">
-                        <h3>Πώς να παίξεις τον Simulator 🏀</h3>
-                        <p>
-                            Επέλεξε τη σεζόν που θέλεις ή άφησέ το γενικό και μόλις πατήσεις <strong>GAME</strong>, θα βρεθείς σε ένα τυχαίο κρίσιμο σημείο (Crunch Time) ενός αγώνα της επιλεγμένης σεζόν.<br><br>
-                            <strong>Ο Στόχος σου:</strong> Φτιάξε την καλύτερη δυνατή πεντάδα για να πάρεις τη νίκη!<br>
-                            💡 <em>Tip:</em> Μπορείς να σύρεις (Drag & Drop) παίκτες  από τον πάγκο σου!
-                        </p>
-                    </div>
-
-                    <!-- 2. ΤΟ ΠΡΑΓΜΑΤΙΚΟ ΠΑΙΧΝΙΔΙ (Αρχικά κρυφό) -->
-                    <div id="actualSimulatorUI">
-                        <div class="simulator-scenario-card">
-                            <h3 id="simMatchupTitle">Coach Simulator</h3>
-                            <p id="simScenarioText">Φόρτωση...</p>
-                        </div>
-
-                        <div class="sim-layout">
-                            <div class="sim-court">
-                                <div class="sim-3pt-line"></div>
-                                <div class="sim-paint"></div>
-                                <div class="slot" id="slot-pg" data-position="PG">PG</div>
-                                <div class="slot" id="slot-sg" data-position="SG">SG</div>
-                                <div class="slot" id="slot-sf" data-position="SF">SF</div>
-                                <div class="slot" id="slot-pf" data-position="PF">PF</div>
-                                <div class="slot" id="slot-c" data-position="C">C</div>
-                            </div>
-                            <div class="roster-panel" id="rosterPool"></div>
-                        </div>
-
-                        <button id="runSimulatorBtn">
-                            ΕΚΤΕΛΕΣΗ ΠΡΟΣΟΜΟΙΩΣΗΣ
-                        </button>
-                        <div id="simulatorResult"></div>
-                    </div>
-                </div>
-                <h2 id="analyticsTitle">Αποτελέσματα Ανάλυσης</h2>
-                <div id="analyticsContent" class="analytics-grid"></div>
-            </div>
-
-        </main>
-    </div>
-
-    <div id="shotTooltip"></div>
-
-    <script>
-        var player;
-        var youtubePlayerReady = false;
-        var pendingVideoStart = null;
-        var currentYouTubeVideoId = null;
-        var currentVideoLeadSeconds = 5;
-        var youtubePlayerErrorCode = null;
-
-        function ensureYouTubePlayerHost() {
-            const videoContainer = document.getElementById('videoContainer');
-            if (!videoContainer || document.getElementById('player')) return;
-            const playerHost = document.createElement('div');
-            playerHost.id = 'player';
-            videoContainer.prepend(playerHost);
-        }
-
-        function destroyYouTubePlayer() {
-            pendingVideoStart = null;
-            youtubePlayerReady = false;
-            if (player) {
-                try {
-                    if (typeof player.stopVideo === 'function') player.stopVideo();
-                    if (typeof player.destroy === 'function') player.destroy();
-                } catch (error) {
-                    console.warn('Could not fully reset the YouTube player.', error);
-                }
-            }
-            player = null;
-            ensureYouTubePlayerHost();
-        }
-
-        function createYouTubePlayer() {
-            if (player || !currentYouTubeVideoId || !window.YT || typeof YT.Player !== 'function') return;
-            ensureYouTubePlayerHost();
-            youtubePlayerReady = false;
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 1,
-                    'rel': 0,
-                    'origin': window.location.origin
-                },
-                events: {
-                    'onReady': onYouTubePlayerReady,
-                    'onError': onYouTubePlayerError
-                }
-            });
-        }
-
-        function setYouTubeVideo(videoId, leadSeconds = 5) {
-            const nextVideoId = String(videoId || '').trim() || null;
-            const numericLead = Number(leadSeconds);
-            const nextLeadSeconds = Number.isFinite(numericLead)
-                ? Math.max(0, Math.min(15, numericLead))
-                : 5;
-            const videoChanged = nextVideoId !== currentYouTubeVideoId;
-
-            currentYouTubeVideoId = nextVideoId;
-            currentVideoLeadSeconds = nextLeadSeconds;
-            youtubePlayerErrorCode = null;
-            updateYouTubePlayerNotice();
-            pendingVideoStart = null;
-
-            if (!currentYouTubeVideoId) {
-                destroyYouTubePlayer();
-                return;
-            }
-
-            if (!player) createYouTubePlayer();
-            if (!videoChanged || !youtubePlayerReady || !player) return;
-            if (typeof player.cueVideoById === 'function') {
-                player.cueVideoById({ videoId: currentYouTubeVideoId, startSeconds: 0 });
-            }
-        }
-
-        window.setYouTubeVideo = setYouTubeVideo;
-
-        function startYouTubeAt(seconds, leadSeconds = currentVideoLeadSeconds) {
-            const requestedLead = Number(leadSeconds);
-            const safeLeadSeconds = Number.isFinite(requestedLead)
-                ? Math.max(0, Math.min(15, requestedLead))
-                : currentVideoLeadSeconds;
-            const startSeconds = Math.max(0, Number(seconds) - safeLeadSeconds);
-            if (!currentYouTubeVideoId || !Number.isFinite(startSeconds)) return;
-            pendingVideoStart = startSeconds;
-
-            if (!youtubePlayerReady || !player || typeof player.getPlayerState !== 'function') return;
-
-            const state = player.getPlayerState();
-            if (state === YT.PlayerState.UNSTARTED || state === YT.PlayerState.CUED) {
-                // loadVideoById is reliable before the first playback; seekTo alone is often ignored here.
-                player.loadVideoById({ videoId: currentYouTubeVideoId, startSeconds });
-            } else {
-                player.seekTo(startSeconds, true);
-                player.playVideo();
-            }
-            pendingVideoStart = null;
-        }
-
-        window.playVideoAt = startYouTubeAt;
-
-        function updateYouTubePlayerNotice(message = '') {
-            const notice = document.getElementById('youtubePlayerNotice');
-            const noticeText = document.getElementById('youtubePlayerNoticeText');
-            const noticeLink = document.getElementById('youtubePlayerNoticeLink');
-            if (!notice || !noticeText || !noticeLink) return;
-
-            notice.style.display = message ? 'block' : 'none';
-            noticeText.textContent = message ? `${message} ` : '';
-            noticeLink.href = currentYouTubeVideoId
-                ? `https://www.youtube.com/watch?v=${encodeURIComponent(currentYouTubeVideoId)}`
-                : '#';
-        }
-
-        function onYouTubePlayerReady() {
-            if (!currentYouTubeVideoId) {
-                destroyYouTubePlayer();
-                return;
-            }
-            youtubePlayerReady = true;
-            if (pendingVideoStart !== null) {
-                startYouTubeAt(pendingVideoStart + currentVideoLeadSeconds);
-            } else if (currentYouTubeVideoId) {
-                player.cueVideoById({ videoId: currentYouTubeVideoId, startSeconds: 0 });
-            }
-        }
-
-        function onYouTubePlayerError(event) {
-            youtubePlayerErrorCode = Number(event?.data);
-            const messages = {
-                100: 'This video was removed or is private.',
-                101: 'The video owner does not allow playback inside other websites.',
-                150: 'The video owner does not allow playback inside other websites.',
-                153: 'YouTube could not identify the website that embedded this player.'
-            };
-            updateYouTubePlayerNotice(messages[youtubePlayerErrorCode] || 'YouTube could not play this video here.');
-            console.warn(`YouTube player error ${youtubePlayerErrorCode} for video ${currentYouTubeVideoId || "unknown"}.`);
-        }
-
-        function onYouTubeIframeAPIReady() {
-            createYouTubePlayer();
-        }
-    </script>
-    <script src="https://www.youtube.com/iframe_api"></script>
-
-    <script src="js/api.js?v=6"></script>
-    <script src="js/court.js?v=15"></script>
-    <script src="js/main.js?v=26"></script>
+    </section>
+    <section id="gamesSection" aria-labelledby="gamesTitle" hidden><div class="page-intro"><p class="eyebrow">COURTLENS / GAMES</p><h1 id="gamesTitle">Games</h1><p>Build a closing lineup or test your EuroLeague knowledge.</p></div><div class="mode-tabs" role="group" aria-label="Game mode"><button data-mode="coach" aria-pressed="true">Coach Challenge</button><button data-mode="quiz" aria-pressed="false">Quiz Ball</button></div>
+      <section id="coachPanel" aria-labelledby="coachTitle"><div class="coach-intro"><div><p class="eyebrow">COACH SIMULATOR</p><h2 id="coachTitle">Manage the final minutes.</h2><p>Take over a fourth-quarter timeout. Select five players and simulate the remaining possessions.</p><p class="muted">Historical scenario · Simulated outcome, including an element of chance.</p></div><div class="coach-start"><label>Season<select id="coachSeason"><option value="ALL">Any season</option><option value="E2023">2023–24</option><option value="E2024">2024–25</option><option value="E2025">2025–26</option></select></label><button id="startChallenge" class="primary-button">Start challenge</button></div></div><div id="coachStatus" class="notice" role="status" hidden></div><div id="coachWorkspace" hidden><div id="scenarioHeader" class="scenario-header"></div><div class="coach-layout"><div><div id="simCourt" class="sim-court" aria-label="Your five-player lineup"></div><p class="muted">Select a position, then add a player. You can also drag players onto the court.</p></div><section class="bench"><div class="section-heading"><h3>Available players</h3><span id="lineupCount" role="status">0 of 5 selected</span></div><div id="benchList"></div></section></div><div class="simulation-actions"><button id="runSimulation" class="primary-button" disabled>Run simulation</button><button id="clearLineup" class="text-button">Clear lineup</button></div><div id="simulatorResult" class="simulation-result" role="status" hidden></div></div></section>
+      <section id="quizPanel" aria-labelledby="quizTitle" hidden><div id="quizSetup"><div class="section-heading"><div><p class="eyebrow">QUIZ BALL</p><h2 id="quizTitle">Select a format</h2></div><p class="muted">Five formats. Three difficulty levels.</p></div><form id="quizSetupForm"><fieldset class="quiz-categories"><legend class="sr-only">Quiz category</legend><label><input type="radio" name="category" value="who-am-i" checked><span class="category-number">01</span><span><strong>Who am I?</strong><small>Three clues. One player. Can you name them?</small></span></label><label><input type="radio" name="category" value="who-is-missing"><span class="category-number">02</span><span><strong>Who is missing?</strong><small>Four teammates are here. Find the fifth.</small></span></label><label><input type="radio" name="category" value="higher-or-lower"><span class="category-number">03</span><span><strong>Higher or lower</strong><small>Compare two players’ statistics.</small></span></label><label><input type="radio" name="category" value="top-5"><span class="category-number">04</span><span><strong>Top 5</strong><small>Name the five leaders before three misses.</small></span></label><label><input type="radio" name="category" value="fifty-fifty"><span class="category-number">05</span><span><strong>50/50</strong><small>Two possible answers. Make your choice.</small></span></label></fieldset><div class="quiz-start"><fieldset class="difficulty-control"><legend>Difficulty</legend><label><input type="radio" name="difficulty" value="easy" checked>Easy</label><label><input type="radio" name="difficulty" value="medium">Medium</label><label><input type="radio" name="difficulty" value="hard">Hard</label></fieldset><button class="primary-button">Start quiz</button></div></form></div><div id="quizGame" hidden></div></section>
+    </section>
+    <footer class="page-footer"><span>COURTLENS / EUROLEAGUE</span><span>Basketball, in focus.</span></footer>
+  </main>
+  <dialog id="courtFilterDialog" class="filter-dialog" aria-labelledby="courtFilterTitle">
+    <div class="filter-dialog-header"><div><p class="eyebrow">SHOT LOCATIONS</p><h2 id="courtFilterTitle">Court filters</h2></div><button type="button" data-close-dialog="courtFilterDialog" class="text-button">Close</button></div>
+    <p class="muted">Apply to the court and shot table. AI search matches remain in scope.</p>
+    <section class="filter-section"><h3>Players</h3><label class="sr-only" for="courtPlayerSearch">Find a player</label><input id="courtPlayerSearch" type="search" placeholder="Find a player" autocomplete="off"><div id="rosterFilters"></div></section>
+    <section class="filter-section"><h3>Shot type &amp; scoring context</h3><p class="muted">Choose which shot types and scoring situations to include for each team.</p><div id="teamShotFilters"></div></section>
+    <div class="filter-dialog-footer"><button id="resetShotFilters" class="text-button" type="button">Reset filters</button><button type="button" data-close-dialog="courtFilterDialog" class="primary-button">Done</button></div>
+  </dialog>
+  <dialog id="basicsDialog" aria-labelledby="basicsTitle"><form method="dialog"><button class="text-button dialog-close" aria-label="Close glossary">Close ×</button></form><p class="eyebrow">BASKETBALL TERMINOLOGY</p><h2 id="basicsTitle">Glossary</h2><dl><dt>Assist</dt><dd>A pass that directly leads to a teammate scoring.</dd><dt>Turnover</dt><dd>Losing possession of the ball to the other team.</dd><dt>Rebound</dt><dd>Recovering the ball after a missed shot.</dd><dt>Second-chance points</dt><dd>Points scored after recovering your own team’s missed shot.</dd><dt>Fast break</dt><dd>A quick attack before the defense has time to get into position.</dd><dt>Lineup</dt><dd>The five players on court together. Plus/minus is the difference between their team’s points scored and conceded.</dd><dt>Game clock</dt><dd>The time left in a period. Q4, 02:14 means fourth quarter, 2 minutes 14 seconds remaining. OT means overtime.</dd><dt>Positions</dt><dd>Point guard (PG), shooting guard (SG), small forward (SF), power forward (PF), and center (C).</dd></dl></dialog>
+  <div id="shotTooltip" role="tooltip" hidden></div><script defer src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

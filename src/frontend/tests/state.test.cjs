@@ -44,3 +44,32 @@ test('quiz accepts names without accents and surname order, but not arbitrary su
 test('CSV export escapes quotes and neutralizes spreadsheet formulas',()=>{
   assert.equal(csvValue('=1+1'),'"\'=1+1"');assert.equal(csvValue('A "quoted" name'),'"A ""quoted"" name"');
 });
+
+test('full-name autocomplete matches a legacy jersey surname without accepting the wrong person',()=>{
+  const catalog=['Shane Larkin','Kostas Sloukas'];
+  assert.equal(matchesName('Shane Larkin','LARKIN',catalog),true);
+  assert.equal(matchesName('Larkin','LARKIN, SHANE',catalog),true);
+  assert.equal(matchesName('Shane Larkin','LARKIN, SHANE',catalog),true);
+  assert.equal(matchesName('Tom Larkin','LARKIN',catalog),false);
+  assert.equal(matchesName('Shane','Shane Larkin',catalog),false);
+  assert.equal(matchesName('Mike James','JAMES',['Mike James','LeBron James']),false);
+});
+test('passing pair answers require both players, in either order',()=>{
+  const answer='Kostas Sloukas & Mathias Lessort';
+  assert.equal(matchesName('Sloukas',answer),false);
+  assert.equal(matchesName('Lessort and Sloukas',answer),true);
+  assert.equal(matchesName('Kostas Sloukas & Mathias Lessort',answer),true);
+  assert.equal(matchesName('Sloukas & Sloukas',answer),false);
+});
+test('every game label includes its number and uses stored stage and round when present',()=>{
+  const {gameLabel}=require('../js/state.js');
+  assert.equal(gameLabel({gameCode:'333',matchup:'Madrid vs Panathinaikos',stage:'Final',round:'43'}),'Game 333 · Final · Round 43 · Madrid vs Panathinaikos');
+  assert.equal(gameLabel({gameCode:'2',matchup:'A vs B'}),'Game 2 · A vs B');
+});
+
+test('compound surnames and optional generational suffixes identify the same player',()=>{
+  assert.equal(matchesName('De Colo','Nando De Colo'),true);
+  assert.equal(matchesName('Wade Baldwin','Wade Baldwin IV'),true);
+  assert.equal(matchesName('Baldwin','Wade Baldwin IV'),true);
+  assert.equal(matchesName('Tom Baldwin','Wade Baldwin IV'),false);
+});

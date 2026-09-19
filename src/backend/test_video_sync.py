@@ -121,9 +121,9 @@ class VideoSynchronizationTests(unittest.TestCase):
         ):
             models = backend_app.available_ai_search_models()
 
-        self.assertEqual([model["provider"] for model in models], ["gemini", "openai"])
-        self.assertFalse(models[0]["is_default"])
-        self.assertTrue(models[1]["is_default"])
+        self.assertEqual([model["provider"] for model in models], ["openai", "gemini"])
+        self.assertTrue(models[0]["is_default"])
+        self.assertFalse(models[1]["is_default"])
 
     def test_ontology_prompt_uses_virtuoso_safe_player_name_boundaries(self):
         self.assertIn(
@@ -503,6 +503,7 @@ LIMIT 200
         fake_client = SimpleNamespace(aio=SimpleNamespace(models=fake_models))
         request = backend_app.ChatRequest(
             message="the percentage 2 shots of sloukas",
+            provider="gemini",
             game_code="333",
             season_code="E2023",
         )

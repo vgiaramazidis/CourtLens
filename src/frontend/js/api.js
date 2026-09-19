@@ -20,14 +20,14 @@ async function apiRequest(path, params = {}, options = {}) {
     const message = detail || data.error || `The request could not be completed (${response.status}).`;
     if(/configure|not configured|AI generation is currently unavailable/i.test(message))throw new Error('AI generation is unavailable on this server. Please choose another activity.');
     if(response.status===429 || /429|RESOURCE_EXHAUSTED|rate.limit/i.test(message))throw new Error('The service has reached its request limit. Please try again later.');
-    if(response.status===503 || /503|high demand|temporarily unavailable/i.test(message))throw new Error('The service is temporarily busy. Please try again in a moment.');
+    if(response.status===503 || /503|high demand|temporarily unavailable/i.test(message))throw new Error(/AI provider|quiz provider/.test(message)?message:'The service is temporarily busy. Please try again in a moment.');
     throw new Error(/[\u0370-\u03ff\u1f00-\u1fff]/.test(message) ? 'The data service could not complete this request. Please try again.' : message);
   }
   return data;
 }
 
-function fetchAiChat(message, game_code, season_code, provider, signal) {
-  return apiRequest('/api/chat', {}, {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({message,game_code:game_code || null,season_code,provider:provider || null})});
+function fetchAiChat(message, game_code, season_code, provider, signal, workspace = 'explore') {
+  return apiRequest('/api/chat', {}, {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({message,game_code:game_code || null,season_code,provider:provider || null,include_answer:true,workspace})});
 }
 function fetchAvailableVideoGames(season_code, signal) { return apiRequest('/api/video/games',{season_code},{signal}); }
 function fetchMatchPlayByPlay(game_code, season_code, signal) { return apiRequest('/api/match/playbyplay',{game_code,season_code},{signal}).then(data=>data.actions || []); }

@@ -11,7 +11,12 @@ python3 -m http.server 3000 --directory src/frontend
 Open `http://localhost:3000` rather than opening `index.html` directly.
 The fixed light interface has three primary sections:
 
-- **Explore**: AI Search, shot locations, result tables, and player/team analysis.
+- **Explore**: separate **Ask a question** and **Browse statistics** modes.
+  Player-profile questions (for example, “Who is Sloukas?”) show a photo,
+  source-linked biography, and career highlights. Game-action answers derive
+  their counts directly from verified Play-by-Play; other AI explanations use
+  returned query evidence. Manual reports retain all six analysis types with
+  validated player/name, season, game, period, and clock filters.
 - **Video Analysis**: available YouTube games, synchronized shots and Play-by-Play,
   with AI Search filtering the matching actions.
 - **Games**: Coach Challenge and all five Quiz Ball modes.
@@ -23,9 +28,12 @@ three bottom tabs; tables and court views have a local display switch.
 Frontend and related backend regression checks:
 
 ```bash
-node --test src/frontend/tests/state.test.cjs
-.venv/bin/python -m unittest src.backend.test_english_ui src.backend.test_coach_scope src.backend.test_video_sync src.backend.test_ai_search_evaluation
+node --test src/frontend/tests/*.cjs
+PYTHONPATH=src/backend:src/data_pipeline .venv/bin/python -m unittest discover -s src/backend -p 'test_*.py'
 ```
+
+The latest scoped UX, API, data-correctness, and video-timeline audit is recorded
+in [the system review](evaluation/courtlens-system-review-2026-09-19.md).
 
 ## Backend AI configuration
 
@@ -44,11 +52,11 @@ Open `.env` and replace the two placeholders:
 ```dotenv
 GEMINI_API_KEY=your-real-gemini-key
 OPENAI_API_KEY=your-real-openai-key
-AI_SEARCH_PROVIDER=gemini
+AI_SEARCH_PROVIDER=openai
 AI_SEARCH_PROMPT_VARIANT=ontology
 ```
 
-The frontend model selector displays only providers whose key is present. Start
+GPT-5 Mini is the default AI Search model. The frontend model selector displays only providers whose key is present. Quiz Ball uses GPT-5 Mini exclusively for generated questions; Top 5 is built directly from database statistics and needs no AI provider. Start
 the backend without exporting the keys manually:
 
 ```bash

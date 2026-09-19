@@ -13,7 +13,7 @@
     ['blocks','Blocks',/Block|ShotRejected/],['substitutions','Substitutions',/Substitution|PlayerIn|PlayerOut/],
     ['timeouts','Timeouts',/Timeout/],['jump-balls','Jump balls',/JumpBall/],['periods','Period events',/BeginPeriod|EndPeriod|PeriodStart|PeriodEnd|GameEnd|EndGame/],['other','Other',/.*/]
   ];
-  const state = {section:'explore',mode:'coach',shots:[],actions:[],roster:[],players:new Map(),games:[],videoCatalog:[],models:[],table:[],columns:[],tableLimit:50,pbpLimit:50,aiUris:null,shotUris:null,selectedAction:null,scenario:null,lineup:Array(5).fill(null),slot:0,quiz:null,tableIsShots:false};
+  const state = {exploreMode:'ask',section:'explore',mode:'coach',shots:[],actions:[],roster:[],players:new Map(),games:[],videoCatalog:[],models:[],teams:[],table:[],columns:[],tableLimit:50,pbpLimit:50,aiUris:null,shotUris:null,selectedAction:null,scenario:null,lineup:Array(5).fill(null),slot:0,quiz:null,tableIsShots:false};
   window.App = { get section(){return state.section;}, selectShot:shot=>selectShot(shot), clearShotSelection };
   window.homePlayersSet = new Set();
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -34,8 +34,19 @@
       ? `<img class="avatar" src="${esc(src)}" alt="" loading="lazy">`
       : `<span class="avatar" aria-hidden="true">${esc(initials(player?.name || 'Player'))}</span>`;
   }
+  function teamMarkup(name,code='') {
+    const team=state.teams.find(t=>t.id===code || S.normalizeName(t.name)===S.normalizeName(name));
+    const logo=team?.logo;
+    return `<span class="team-identity"><span class="team-badge">${logo && /^https?:\/\//.test(logo)?`<img src="${esc(logo)}" alt="" data-team-fallback="${esc(initials(name))}">`:esc(initials(name))}</span><span>${esc(name)}</span></span>`;
+  }
+  async function loadTeams(signal) {
+    if(state.teams.length)return;
+    try {const data=await apiRequest('/api/teams',{}, {signal});state.teams=data.teams || [];}
+    catch(error){if(error.name==='AbortError')throw error;}
+  }
   function personMarkup(player) { return `<span class="table-person">${imageMarkup(player)}<span>${esc(playerName(player?.name || player?.id))}</span></span>`; }
   document.addEventListener('error',event=>{
+    if(event.target instanceof HTMLImageElement && event.target.hasAttribute('data-team-fallback')){event.target.parentElement.textContent=event.target.dataset.teamFallback;return;}
     if(event.target instanceof HTMLImageElement){const span=document.createElement('span');span.className='avatar';span.textContent='EL';span.setAttribute('aria-hidden','true');event.target.replaceWith(span);}
   },true);
   function message(id,content,error=false) { const el=$(id); el.textContent=content; el.classList.toggle('error',error); el.hidden=!content; }
@@ -57,11 +68,11 @@
     $('shotTeam').value='';$('shotTeam').options[1].textContent='Home team';$('shotTeam').options[2].textContent='Away team';$('shotResult').value='';$('pbpQuarter').innerHTML='<option value="">All periods</option>';
     document.querySelectorAll('#analysisSection details').forEach(el=>el.open=false);
     message('workspaceStatus','');text('scopeStatus','');show('retryGamesButton',false);
-    setBusy('aiPlaySearchButton',false,'Search');setBusy('runAnalysis',false,'Run analysis');
+    setBusy('aiPlaySearchButton',false,'Search');setBusy('runAnalysis',false,'Show results');
     $('aiPlaySearchResult').removeAttribute('aria-busy');
     window.setYouTubeVideo?.(null);window.drawShots?.([]);window.highlightShot?.(null);
     setMobileView('results');
-    show('exploreSuggestions',state.section==='explore');
+    show('exploreSuggestions',state.section==='explore' && state.exploreMode==='ask');
   }
   function resetGames() {
     state.scenario=null;state.lineup=Array(5).fill(null);state.slot=0;state.quiz=null;
@@ -70,7 +81,7 @@
     message('coachStatus','');setBusy('startChallenge',false,'Start challenge');setBusy('runSimulation',true,'Run simulation');
   }
   function navigate(section,mode='coach') {
-    requests.reset();state.section=section;state.mode=mode;
+    requests.reset();state.section=section;state.mode=mode;state.exploreMode='ask';
     clearAnalysis();resetGames();
     document.querySelectorAll('[data-section]').forEach(link=>{if(link.dataset.section===section)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
     document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
@@ -85,7 +96,7 @@
     $('aiPlaySearchInput').placeholder=video ? 'Search this game':'Ask about a player, team, or game';
     text('aiSearchNote',video ? 'Choose a game, then ask a question to find its matching plays.':'Search across all available seasons, or narrow your question to a game.');
     document.querySelector('[data-view="results"]').textContent=video ? 'Actions':'Results';
-    show('analysisTools',section==='explore');
+    show('exploreModes',section==='explore');setExploreModeUI();
     $('seasonSelect').innerHTML=video ? '<option value="">Choose a season</option>' : '<option value="ALL">All available seasons</option>'+Object.entries(seasons).map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
     $('gameSelect').innerHTML=`<option value="">${video ? 'Choose a season first':'All games'}</option>`;$('gameSelect').disabled=true;
     $('seasonSelect').disabled=video;
@@ -94,6 +105,18 @@
     if(section!=='games') loadModels();
     window.scrollTo({top:0,behavior:'instant'});
   }
+  function setExploreModeUI() {
+    const browse=state.section==='explore' && state.exploreMode==='browse';
+    show('analysisTools',browse);show('searchForm',!browse);$('aiSearchPanel').setAttribute('aria-label',browse?'Statistics workspace':'AI Search');
+    document.querySelectorAll('[data-explore-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.exploreMode===state.exploreMode)));
+    $(state.section==='video'?'scopeDock':browse?'browseScopeDock':'searchScopeDock').append($('scopeBar'));
+  }
+  document.querySelectorAll('[data-explore-mode]').forEach(button=>button.onclick=()=>{
+    if(state.exploreMode===button.dataset.exploreMode)return;
+    requests.reset();state.exploreMode=button.dataset.exploreMode;clearAnalysis();
+    $('seasonSelect').value='ALL';$('gameSelect').innerHTML='<option value="">All games</option>';$('gameSelect').disabled=true;
+    setExploreModeUI();loadModels();
+  });
   function readRoute() { const [section,mode]=location.hash.slice(1).split('/');navigate(['explore','video','games'].includes(section)?section:'explore',mode==='quiz'?'quiz':'coach'); }
   window.addEventListener('hashchange',()=>{readRoute();$('mainContent').focus({preventScroll:true});});
   document.querySelector('.skip-link').addEventListener('click',event=>{event.preventDefault();$('mainContent').focus();$('mainContent').scrollIntoView();});
@@ -114,7 +137,7 @@
   $('resetAnalysisFilters').onclick=()=>{
     const type=$('analysisType').value;$('analysisForm').reset();$('analysisType').value=type;updateTopicFilters();updateAnalysisFilterSummary();message('analysisFilterError','');
   };
-  $('clearSearchButton').addEventListener('click',()=>navigate(state.section));
+  $('clearSearchButton').addEventListener('click',()=>{const mode=state.exploreMode;navigate(state.section);if(state.section==='explore' && mode==='browse'){state.exploreMode=mode;setExploreModeUI();show('exploreSuggestions',false);}});
   $('seasonSelect').addEventListener('change',()=>{requests.reset();clearAnalysis();loadGames();loadModels();});
   $('gameSelect').addEventListener('change',()=>{requests.reset();clearAnalysis();if($('gameSelect').value)loadGame();loadModels();});
   $('retryGamesButton').addEventListener('click',()=>state.section==='video' && !state.videoCatalog.length ? loadVideoCatalog() : loadGames());
@@ -129,7 +152,7 @@
       if(!ticket.current())return;
       $('aiModelSelect').innerHTML=state.models.length ? state.models.map(model=>`<option value="${esc(model.provider)}" ${model.is_default?'selected':''}>${esc(model.label)}</option>`).join('') : '<option value="">No provider available</option>';
       $('aiModelSelect').disabled=!state.models.length;
-      text('aiModelStatus',state.models.length ? 'Choose the provider for this search.':'AI Search is currently unavailable. Topic analysis is still available.');
+      text('aiModelStatus',state.models.length ? 'Choose the provider for this search.':'AI Search is currently unavailable. Player profiles and Browse statistics are still available.');
     } catch(error) {if(ticket.current()){text('aiModelStatus',error.message);$('aiModelSelect').disabled=true;}}
   }
   async function loadVideoCatalog() {
@@ -151,8 +174,7 @@
     try {
       const data=await apiRequest('/api/games',{season_code:season},{signal:ticket.signal});if(!ticket.current())return;
       state.games=state.section==='video' ? S.videoGamesForSeason(data.games || [],state.videoCatalog,season) : data.games || [];
-      const matchupCounts=new Map();state.games.forEach(game=>matchupCounts.set(game.matchup,(matchupCounts.get(game.matchup)||0)+1));
-      $('gameSelect').innerHTML=`<option value="">${state.section==='video'?'Choose a game':'All games in this season'}</option>`+state.games.map(game=>`<option value="${esc(game.gameCode)}">${esc(game.matchup)}${matchupCounts.get(game.matchup)>1?` · Game ${esc(game.gameCode)}`:''}</option>`).join('');
+      $('gameSelect').innerHTML=`<option value="">${state.section==='video'?'Choose a game':'All games in this season'}</option>`+state.games.map(game=>`<option value="${esc(game.gameCode)}">${esc(S.gameLabel(game))}</option>`).join('');
       $('gameSelect').disabled=!state.games.length;
       message('workspaceStatus',state.games.length ? '' : 'No games are available for this season.');text('scopeStatus',`${state.games.length} games${state.section==='video'?' with video':''}`);
     } catch(error){if(ticket.current()){$('gameSelect').innerHTML='<option value="">Games unavailable</option>';message('workspaceStatus',error.message,true);show('retryGamesButton');}}
@@ -160,8 +182,9 @@
   function ingestRoster(data) {
     state.roster=[];state.players.clear();window.homePlayersSet.clear();
     (data.lineups || []).forEach(lineup=>(lineup.players || '').split('@@').filter(Boolean).forEach(info=>{
-      const [id,name,img]=info.split('|');if(state.players.has(id))return;
-      const player={id,name:name || id,img,side:lineup.teamType};state.players.set(id,player);state.roster.push(player);
+      const [id,name,img,position]=info.split('|');
+      if(state.players.has(id)){const existing=state.players.get(id);existing.position=[...new Set([...(existing.position || '').split(' / '),position].filter(Boolean))].sort().join(' / ');return;}
+      const player={id,name:name || id,img,position,side:lineup.teamType};state.players.set(id,player);state.roster.push(player);
       if(player.side==='home')window.homePlayersSet.add(player.name);
     }));
     $('playerOptions').innerHTML=state.roster.map(player=>`<option value="${esc(player.id)}">${esc(playerName(player.name))}</option>`).join('');
@@ -174,17 +197,19 @@
         apiRequest('/api/game/lineups',params,{signal:ticket.signal}),
         video ? apiRequest('/api/shots',params,{signal:ticket.signal}):Promise.resolve(null),
         video ? fetchMatchPlayByPlay(params.game_code,params.season_code,ticket.signal):Promise.resolve(null),
-        video ? fetchVideoConfig(params.game_code,params.season_code,ticket.signal):Promise.resolve(null)
+        video ? fetchVideoConfig(params.game_code,params.season_code,ticket.signal):Promise.resolve(null),
+        loadTeams(ticket.signal)
       ]);
       if(!ticket.current())return;ingestRoster(roster);message('workspaceStatus','');
       const names=(state.games.find(game=>String(game.gameCode)===params.game_code)?.matchup || '').split(/\s+vs\s+/i);
       const home=names[0] || 'Home team',away=names[1] || 'Away team';
       $('shotTeam').options[1].textContent=home;$('shotTeam').options[2].textContent=away;
+      show('gameHeading');$('gameHeading').innerHTML=`${teamMarkup(home)}<span class="matchup-separator">vs</span>${teamMarkup(away)}<span class="muted">${esc(seasons[params.season_code])}</span>`;
       if(!video)return;
       if(!config?.available || !config.timeline_available){message('workspaceStatus','This game’s synchronized video is no longer available. Choose another game.',true);return;}
       state.shots=shots.shots || [];state.actions=actions || [];
       show('videoPanel');show('courtPanel');show('pbpPanel');show('mobileViewSwitch');show('gameHeading');
-      $('gameHeading').innerHTML=`<span class="team-identity"><span class="team-badge">${esc(initials(home))}</span>${esc(home)}</span><span class="game-score">${esc(roster.homeScore ?? '—')} – ${esc(roster.roadScore ?? '—')}<small>Final score</small></span><span class="team-identity"><span class="team-badge">${esc(initials(away))}</span>${esc(away)}</span><span class="muted">${esc(seasons[params.season_code])} · Full game</span>`;
+      $('gameHeading').innerHTML=`${teamMarkup(home)}<span class="game-score">${esc(roster.homeScore ?? '—')} – ${esc(roster.roadScore ?? '—')}<small>Final score</small></span>${teamMarkup(away)}<span class="muted">${esc(seasons[params.season_code])} · Full game</span>`;
       $('shotTeam').options[1].textContent=home;$('shotTeam').options[2].textContent=away;
       window.setYouTubeVideo(config.youtube_id,config.playback_lead_seconds);
       buildShotFilters();buildActionFilters();renderActions();applyShotFilters();
@@ -274,7 +299,7 @@
   $('clearShotSelection').onclick=clearShotSelection;
   async function getPlayer(id,signal) {
     if(state.players.has(id))return state.players.get(id);
-    try {const data=await apiRequest('/api/player',{player:id},{signal});return {id,name:data.player?.name || id,img:data.player?.img};}
+    try {const data=await apiRequest('/api/player',{player:id},{signal});return {id,name:data.player?.name || id,img:data.player?.img,position:data.player?.position};}
     catch(error){if(error.name==='AbortError')throw error;return {id,name:id};}
   }
   setInterval(()=>{
@@ -309,9 +334,12 @@
     }
     return count!==null ? `${count} matching plays found in this game.`:`${rows.length} ${rows.length===1?'result':'results'} found in the selected data. Explore the details below.`;
   }
-  function setAnswer(summary,question='') {
+  function setAnswer(summary,question='',answer=null) {
     const el=$('aiPlaySearchResult');el.className='answer';el.hidden=false;
-    el.innerHTML=`<p>${esc(summary)}</p><p class="answer-scope">${question ? `${esc(question)} · `:''}${esc(scopeText())}</p>`;
+    const paragraphs=answer?.paragraphs?.length?answer.paragraphs:[summary];
+    const profiles=answer?.profiles || [];
+    const sourceLink=url=>{try {const parsed=new URL(url);return parsed.protocol==='https:' && parsed.hostname==='www.euroleaguebasketball.net'?`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">EuroLeague player profile</a>`:'';}catch{return '';}};
+    el.innerHTML=`<div class="answer-heading"><p class="eyebrow">${answer?.kind==='profile'?'PLAYER PROFILE':'ANSWER'}</p>${question?`<p class="answer-question">${esc(question)}</p>`:''}</div>${profiles.length?profiles.map(profile=>`<article class="player-profile"><div class="profile-heading">${imageMarkup({name:profile.name,img:profile.image})}<div><h2>${esc(profile.name)}</h2><p class="muted">${esc([profile.position,profile.country].filter(Boolean).join(' · '))}</p></div></div><div class="answer-prose">${profile.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}</div><p class="profile-source">${sourceLink(profile.source_url)}</p></article>`).join(''): `<div class="answer-prose">${paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}</div>`}<p class="answer-scope">${esc(answer?.note || scopeText())}</p>`;
   }
   function updateSelectedResult() {
     $('resultTable').querySelectorAll('[data-result]').forEach(button=>{const selected=Boolean(state.selectedAction && state.table[Number(button.dataset.result)]?._shot?.action_uri===state.selectedAction);button.setAttribute('aria-pressed',String(selected));button.closest('tr').classList.toggle('selected-result',selected);});
@@ -341,14 +369,14 @@
     const params=scopeParams();
     if(state.section==='video' && (!params.game_code || $('videoPanel').hidden)){message('aiPlaySearchResult','Choose an available video game and wait for it to load first.',true);return;}
     const ticket=requests.start('query');
-    setBusy('aiPlaySearchButton',true,'Searching…');setBusy('runAnalysis',false,'Run analysis');$('aiPlaySearchResult').setAttribute('aria-busy','true');
+    setBusy('aiPlaySearchButton',true,'Searching…');setBusy('runAnalysis',false,'Show results');$('aiPlaySearchResult').setAttribute('aria-busy','true');
     show('evidencePanel',false);state.table=[];state.aiUris=null;state.shotUris=null;state.tableIsShots=false;state.tableLimit=50;state.pbpLimit=50;clearShotSelection();
     if(state.section==='explore'){show('courtPanel',false);show('pbpPanel',false);show('mobileViewSwitch',false);window.drawShots?.([]);}
     else {renderActions();applyShotFilters();}
     message('aiPlaySearchResult','Searching the selected basketball data…');show('exploreSuggestions',false);
     try {
       const season=params.season_code==='ALL'?Object.keys(seasons).join(','):params.season_code;
-      const data=await fetchAiChat(question,params.game_code,season,$('aiModelSelect').value,ticket.signal);
+      const data=await fetchAiChat(question,params.game_code,season,$('aiModelSelect').value,ticket.signal,state.section);
       if(!ticket.current())return;
       let count=null;
       if(data.playbyplay_filter && params.game_code){
@@ -365,8 +393,8 @@
         }else if(state.section==='video'){applyShotFilters();}
       }
       if(!ticket.current())return;
-      setAnswer(friendlySummary(data,count),question);
-      if(!data.playbyplay_filter || !params.game_code){
+      setAnswer(friendlySummary(data,count),question,data.answer);
+      if(data.answer?.kind!=='profile' && (!data.playbyplay_filter || !params.game_code)){
         state.table=(data.results || []).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,valueOf(value)])));
         state.columns=[...new Set(state.table.flatMap(Object.keys))].filter(key=>!['action','actionuri','play','playuri','event','eventuri','sequence','order'].includes(key.toLowerCase()));
         if(state.columns.length){text('evidenceTitle','Search results');renderTable();}
@@ -378,8 +406,9 @@
   function playerId(input) {const value=$(input).value.trim();return state.roster.find(p=>S.normalizeName(p.name)===S.normalizeName(value) || S.normalizeName(playerName(p.name))===S.normalizeName(value))?.id || value;}
   function updateTopicFilters() {
     const type=$('analysisType').value;
-    const relevant={playerFilter:['shots','second-chance','fouls-drawn','defensive-anchors'],assistFilter:['shots'],foulingPlayer:['fouls-drawn'],blockingPlayer:['defensive-anchors'],lineupFilter:['shots']};
-    Object.entries(relevant).forEach(([id,types])=>{const visible=types.includes(type);$(id).closest('label').hidden=!visible;if(!visible)$(id).value='';});
+    const relevant={playerFilter:['shots','second-chance','fouls-drawn','defensive-anchors'],assistFilter:['shots'],foulingPlayer:['fouls-drawn'],blockingPlayer:['defensive-anchors'],lineupFilter:[]};
+    Object.entries(relevant).forEach(([id,types])=>{const visible=types.includes(type);$(id).closest('label').hidden=!visible;if(!visible && id!=='lineupFilter')$(id).value='';});
+    text('analysisDescription',{shots:'Every returned shot, with court locations and a filterable table. Up to 500 shots; choose a game for a complete view.',lineups:'The ten five-player groups with the most points scored together. Scoring totals do not measure defensive performance.','assist-duos':'The ten passer–scorer combinations with the most assisted baskets.','second-chance':'The ten players with the most points after an offensive rebound.','fouls-drawn':'The ten players who drew the most fouls.','defensive-anchors':'The ten players with the most blocked shots.'}[type]);
     $('advancedFilters').querySelectorAll('.filter-section').forEach(section=>section.hidden=![...section.querySelectorAll('label')].some(label=>!label.hidden));
     updateAnalysisFilterSummary();
   }
@@ -391,17 +420,18 @@
   }
   $('advancedFilters').addEventListener('input',updateAnalysisFilterSummary);
   $('analysisForm').addEventListener('invalid',event=>{if(event.target.closest('#advancedFilters'))$('advancedFilters').showModal();},true);
-  $('analysisType').addEventListener('change',updateTopicFilters);
+  $('analysisType').addEventListener('change',()=>{$('lineupFilter').value='';updateTopicFilters();});
   async function runAnalysis(event) {
     event?.preventDefault();
     const type=$('analysisType').value;
     const params={...scopeParams(),player:playerId('playerFilter'),assist_by:playerId('assistFilter'),filter_type:$('presenceFilter').value,filter_id:playerId('presencePlayer'),quarter:$('analysisQuarter').value,min_start:$('clockFrom').value,min_end:$('clockTo').value};
     if(params.filter_type && !params.filter_id){message('analysisFilterError','Choose a player or referee for the context filter.',true);$('advancedFilters').showModal();return;}
+    if(params.quarter==='OT' && Number(params.min_start)>5){message('analysisFilterError','Overtime periods have five minutes. Choose clock limits from 5 to 0.',true);$('advancedFilters').showModal();return;}
     if((params.min_start==='') !== (params.min_end==='') || (params.min_start!=='' && Number(params.min_start)<Number(params.min_end))){message('analysisFilterError','Enter both times, starting with the larger number of minutes remaining (for example, from 5 to 0).',true);$('advancedFilters').showModal();return;}
     message('analysisFilterError','');$('advancedFilters').close();
     const ticket=requests.start('query');
     setBusy('runAnalysis',true,'Loading…');setBusy('aiPlaySearchButton',false,'Search');$('aiPlaySearchResult').removeAttribute('aria-busy');
-    message('aiPlaySearchResult','Loading the selected analysis…');show('exploreSuggestions',false);show('evidencePanel',false);show('pbpPanel',false);show('courtPanel',false);show('mobileViewSwitch',false);state.tableLimit=50;state.aiUris=null;state.shotUris=null;state.tableIsShots=type==='shots';clearShotSelection();
+    $('aiPlaySearchInput').value='';message('aiPlaySearchResult','Loading the selected report…');show('exploreSuggestions',false);show('evidencePanel',false);show('pbpPanel',false);show('courtPanel',false);show('mobileViewSwitch',false);state.tableLimit=50;state.aiUris=null;state.shotUris=null;state.tableIsShots=type==='shots';clearShotSelection();
     try {
       if(type==='shots'){
         params.lineup_uri=$('lineupFilter').value.trim();const data=await apiRequest('/api/shots',params,{signal:ticket.signal});if(!ticket.current())return;
@@ -427,7 +457,7 @@
       }
       setMobileView('results');$('aiSearchPanel').scrollIntoView({block:'start'});
     }catch(error){if(ticket.current())message('aiPlaySearchResult',error.message,true);}
-    finally{if(ticket.current())setBusy('runAnalysis',false,'Run analysis');}
+    finally{if(ticket.current())setBusy('runAnalysis',false,'Show results');}
   }
   $('analysisForm').addEventListener('submit',runAnalysis);
 
@@ -438,11 +468,12 @@
     try {
       const scenario=await apiRequest('/api/simulator/scenario',{season_code:season},{signal:ticket.signal});if(!ticket.current())return;
       const roster=await apiRequest('/api/game/lineups',{game_code:scenario.game_code,season_code:season},{signal:ticket.signal});if(!ticket.current())return;ingestRoster(roster);
+      await loadTeams(ticket.signal);if(!ticket.current())return;
       const players=await Promise.all((scenario.roster || []).map(p=>getPlayer(p.id,ticket.signal)));if(!ticket.current())return;
       if(players.length<5)throw new Error('This scenario does not have five available players. Try another challenge.');
       state.scenario={...scenario,season,players};show('coachWorkspace');message('coachStatus','');
       const difference=Number(scenario.opp_score)-Number(scenario.user_score);
-      $('scenarioHeader').innerHTML=`<p class="eyebrow">${esc(seasons[season])} · FOURTH QUARTER · HISTORICAL SCENARIO</p><h3>You coach ${esc(scenario.user_team_name || scenario.user_team)}.</h3><p>${difference>0?`Your team trails by ${difference}.`:'The scores are level.'} There is <strong>${esc(scenario.clock)}</strong> left.</p><p class="muted">${esc(scenario.user_team_name || scenario.user_team)} ${esc(scenario.user_score)} – ${esc(scenario.opp_score)} ${esc(scenario.opponent_name || scenario.opponent)}</p>`;
+      $('scenarioHeader').innerHTML=`<p class="eyebrow">${esc(seasons[season])} · GAME ${esc(scenario.game_code)} · FOURTH QUARTER · HISTORICAL SCENARIO</p><h3>You coach ${esc(scenario.user_team_name || scenario.user_team)}.</h3><p>${difference>0?`Your team trails by ${difference}.`:'The scores are level.'} There is <strong>${esc(scenario.clock)}</strong> left.</p><div class="scenario-matchup">${teamMarkup(scenario.user_team_name || scenario.user_team,scenario.user_team)}<strong>${esc(scenario.user_score)} – ${esc(scenario.opp_score)}</strong>${teamMarkup(scenario.opponent_name || scenario.opponent,scenario.opponent)}</div>`;
       renderLineup();$('scenarioHeader').tabIndex=-1;$('scenarioHeader').focus();
     }catch(error){if(ticket.current())message('coachStatus',error.message,true);}
     finally{if(ticket.current())setBusy('startChallenge',false,state.scenario?'New challenge':'Try another challenge');}
@@ -454,7 +485,7 @@
       const person=state.lineup[index];
       return `<div class="position-slot ${state.slot===index?'selected':''}" data-slot="${index}"><button class="text-button slot-label" data-select-slot="${index}" aria-pressed="${state.slot===index}">${position}</button>${person?`${imageMarkup(person)}<strong>${esc(playerName(person.name))}</strong><button class="text-button" data-remove-slot="${index}" aria-label="Remove ${esc(playerName(person.name))}">Remove</button>`:`<button class="text-button" data-select-slot="${index}" aria-label="Choose player for ${position}"><span class="choose-slot">+</span><br>Choose player</button>`}</div>`;
     }).join('');
-    $('benchList').innerHTML=(state.scenario?.players || []).map(person=>`<div class="bench-row" draggable="true" data-player-id="${esc(person.id)}">${personMarkup(person)}<button class="secondary-button" data-add-player="${esc(person.id)}" ${state.lineup.some(p=>p?.id===person.id)?'disabled':''}>${state.lineup.some(p=>p?.id===person.id)?'Selected':'Add'}</button></div>`).join('');
+    $('benchList').innerHTML=(state.scenario?.players || []).map(person=>`<div class="bench-row" draggable="true" data-player-id="${esc(person.id)}">${imageMarkup(person)}<span class="bench-person"><strong>${esc(playerName(person.name))}</strong><small>${esc(person.position || "Position unavailable")}</small></span><button class="secondary-button" data-add-player="${esc(person.id)}" ${state.lineup.some(p=>p?.id===person.id)?'disabled':''}>${state.lineup.some(p=>p?.id===person.id)?'Selected':'Add'}</button></div>`).join('');
     const count=state.lineup.filter(Boolean).length;text('lineupCount',`${count} of 5 selected`);$('runSimulation').disabled=count!==5;
   }
   function invalidateSimulation(){requests.start('simulation');show('simulatorResult',false);text('runSimulation','Run simulation');}
@@ -506,32 +537,50 @@
     const q=state.quiz;if(!q)return;const data=q.data;
     let content='';
     if(q.category==='who-am-i')content=`<p>Identify the player from the clues. You have ${data.hints.length} attempts.</p><div id="quizHints" class="quiz-hints"><p><strong>Clue 1.</strong> ${esc(data.hints[0])}</p></div>`;
-    if(q.category==='who-is-missing')content=`<p>These four players shared the court. Who was the fifth?</p><div class="known-players">${data.known_players.map(name=>`<span>${esc(playerName(name))}</span>`).join('')}<span>?</span></div><p class="muted">Two attempts. A clue follows your first miss.</p><div id="quizHints" class="quiz-hints"></div>`;
+    if(q.category==='who-is-missing')content=`<p>These four players shared the court. Who was the fifth?</p>${missingCourt(data)}<p class="muted">Two attempts. A clue follows your first miss.</p><div id="quizHints" class="quiz-hints"></div>`;
     if(q.category==='higher-or-lower')content=`<p>${esc(data.question_text)}</p><p><strong>${esc(playerName(data.player_a.name))}: ${esc(data.player_a.stat)}</strong> ${esc(data.category_name || '')}</p><p>Did ${esc(playerName(data.player_b.name))} record more or fewer?</p><div class="quiz-options"><button data-choice="higher">Higher</button><button data-choice="lower">Lower</button></div>`;
     if(q.category==='fifty-fifty')content=`<p>${esc(data.question_text)}</p><div class="quiz-options">${data.options.map((value,index)=>`<button data-choice="${index}">${esc(value)}</button>`).join('')}</div>`;
     if(q.category==='top-5')content=`<p>${esc(data.question_text)}</p><p class="muted">Three misses available. Enter a player’s name, or the names in a passing pair.</p><ol id="topFive" class="top-five">${data.answers.map((_,index)=>`<li data-answer-index="${index}">Not found yet</li>`).join('')}</ol>`;
     const typed=['who-am-i','who-is-missing','top-5'].includes(q.category);
-    $('quizGame').innerHTML=`<article class="quiz-question"><div class="quiz-meta"><button class="text-button" data-quiz-menu> Quiz menu</button><span>${esc(q.difficulty)} · Streak: ${q.streak}</span></div><h2 tabindex="-1">${quizNames[q.category]}</h2>${content}<p class="muted">${esc([data.matchup,data.season].filter(Boolean).join(' · '))}</p>${typed?'<form id="quizAnswerForm" class="quiz-answer-form"><label>Your answer<input id="quizAnswerInput" type="text" required minlength="2" maxlength="150" list="quizNameOptions" autocomplete="off" placeholder="Enter a name…"><datalist id="quizNameOptions"></datalist></label><button class="primary-button">Check answer</button></form>':''}<div id="quizFeedback" class="quiz-feedback" role="status" hidden></div></article>`;
+    $('quizGame').innerHTML=`<article class="quiz-question"><div class="quiz-meta"><button class="text-button" data-quiz-menu> Quiz menu</button><span>${esc(q.difficulty)} · Streak: ${q.streak}</span></div><h2 tabindex="-1">${quizNames[q.category]}</h2>${content}<p class="muted">${esc([data.game_code && `Game ${data.game_code}`,data.matchup,data.season].filter(Boolean).join(' · '))}</p>${typed?'<form id="quizAnswerForm" class="quiz-answer-form"><label>Your answer<input id="quizAnswerInput" type="text" required minlength="2" maxlength="150" list="quizNameOptions" autocomplete="off" placeholder="Enter a name…"><datalist id="quizNameOptions"></datalist></label><button class="primary-button">Check answer</button></form>':''}<div id="quizFeedback" class="quiz-feedback" role="status" hidden></div></article>`;
     if(typed){
       $('quizAnswerForm').addEventListener('submit',submitQuizGuess);
       $('quizAnswerInput').addEventListener('input',()=>{const term=S.normalizeName($('quizAnswerInput').value);$('quizNameOptions').innerHTML=term.length<2?'':(window.QUIZ_PLAYER_NAMES || []).filter(name=>S.normalizeName(name).includes(term)).slice(0,8).map(name=>`<option value="${esc(name)}"></option>`).join('');});
       $('quizAnswerInput').focus();
     }else $('quizGame').querySelector('h2').focus();
   }
+  function missingCourt(data,revealed=false) {
+    const lineup=data.lineup || [...data.known_players.map(name=>({player:{name},position:''})),{missing:true,position:''}];
+    return `<figure class="missing-lineup"><div class="quiz-court" aria-label="Five-player lineup on an illustrative half court"><svg class="quiz-court-lines" viewBox="0 0 600 440" preserveAspectRatio="none" aria-hidden="true"><path d="M10 10H590V430H10Z M215 10V150H385V10 M215 150A85 85 0 0 0 385 150 M35 10V90C35 445 565 445 565 90V10 M277 27H323"/><circle cx="300" cy="42" r="12"/></svg>${lineup.map(slot=>{
+      const person=slot.missing?(revealed?data.secret_player:null):slot.player;
+      return `<div class="quiz-court-player${slot.missing?' missing-player':''}"${slot.missing?' id="missingPlayerSlot"':''}>${person?imageMarkup(person):'<span class="avatar missing-avatar" aria-hidden="true">?</span>'}<strong>${esc(person?playerName(person.name):'Who is missing?')}</strong><small>${esc(slot.position || 'Position unavailable')}</small></div>`;
+    }).join('')}</div><figcaption>Listed player positions. Court placement is illustrative; these five shared the court in this game.</figcaption></figure>`;
+  }
+  function revealQuizPlayer() {
+    const q=state.quiz,profile=q?.data.secret_player;
+    if(!profile)return;
+    if(q.category==='who-is-missing') {
+      const figure=$('quizGame').querySelector('.missing-lineup');
+      if(figure)figure.outerHTML=missingCourt(q.data,true);
+    }
+    const paragraphs=Array.isArray(profile.paragraphs)?profile.paragraphs:[];
+    const source=profile.source_url && /^https:\/\/www\.euroleaguebasketball\.net\//.test(profile.source_url)?profile.source_url:'';
+    $('quizFeedback').insertAdjacentHTML('beforeend',`<section class="quiz-player-profile" aria-label="Answer player profile"><div class="quiz-profile-heading">${imageMarkup(profile)}<div><h3>${esc(playerName(profile.name))}</h3><p>${esc([profile.position,profile.country].filter(Boolean).join(' · '))}</p></div></div>${paragraphs.map(paragraph=>`<p>${esc(paragraph)}</p>`).join('')}<p class="profile-source">From stored EuroLeague profiles; career information may have changed.${source?` <a href="${esc(source)}" target="_blank" rel="noopener noreferrer">Player profile</a>`:''}</p></section>`);
+  }
   function quizFeedback(content,wrong=false,finished=false) {
-    const q=state.quiz;const feedback=$('quizFeedback');feedback.hidden=false;feedback.className=`quiz-feedback${wrong?' wrong':''}`;feedback.innerHTML=`<p>${esc(content)}</p>`;
-    if(finished){q.active=false;document.querySelectorAll('#quizAnswerForm input,#quizAnswerForm button,.quiz-options button').forEach(el=>el.disabled=true);feedback.insertAdjacentHTML('beforeend',`<button class="primary-button" data-next-quiz data-keep-streak="${wrong?'false':'true'}">${wrong?'Play again':'Next question'}</button>`);}
+    const q=state.quiz;const meta=$('quizGame').querySelector('.quiz-meta>span');if(meta)meta.textContent=`${q.difficulty} · Streak: ${q.streak}`;const feedback=$('quizFeedback');feedback.hidden=false;feedback.className=`quiz-feedback${wrong?' wrong':''}`;feedback.innerHTML=`<p>${esc(content)}</p>`;
+    if(finished){q.active=false;revealQuizPlayer();document.querySelectorAll('#quizAnswerForm input,#quizAnswerForm button,.quiz-options button').forEach(el=>el.disabled=true);feedback.insertAdjacentHTML('beforeend',`<button class="primary-button" data-next-quiz data-keep-streak="${wrong?'false':'true'}">${wrong?'Play again':'Next question'}</button>`);}
   }
   function submitQuizGuess(event) {
     event.preventDefault();const q=state.quiz;if(!q?.active)return;const input=$('quizAnswerInput'),guess=input.value.trim();if(!guess)return;
     if(q.category==='top-5'){
-      const matches=q.data.answers.map((answer,index)=>({answer,index})).filter(({answer})=>S.matchesName(guess,answer.name));
+      const matches=q.data.answers.map((answer,index)=>({answer,index})).filter(({answer})=>S.matchesName(guess,answer.name,window.QUIZ_PLAYER_NAMES || []));
       const fresh=matches.filter(({index})=>!q.revealed.has(index));
       if(fresh.length>1){quizFeedback('That name matches more than one answer. Enter the full name or both players in the pair.');return;}
       if(fresh.length===1){const {answer,index}=fresh[0];q.revealed.add(index);const item=$('topFive').querySelector(`[data-answer-index="${index}"]`);item.innerHTML=`<strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small>`;if(q.revealed.size===5){q.streak++;quizFeedback('All five found. Nicely played.',false,true);}else quizFeedback(`Correct. ${q.revealed.size} of 5 found.`);}
       else if(matches.length){quizFeedback('You already found that answer. Try another name.');}
       else {q.misses++;if(q.misses>=3){$('topFive').innerHTML=q.data.answers.map(answer=>`<li><strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small></li>`).join('');quizFeedback('Three misses. The answers are revealed above.',true,true);}else quizFeedback(`Not on this list. ${3-q.misses} ${3-q.misses===1?'miss':'misses'} remaining.`,true);}
-    }else if(S.matchesName(guess,q.data.secret_player_name)){q.streak++;quizFeedback(`Correct! It was ${playerName(q.data.secret_player_name)}.`,false,true);}
+    }else if(S.matchesName(guess,q.data.secret_player_name,window.QUIZ_PLAYER_NAMES || [])){q.streak++;quizFeedback(`Correct! It was ${playerName(q.data.secret_player_name)}.`,false,true);}
     else {
       q.misses++;const attempts=q.category==='who-am-i'?q.data.hints.length:2;
       if(q.misses>=attempts)quizFeedback(`The player was ${playerName(q.data.secret_player_name)}. Try another question.`,true,true);

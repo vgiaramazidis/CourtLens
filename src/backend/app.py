@@ -2,6 +2,7 @@
 import asyncio
 import csv
 import json
+import math
 import os
 import random
 import re
@@ -17,6 +18,11 @@ import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from analysis_queries import AnalysisFilterError
+from quiz_support import game_stage, quiz_player_profile, missing_lineup
+from search_validation import validate_read_only, unsupported_shot_style
+from search_answers import profile_subject, profile_query, profile_answer, evidence_for_answer, ANSWER_PROMPT, action_answer
 from sparql_queries import (
     get_filtered_player_query, get_game_lineups_query, get_games_list_query,
     get_match_playbyplay_query, get_play_context_query, query_sparql_requests,
@@ -204,7 +210,18 @@ async def query_sparql(sparql_query, *, use_cache=True):
     query_function = _query_sparql_cached if use_cache else query_sparql_requests
     return await asyncio.to_thread(query_function, sparql_query)
 
-app = FastAPI(title="Euroleague API")
+app = FastAPI(title="CourtLens API")
+
+@app.exception_handler(AnalysisFilterError)
+async def invalid_analysis_filter(_request, error):
+    return JSONResponse(status_code=422, content={"detail": str(error)})
+
+async def analysis_data(query):
+    data = await query_sparql(query)
+    if data is None:
+        raise HTTPException(status_code=502, detail="The basketball database did not respond. Please retry your analysis.")
+    return data
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -415,7 +432,7 @@ async def get_shots(
         min_end=min_end,
         lineup_uri=lineup_uri
     )
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"error": "Failed to fetch data from SPARQL endpoint", "shots": []}
@@ -424,8 +441,13 @@ async def get_shots(
     bindings = data.get("results", {}).get("bindings", [])
 
     for result in bindings:
-        raw_coords = result.get("coords", {}).get("value", "0,0")
-        x, y = raw_coords.split(",")
+        raw_coords = result.get("coords", {}).get("value", "")
+        try:
+            x, y = map(float, raw_coords.split(","))
+            if not all(math.isfinite(v) for v in (x, y)):
+                x, y = -1, -1
+        except (ValueError, TypeError):
+            x, y = -1, -1
         action_type_full = result.get("action_type", {}).get("value", "")
         action_type = action_type_full.split("#")[-1]
 
@@ -467,7 +489,7 @@ async def get_shots(
 @app.get("/api/player")
 async def get_player(player: str = Query(None)):
     sparql_query = get_filtered_player_query(player)
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"error": "Failed to fetch data from SPARQL endpoint", "player": {}}
@@ -494,7 +516,7 @@ async def get_player(player: str = Query(None)):
 @app.get("/api/match/playbyplay")
 async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(...)):
     sparql_query = get_match_playbyplay_query(game_code, season_code)
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"error": "Failed to fetch play-by-play", "actions": []}
@@ -543,7 +565,7 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
 @app.get("/api/play/context")
 async def get_play_context(action_uri: str = Query(...)):
     sparql_query = get_play_context_query(action_uri)
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"error": "Failed to fetch play context"}
@@ -561,10 +583,29 @@ async def get_play_context(action_uri: str = Query(...)):
         "playersOnCourt": players
     }
 
+@app.get("/api/teams")
+async def get_teams():
+    query = """PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    SELECT ?team ?name (SAMPLE(?image) AS ?logo) WHERE {
+        ?team a bball:Team ; rdfs:label ?name .
+        OPTIONAL { ?team foaf:depiction ?image . }
+    } GROUP BY ?team ?name ORDER BY ?name"""
+    data = await analysis_data(query)
+    teams = []
+    for row in data.get("results", {}).get("bindings", []):
+        uri = row.get("team", {}).get("value", "")
+        logo = row.get("logo", {}).get("value", "")
+        teams.append({"id": uri.rstrip('/').split('/')[-1], "name": row.get("name", {}).get("value", ""),
+                      "logo": logo if logo.startswith(('https://', 'http://')) else None})
+    return {"teams": teams}
+
+
 @app.get("/api/games")
 async def get_games(season_code: str = Query(...)):
     sparql_query = get_games_list_query(season_code)
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"games": []}
@@ -575,7 +616,9 @@ async def get_games(season_code: str = Query(...)):
         away_label = row.get("awayLabel", {}).get("value", "")
         games.append({
             "gameCode": row.get("gameCode", {}).get("value", ""),
-            "matchup": f"{home_label} vs {away_label}"
+            "matchup": f"{home_label} vs {away_label}",
+            "stage": game_stage(row),
+            "round": row.get("round", {}).get("value", "")
         })
 
     return {"games": games}
@@ -583,12 +626,13 @@ async def get_games(season_code: str = Query(...)):
 @app.get("/api/game/lineups")
 async def get_game_lineups(game_code: str = Query(...), season_code: str = Query(...)):
     sparql_query = get_game_lineups_query(game_code, season_code)
-    data = await query_sparql(sparql_query)
+    data = await analysis_data(sparql_query)
 
     if not data:
         return {"error": "Failed to fetch lineups", "lineups": []}
 
     lineups = []
+    homeScore = roadScore = ""
     bindings = data.get("results", {}).get("bindings", [])
 
     for row in bindings:
@@ -620,7 +664,7 @@ async def get_assist_duos(
     season_code: str = Query(None)
 ):
     query = get_top_assist_duos_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
-    data = await query_sparql(query)
+    data = await analysis_data(query)
 
     results = []
     bindings = data.get("results", {}).get("bindings", [])
@@ -649,7 +693,7 @@ async def get_second_chance(
     player_id: str = Query(None)
 ):
     query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code, player_id)
-    data = await query_sparql(query)
+    data = await analysis_data(query)
 
     results = []
     bindings = data.get("results", {}).get("bindings", [])
@@ -675,7 +719,7 @@ async def get_top_lineups(
     season_code: str = Query(None) # ΠΡΟΣΘΗΚΗ
 ):
     query = get_top_lineups_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
-    data = await query_sparql(query)
+    data = await analysis_data(query)
 
     results = []
     bindings = data.get("results", {}).get("bindings", [])
@@ -708,7 +752,7 @@ async def get_fouls_drawn(
     season_code: str = Query(None)
 ):
     query = get_foul_drawn_gravity_query(filter_type, filter_id, quarter, min_start, min_end, fouled_id, fouling_id, game_code,season_code)
-    data = await query_sparql(query)
+    data = await analysis_data(query)
 
     results = []
     bindings = data.get("results", {}).get("bindings", [])
@@ -735,7 +779,7 @@ async def get_defensive_anchors(
     season_code: str = Query(None)
 ):
     query = get_defensive_anchors_query(filter_type, filter_id, quarter, min_start, min_end, shooter_id, blocker_id, game_code,season_code)
-    data = await query_sparql(query)
+    data = await analysis_data(query)
 
     results = []
     bindings = data.get("results", {}).get("bindings", [])
@@ -949,7 +993,7 @@ async def get_simulator_scenario(season_code: str = Query(...)):
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
-AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "gemini").strip().lower()
+AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "openai").strip().lower()
 AI_SEARCH_PROMPT_VARIANT = os.getenv(
     "AI_SEARCH_PROMPT_VARIANT", "ontology"
 ).strip().lower()
@@ -1425,19 +1469,19 @@ def ai_search_configuration(
 def available_ai_search_models() -> list[dict[str, str | bool]]:
     """Return only AI models whose provider key is configured."""
     models = []
-    if GEMINI_API_KEY and client is not None:
-        models.append({
-            "provider": "gemini",
-            "model": GEMINI_MODEL,
-            "label": f"Gemini ({GEMINI_MODEL})",
-            "is_default": AI_SEARCH_PROVIDER == "gemini",
-        })
     if OPENAI_API_KEY:
         models.append({
             "provider": "openai",
             "model": OPENAI_MODEL,
             "label": "GPT-5 Mini",
             "is_default": AI_SEARCH_PROVIDER == "openai",
+        })
+    if GEMINI_API_KEY and client is not None:
+        models.append({
+            "provider": "gemini",
+            "model": GEMINI_MODEL,
+            "label": f"Gemini ({GEMINI_MODEL})",
+            "is_default": AI_SEARCH_PROVIDER == "gemini",
         })
 
     if models and not any(model["is_default"] for model in models):
@@ -1477,6 +1521,8 @@ class ChatRequest(BaseModel):
     prompt_variant: Literal["simple", "ontology"] | None = None
     openai_model: Literal["gpt-5-mini"] | None = None
     include_query: bool = False
+    include_answer: bool = False
+    workspace: Literal["explore", "video"] = "explore"
 
 
 def ai_search_response(payload: dict, include_query: bool) -> dict:
@@ -1525,36 +1571,7 @@ def build_ai_scope_context(
 
 
 def clean_and_validate_sparql(raw_query: str) -> str:
-    query = (raw_query or "").strip()
-    query = re.sub(r"^```(?:sparql)?\s*", "", query, flags=re.IGNORECASE)
-    query = re.sub(r"\s*```$", "", query).strip()
-
-    query_body = query
-    while True:
-        prefix_match = re.match(
-            r"^(?:PREFIX\s+[A-Za-z][\w-]*:\s*<[^>]+>|BASE\s+<[^>]+>)\s*",
-            query_body,
-            flags=re.IGNORECASE,
-        )
-        if not prefix_match:
-            break
-        query_body = query_body[prefix_match.end():].lstrip()
-
-    if not re.match(r"^(SELECT|ASK)\b", query_body, flags=re.IGNORECASE):
-        raise ValueError("The AI query must be a read-only SELECT or ASK query.")
-
-    forbidden = re.search(
-        r"\b(LOAD|CLEAR|DROP|CREATE|ADD|MOVE|COPY|INSERT|DELETE|WITH|SERVICE)\b",
-        query,
-        flags=re.IGNORECASE,
-    )
-    if forbidden:
-        raise ValueError(f"Disallowed SPARQL command: {forbidden.group(1).upper()}")
-
-    if re.match(r"^SELECT\b", query_body, flags=re.IGNORECASE) and not re.search(r"\bLIMIT\s+\d+\b", query, flags=re.IGNORECASE):
-        query = f"{query}\nLIMIT 200"
-
-    return query
+    return validate_read_only(raw_query)
 
 
 def query_selects_playbyplay_actions(query: str) -> bool:
@@ -1679,9 +1696,47 @@ async def resolve_assist_action_uris(action_uris: list[str]) -> list[str]:
         return []
     return extract_playbyplay_action_uris(data.get("results", {}).get("bindings", []))
 
+async def readable_answer(request, provider, model, results, boolean):
+    if not results and boolean is None:
+        return {"kind": "analysis", "paragraphs": ["No matching data was found in the selected scope. Try another spelling or a broader season/game selection."]}
+    evidence = json.dumps(evidence_for_answer(results, boolean, request), ensure_ascii=False)
+    async def generate():
+        if provider == "gemini":
+            response = await client.aio.models.generate_content(
+                model=model, contents=evidence,
+                config=types.GenerateContentConfig(system_instruction=ANSWER_PROMPT, max_output_tokens=1800))
+            return response.text
+        result, _usage = await asyncio.to_thread(request_openai_text, evidence, ANSWER_PROMPT, model)
+        return result
+    try:
+        answer = (await asyncio.wait_for(generate(), timeout=25) or "").strip()
+        if not answer or re.search(r"[\u0370-\u03ff\u1f00-\u1fff]", answer):
+            return None
+        return {"kind": "analysis", "paragraphs": [p.strip() for p in re.split(r"\n\s*\n", answer) if p.strip()][:3],
+                "note": "AI explanation based on the returned basketball data. Check the supporting results below."}
+    except Exception:
+        # Explanation failure must not discard a successful query or video action matches.
+        return None
+
+
 @app.post("/api/chat")
 async def ai_chat_handler(request: ChatRequest):
     try:
+        shot_styles = unsupported_shot_style(request.message)
+        if shot_styles:
+            return {"results": [], "playbyplay_filter": False, "action_uris": [],
+                    "answer": {"kind": "capability", "paragraphs": [
+                        "This dataset does not label " + " or ".join(shot_styles) + ", so I cannot reliably identify those plays.",
+                        "It records two-pointers, three-pointers, free throws, assists, fast breaks and shot locations. An assisted shot near the basket is not necessarily an alley-oop. Try ‘Show assisted two-point shots in this game’ as a broader search."],
+                        "note": "Shot-style information is unavailable; this does not mean the game had no such plays."}}
+        subject = profile_subject(request.message) if request.include_answer and request.workspace == "explore" else None
+        if subject:
+            query = profile_query(subject)
+            data = await analysis_data(query)
+            rows = data.get("results", {}).get("bindings", [])
+            if rows:
+                payload = {"results": rows, "answer": profile_answer(rows, subject), "playbyplay_filter": False, "action_uris": [], "sparql_query": query}
+                return ai_search_response(payload, request.include_query)
         provider, prompt_variant, model = ai_search_configuration(
             request.provider,
             request.prompt_variant,
@@ -1694,6 +1749,7 @@ async def ai_chat_handler(request: ChatRequest):
             request.season_code or "",
             request.game_code or "",
             " ".join(request.message.lower().split()),
+            str(request.include_answer), request.workspace,
         )
         if not request.include_query:
             cached_payload = _get_cached_ai_search(cache_key)
@@ -1717,7 +1773,17 @@ async def ai_chat_handler(request: ChatRequest):
             contextual_message,
         )
 
-        clean_sparql_query = clean_and_validate_sparql(generated_query)
+        try:
+            clean_sparql_query = clean_and_validate_sparql(generated_query)
+        except ValueError as validation_error:
+            if request.include_query:
+                raise
+            generated_query, ai_usage = await generate_ai_search_text(
+                provider, prompt_variant, model,
+                contextual_message + "\nThe previous attempt failed validation: " + str(validation_error)
+                + "\nReturn exactly one read-only SELECT or ASK query. Do not use update commands or SERVICE."
+            )
+            clean_sparql_query = clean_and_validate_sparql(generated_query)
         data = await query_sparql(clean_sparql_query, use_cache=False)
 
         if data is None:
@@ -1756,6 +1822,15 @@ async def ai_chat_handler(request: ChatRequest):
             "playbyplay_action_kind": playbyplay_action_kind,
             "action_uris": action_uris,
         }
+        if request.include_answer:
+            if playbyplay_filter and request.game_code and request.season_code and ',' not in request.game_code + request.season_code:
+                try:
+                    pbp = await get_match_pbp(request.game_code, request.season_code)
+                    payload["answer"] = action_answer(pbp["actions"], action_uris, request)
+                except HTTPException:
+                    payload["answer"] = None
+            else:
+                payload["answer"] = await readable_answer(request, provider, model, results, data.get("boolean"))
         if not request.include_query:
             _cache_ai_search(cache_key, payload)
         return ai_search_response(payload, request.include_query)
@@ -1774,7 +1849,8 @@ async def ai_chat_handler(request: ChatRequest):
                     "ai_usage": ai_usage,
                 },
             ) from error
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        detail = "We couldn't complete this search. Try rephrasing your question or choosing another AI provider in Search options." if "generated_query" in locals() else str(error)
+        raise HTTPException(status_code=422, detail=detail) from error
     except Exception as e:
         print(f"AI Search failed: {e}")
         error_text = str(e).upper()
@@ -1783,7 +1859,16 @@ async def ai_chat_handler(request: ChatRequest):
                 status_code=429,
                 detail="The selected AI provider has reached its usage limit. Try another provider or try again later.",
             ) from e
-        raise HTTPException(status_code=502, detail="AI Search could not complete this request.") from e
+        if "503" in error_text or "UNAVAILABLE" in error_text:
+            raise HTTPException(status_code=503, detail="The selected AI provider is temporarily unavailable. Choose another provider in Search options or try again later.") from e
+        raise HTTPException(status_code=502, detail="AI Search could not complete this request. Try another provider in Search options.") from e
+
+
+def quiz_generation_error(error):
+    message = str(error).upper()
+    if any(word in message for word in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED")):
+        return HTTPException(status_code=503, detail="The quiz provider is temporarily unavailable. Try Top 5, or try this format again later.")
+    return HTTPException(status_code=502, detail="This quiz question could not be generated. Please try again.")
 
 
 def parse_english_quiz_response(response_text):
@@ -1804,10 +1889,30 @@ def parse_english_quiz_response(response_text):
     return payload
 
 
+def require_quiz_provider():
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure OPENAI_API_KEY on the server.")
+
+
+async def generate_quiz_text(prompt):
+    """All generated Quiz Ball copy uses GPT-5 Mini, independently of Search."""
+    require_quiz_provider()
+    text, _ = await asyncio.to_thread(
+        request_openai_text, prompt,
+        "Write exclusively in English. Return only the requested JSON object. Use only the supplied basketball facts; do not invent facts.",
+        OPENAI_MODEL,
+    )
+    return parse_english_quiz_response(text)
+
+
+async def load_quiz_player(player_id):
+    data = await analysis_data(get_filtered_player_query(player_id))
+    return quiz_player_profile(player_id, data)
+
+
 @app.get("/api/quiz/who-am-i")
 async def generate_who_am_i(difficulty: str = Query("medium")):
-    if client is None:
-        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure GEMINI_API_KEY on the server.")
+    require_quiz_provider()
 
     # 1. Βρίσκουμε ένα τυχαίο παιχνίδι (π.χ. από το 1 έως το 300) για να τραβήξουμε ένα ρόστερ
     import random
@@ -1842,13 +1947,19 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
     player_bio_query = get_filtered_player_query(secret_player_id)
     player_bio = query_sparql_requests(player_bio_query)
 
-    # 3. Prompt στο Gemini (ενσωματώνουμε τη ΔΥΣΚΟΛΙΑ!)
+    profile = quiz_player_profile(secret_player_id, player_bio)
+    if not profile.get("name"):
+        raise HTTPException(status_code=404, detail="This player has no profile. Please try again.")
+
+    # Generate clues from the stored biography.
     prompt = f"""
     Write exclusively in English. We are playing 'Who am I?'.
     The secret basketball player's database biography is:
     {player_bio}
     Difficulty: {difficulty.upper()}.
     Create three factual clues using only the supplied data. Never reveal the name in a clue.
+    These are stored historical profiles, not a current roster: describe team stints in past tense.
+    Avoid present-tense club claims or undated all-time records that may have changed.
     Easy: recognizable team, nationality, or position. Medium: less obvious biography.
     Hard: more specific details supported by this biography. Do not invent records or achievements.
     Return only valid JSON, without Markdown:
@@ -1857,20 +1968,18 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
 
     try:
         import json
-        response = await client.aio.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt
-        )
-        # Καθαρίζουμε τυχόν markdown formatting (```json ... ```)
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        return parse_english_quiz_response(clean_json)
+        result = await generate_quiz_text(prompt)
+        result["secret_player_name"] = profile["name"]
+        result["secret_player"] = profile
+        if not isinstance(result.get("hints"), list) or len(result["hints"]) != 3 or not all(isinstance(hint, str) and hint.strip() for hint in result["hints"]):
+            raise ValueError("The quiz needs three clues.")
+        return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Quiz generation failed: {str(e)}")
+        raise quiz_generation_error(e) from e
 
 @app.get("/api/quiz/who-is-missing")
 async def generate_who_is_missing(difficulty: str = Query("medium")):
-    if client is None:
-        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure GEMINI_API_KEY on the server.")
+    require_quiz_provider()
 
     import random
     lineup_players = []
@@ -1920,15 +2029,10 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
     if len(lineup_players) != 5:
         raise HTTPException(status_code=404, detail="No complete five-player lineup was found. Please try again.")
 
-    # 4. Τραβάμε τα ονόματα των 5 παικτών από τη βάση
-    player_names = []
-    for pid in lineup_players:
-        q = get_player_name_query(pid)
-        res = query_sparql_requests(q)
-        name = pid
-        if res and res.get("results", {}).get("bindings"):
-            name = res["results"]["bindings"][0].get("name", {}).get("value", pid)
-        player_names.append(name)
+    profiles = await asyncio.gather(*(load_quiz_player(pid) for pid in lineup_players))
+    if any(not profile.get("name") for profile in profiles):
+        raise HTTPException(status_code=404, detail="This lineup has incomplete player profiles. Please try again.")
+    player_names = [profile["name"] for profile in profiles]
 
     # 5. Κρύβουμε 1 παίκτη τυχαία
     secret_index = random.randint(0, 4)
@@ -1949,27 +2053,24 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
     """
 
     try:
-        response = await client.aio.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt
-        )
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        result_data = parse_english_quiz_response(clean_json)
+        result_data = await generate_quiz_text(prompt)
 
         # Προσθέτουμε τα metadata του αγώνα στο τελικό JSON
         result_data["secret_player_name"] = secret_player
         result_data["known_players"] = known_players
+        result_data["secret_player"] = profiles[secret_index]
+        result_data["lineup"] = missing_lineup(profiles, secret_index)
+        result_data["game_code"] = game_code
         result_data["matchup"] = matchup_text
         result_data["season"] = f"Euroleague Season {season_text}"
 
         return result_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+        raise quiz_generation_error(e) from e
 
 @app.get("/api/quiz/higher-or-lower")
 async def generate_higher_or_lower(difficulty: str = Query("medium")):
-    if client is None:
-        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
+    require_quiz_provider()
 
     import random
     import itertools
@@ -2101,16 +2202,17 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
     """
 
     try:
-        response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        return parse_english_quiz_response(clean_json)
+        result = await generate_quiz_text(prompt)
+        # The model writes the question, never the scoring facts.
+        result.update(player_a=player_a, player_b=player_b,
+                      category_name=f"{selected_category['name']} ({quarter_text})",
+                      matchup=matchup_text, season=f"EuroLeague Season {season_text}", game_code=game_code)
+        return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Request failed: {str(e)}")
+        raise quiz_generation_error(e) from e
 
 @app.get("/api/quiz/top-5")
 async def generate_top_5(difficulty: str = Query("medium")):
-    if client is None:
-        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
 
     import random
 
@@ -2157,16 +2259,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
                 target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
                 question_context = f"in the {target_quarter} quarter of {home_team} vs {away_team} ({season_text})"
 
-        # Εκτέλεση του query
-        if selected_category["id"] == "fast_break":
-            # Επειδή το fast break δεν παίρνει game_code στις τρέχουσες παραμέτρους, το τρέχουμε γενικά αν κληρωθεί,
-            # ή το αποφεύγουμε. Για σιγουριά το αντικαθιστούμε με fouls αν έχει game_code.
-            if game_code: selected_category = categories[2]
-            stat_query = selected_category["func"]() if not game_code else selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
-        elif selected_category["id"] == "assist_duos":
-            stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
-        else:
-            stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
+        stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
 
         stat_data = query_sparql_requests(stat_query)
         bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
@@ -2217,8 +2310,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
 
 @app.get("/api/quiz/fifty-fifty")
 async def generate_fifty_fifty(difficulty: str = Query("medium")):
-    if client is None:
-        raise HTTPException(status_code=503, detail="AI generation is currently unavailable.")
+    require_quiz_provider()
 
     import random
 
@@ -2338,17 +2430,16 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         {{"question_text": "One short question in English"}}
         """
         try:
-            response = await client.aio.models.generate_content(model='gemini-3.5-flash', contents=prompt)
-            clean_json = response.text.replace("```json", "").replace("```", "").strip()
-            result_data = parse_english_quiz_response(clean_json)
+            result_data = await generate_quiz_text(prompt)
 
+            result_data["game_code"] = game_code
             result_data["options"] = options
             result_data["correct_index"] = correct_index
             result_data["matchup"] = f"{home_team} - {away_team}"
             result_data["season"] = f"Euroleague Season {season_text}"
             return result_data
-        except Exception:
-            continue
+        except Exception as error:
+            raise quiz_generation_error(error) from error
 
     raise HTTPException(status_code=404, detail="No suitable question data was found. Please try again.")
 

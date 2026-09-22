@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 try:
-    from .parser import convert_action_info
+    from parser import convert_action_info
 except ImportError:  # Direct script execution from the repository root.
     from parser import convert_action_info
 

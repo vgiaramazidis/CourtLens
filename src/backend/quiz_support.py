@@ -2,7 +2,7 @@
 
 import re
 
-from .search_answers import profile_answer, value
+from search_answers import profile_answer, value
 
 
 def game_stage(row):

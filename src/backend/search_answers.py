@@ -4,7 +4,7 @@ import re
 from datetime import date
 from urllib.parse import urlparse
 
-from .queries import PREFIXES, literal
+from queries import PREFIXES, literal
 
 
 def profile_subject(message):

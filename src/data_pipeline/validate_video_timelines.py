@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 try:
-    from .video_ocr import (
+    from video_ocr import (
         DEFAULT_CATALOG_FILE,
         clock_to_seconds,
         load_game_catalog,

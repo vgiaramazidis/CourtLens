@@ -1,6 +1,5 @@
 /* HTTP requests and user-facing errors for the CourtLens API. */
-const API_BASE_URL = window.EUROLEAGUE_API_BASE_URL
-  || `${window.location.protocol==='https:'?'https:':'http:'}//${window.location.hostname || 'localhost'}:8000`;
+const API_BASE_URL = "https://euroleagueproject.onrender.com";
 
 async function apiRequest(path, params = {}, options = {}) {
   if(window.location.protocol==='file:' && !window.EUROLEAGUE_API_BASE_URL)throw new Error('Open the app through its web server at http://localhost:3000 to load basketball data.');

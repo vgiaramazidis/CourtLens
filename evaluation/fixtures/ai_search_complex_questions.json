@@ -1,0 +1,353 @@
+{
+  "description": "Complex-query regression cases. Reference results calculated independently in Python from all 534 E2023/333 actions and recorded lineup membership on 2026-09-22. Heights rounded to centimetres; all stored values must satisfy universal conditions. Best means plus/minus. Revalidate references if the underlying dataset changes.",
+  "questions": [
+    {
+      "id": "grant_height",
+      "category": "lineup_conditions",
+      "message": "All assist by Grant when all players are above 1.95 height was on the court.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    },
+    {
+      "id": "teammates_height",
+      "category": "lineup_conditions",
+      "message": "Show all assists by Jerian Grant when all four of his teammates on court were taller than 1.95 m.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    },
+    {
+      "id": "opponents_height",
+      "category": "lineup_conditions",
+      "message": "Show Grant assists when all five opposing players on court were taller than 1.95 m.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    },
+    {
+      "id": "both_present",
+      "category": "lineup_conditions",
+      "message": "Show all shots by Lessort when both Sloukas and Nunn were on the court.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J508",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J576"
+      ]
+    },
+    {
+      "id": "without_player",
+      "category": "lineup_conditions",
+      "message": "Show assists by Grant while Sloukas was not on the court.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J222",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J23",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J338",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53"
+      ]
+    },
+    {
+      "id": "assists_to_player",
+      "category": "assist_receiver_count",
+      "message": "How many assists did Grant give to Lessort in the second half? Show the matching assists.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    },
+    {
+      "id": "height_inclusive",
+      "category": "lineup_conditions",
+      "message": "Show Grant assists when all five players on his team were at least 1.95 m tall.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J23",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53"
+      ]
+    },
+    {
+      "id": "height_positive",
+      "category": "lineup_conditions",
+      "message": "Show Grant assists when all ten players on the court were taller than 180 cm.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J222",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J23",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J338",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J471",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53"
+      ]
+    },
+    {
+      "id": "exactly_three",
+      "category": "lineup_conditions",
+      "message": "Show Grant assists when exactly three of his four teammates on court were taller than 1.95 m.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J222",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J23",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53"
+      ]
+    },
+    {
+      "id": "opponent_presence",
+      "category": "lineup_conditions",
+      "message": "Show Lessort shots when both Sloukas and Tavares were on the court.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J425",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J508"
+      ]
+    },
+    {
+      "id": "presence_and_absence",
+      "category": "lineup_conditions",
+      "message": "Show Grant assists with Lessort on court but without Sloukas.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J222",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J23",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J338",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53"
+      ]
+    },
+    {
+      "id": "height_missing_result",
+      "category": "lineup_conditions",
+      "message": "Show assists by Grant when every player on his team was over 220 cm tall.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    },
+    {
+      "id": "fourth_quarter_points",
+      "category": "clock_and_points",
+      "message": "How many points did Panathinaikos score in the last two minutes of the fourth quarter? Show the scoring plays.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J550",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J559",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J561",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J566",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J567",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J571"
+      ],
+      "expected_totals": {
+        "totalPoints": 7
+      }
+    },
+    {
+      "id": "field_goals_only",
+      "category": "shot_scope",
+      "message": "Show all made and missed shots by Sloukas when Tavares was on court, excluding free throws.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J303",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J499",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J504"
+      ]
+    },
+    {
+      "id": "best_lineup",
+      "category": "lineup_ranking",
+      "message": "What was the best lineup in the game? Tell me the team and all five players.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "explore",
+      "include_answer": true,
+      "expected_playbyplay_filter": false,
+      "expected_row": {
+        "lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_003842_007866_011204_012774",
+        "teamName": "Panathinaikos",
+        "players": [
+          "Jerian Grant",
+          "Kendrick Nunn",
+          "Konstantinos Mitoglou",
+          "Kostas Sloukas",
+          "Mathias Lessort"
+        ],
+        "pointsFor": 22,
+        "pointsAgainst": 12,
+        "plusMinus": 10
+      }
+    },
+    {
+      "id": "best_scoring_lineup",
+      "category": "lineup_ranking",
+      "message": "Which Panathinaikos five-player lineup scored the most points? Name all five players and give the total points.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "explore",
+      "include_answer": true,
+      "expected_playbyplay_filter": false,
+      "expected_row": {
+        "lineup": "https://www.euroleaguebasketball.net/euroleague/teams/-/PAN#Lineup_001926_003842_007866_011204_012774",
+        "teamName": "Panathinaikos",
+        "players": [
+          "Jerian Grant",
+          "Kendrick Nunn",
+          "Konstantinos Mitoglou",
+          "Kostas Sloukas",
+          "Mathias Lessort"
+        ],
+        "pointsFor": 22
+      }
+    },
+    {
+      "id": "assists_to_player_positive",
+      "category": "assist_receiver_count",
+      "message": "How many assists did Grant give to Lessort in the first half? Show the matching assists.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J53",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J222"
+      ],
+      "expected_totals": {
+        "totalAssists": 2
+      }
+    },
+    {
+      "id": "regression_rebounds",
+      "category": "existing_search_regression",
+      "message": "Show all rebounds in the second quarter.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J168",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J189",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J197",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J199",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J206",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J209",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J217",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J224",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J245",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J257",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J269",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J271",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J277",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J279"
+      ]
+    },
+    {
+      "id": "regression_nunn_points",
+      "category": "existing_search_regression",
+      "message": "Show all points scored by Kendrick Nunn.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J343",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J36",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J37",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J38",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J384",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J448",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J516",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J519",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J57",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J571",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J92"
+      ]
+    },
+    {
+      "id": "regression_turnovers",
+      "category": "existing_search_regression",
+      "message": "Show all turnovers in this game.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": [
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J164",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J169",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J176",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J178",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J234",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J314",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J325",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J404",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J406",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J423",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J45",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J467",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J517",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J81",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J85",
+        "https://www.euroleaguebasketball.net/euroleague/game-center/2023-24/-/E2023/333#PlayByPlay_J87"
+      ]
+    },
+    {
+      "id": "actor_height",
+      "category": "lineup_conditions",
+      "message": "Show assists by Sloukas when all five players on his team, including Sloukas himself, were at least 1.95 m tall.",
+      "season_code": "E2023",
+      "game_code": "333",
+      "workspace": "video",
+      "include_answer": true,
+      "expected_playbyplay_filter": true,
+      "expected_action_uris": []
+    }
+  ]
+}

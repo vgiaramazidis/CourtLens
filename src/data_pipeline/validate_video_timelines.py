@@ -94,9 +94,8 @@ def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
         for previous_row, current_row in zip(quarter_rows, quarter_rows[1:]):
             previous_clock = clock_to_seconds(previous_row["game_clock"])
             current_clock = clock_to_seconds(current_row["game_clock"])
-            video_elapsed = (
-                float(current_row["video_time_sec"])
-                - float(previous_row["video_time_sec"])
+            video_elapsed = float(current_row["video_time_sec"]) - float(
+                previous_row["video_time_sec"]
             )
             if (
                 previous_clock is not None
@@ -122,10 +121,7 @@ def validate_timeline(path: Path) -> tuple[dict[str, object], list[str]]:
 def repair_timeline(input_path: Path, output_path: Path) -> tuple[int, int]:
     with input_path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    results = [
-        (float(row["video_time_sec"]), row["quarter"], row["game_clock"])
-        for row in rows
-    ]
+    results = [(float(row["video_time_sec"]), row["quarter"], row["game_clock"]) for row in rows]
     results, monotonic_removed = sanitize_timeline_results(results)
     results, temporal_removed = remove_temporally_impossible_results(results)
     output_path.parent.mkdir(parents=True, exist_ok=True)

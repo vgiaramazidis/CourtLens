@@ -22,7 +22,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parents[1]
 DEFAULT_PROFILES_FILE = SCRIPT_DIR / "ocr_profiles.json"
@@ -201,8 +200,7 @@ class InitialClockGate:
             confirmation_delay = video_time - anchor_video_time
             if (
                 self.opening_anchor_readings >= INITIAL_CLOCK_ANCHOR_MIN_READINGS
-                and 0 <= confirmation_delay
-                <= INITIAL_CLOCK_ANCHOR_MAX_CONFIRMATION_DELAY_SECONDS
+                and 0 <= confirmation_delay <= INITIAL_CLOCK_ANCHOR_MAX_CONFIRMATION_DELAY_SECONDS
             ):
                 self.confirmed_backfill = (anchor_video_time, anchor_clock)
         return status == "confirmed"
@@ -312,14 +310,17 @@ class ClockTracker:
     period_observation_count: int = 0
     period_first_seconds: float | None = None
     period_start_video_time: float | None = None
-    previous_period_end_state: tuple[
-        int,
-        str,
-        float | None,
-        float | None,
-        float | None,
-        int,
-    ] | None = None
+    previous_period_end_state: (
+        tuple[
+            int,
+            str,
+            float | None,
+            float | None,
+            float | None,
+            int,
+        ]
+        | None
+    ) = None
     invalidated_period: tuple[str, float] | None = None
     pending_period_rebase: tuple[float, float, int] | None = None
     last_decision: str = "not_evaluated"
@@ -388,11 +389,7 @@ class ClockTracker:
         ):
             count += 1
             self.pending_period_rebase = (current_seconds, video_time, count)
-            return (
-                "confirmed"
-                if count >= PERIOD_REBASE_CONFIRMATION_READINGS
-                else "pending"
-            )
+            return "confirmed" if count >= PERIOD_REBASE_CONFIRMATION_READINGS else "pending"
         self.pending_period_rebase = None
         return "rejected"
 
@@ -482,8 +479,7 @@ class ClockTracker:
                 # E2024/220, 43.3 was read twice as 3.3 while the clock was
                 # stopped; accepting the second reading poisoned every later
                 # frame. A real running final-seconds clock must move down.
-                and 0 < pending_seconds - current_seconds
-                <= self.max_downward_jump_seconds
+                and 0 < pending_seconds - current_seconds <= self.max_downward_jump_seconds
             ):
                 # Two consecutive final-seconds readings confirm that the large
                 # clock drop was real. The first reading remains omitted.
@@ -498,9 +494,7 @@ class ClockTracker:
                 # A decimal final-seconds clock such as 9.4 can be misread as
                 # 9:24. It cannot represent the next period if only a couple
                 # of video seconds have elapsed since 11.4 remained.
-                enough_time_for_period_end = (
-                    elapsed_video_time + 5 >= previous_seconds
-                )
+                enough_time_for_period_end = elapsed_video_time + 5 >= previous_seconds
             is_period_reset = (
                 self.period_index < len(self.periods) - 1
                 and previous_seconds <= self.period_end_max_seconds
@@ -513,8 +507,7 @@ class ClockTracker:
                 and next_index >= 4
                 and video_time is not None
                 and self.last_video_time is not None
-                and video_time - self.last_video_time
-                > OVERTIME_START_MAX_VIDEO_GAP_SECONDS
+                and video_time - self.last_video_time > OVERTIME_START_MAX_VIDEO_GAP_SECONDS
             ):
                 is_period_reset = False
             if is_period_reset:
@@ -538,18 +531,14 @@ class ClockTracker:
                 change = current_seconds - previous_seconds
                 confirmed_period_rebase = False
                 if self.pending_period_rebase is not None:
-                    rebase_status = self._advance_period_rebase(
-                        current_seconds, video_time
-                    )
+                    rebase_status = self._advance_period_rebase(current_seconds, video_time)
                     if rebase_status == "pending":
                         return self._reject("period_rebase_confirmation_pending")
                     confirmed_period_rebase = rebase_status == "confirmed"
                 if (
                     not confirmed_period_rebase
                     and change > self.max_upward_jump_seconds
-                    and self._can_start_period_rebase(
-                        previous_seconds, current_seconds, video_time
-                    )
+                    and self._can_start_period_rebase(previous_seconds, current_seconds, video_time)
                 ):
                     self.pending_period_rebase = (
                         current_seconds,
@@ -577,15 +566,13 @@ class ClockTracker:
                     return self._reject("single_digit_decimal_confirmation_pending")
                 confirmed_gapped_clock_drop = False
                 if self.pending_gapped_clock_drop is not None and video_time is not None:
-                    gap_status, self.pending_gapped_clock_drop = (
-                        advance_descending_confirmation(
-                            self.pending_gapped_clock_drop,
-                            current_seconds,
-                            video_time,
-                            GAPPED_CLOCK_CONFIRMATION_READINGS,
-                            GAPPED_CLOCK_MAX_CONFIRMATION_GAP_SECONDS,
-                            GAPPED_CLOCK_MAX_RATE_DRIFT_SECONDS,
-                        )
+                    gap_status, self.pending_gapped_clock_drop = advance_descending_confirmation(
+                        self.pending_gapped_clock_drop,
+                        current_seconds,
+                        video_time,
+                        GAPPED_CLOCK_CONFIRMATION_READINGS,
+                        GAPPED_CLOCK_MAX_CONFIRMATION_GAP_SECONDS,
+                        GAPPED_CLOCK_MAX_RATE_DRIFT_SECONDS,
                     )
                     if gap_status in {"pending", "holding"}:
                         pending_result = (video_time, self.period, clock)
@@ -597,9 +584,7 @@ class ClockTracker:
                         return self._reject("gapped_clock_drop_confirmation_pending")
                     if gap_status == "confirmed":
                         confirmed_gapped_clock_drop = True
-                        self.confirmed_gapped_clock_backfills = (
-                            self.pending_gapped_clock_backfills
-                        )
+                        self.confirmed_gapped_clock_backfills = self.pending_gapped_clock_backfills
                     self.pending_gapped_clock_backfills = ()
 
                 if (
@@ -609,10 +594,8 @@ class ClockTracker:
                     and change < 0
                     and video_time is not None
                     and self.last_video_time is not None
-                    and video_time - self.last_video_time
-                    >= GAPPED_CLOCK_MIN_VIDEO_GAP_SECONDS
-                    and previous_seconds - current_seconds
-                    >= GAPPED_CLOCK_MIN_DROP_SECONDS
+                    and video_time - self.last_video_time >= GAPPED_CLOCK_MIN_VIDEO_GAP_SECONDS
+                    and previous_seconds - current_seconds >= GAPPED_CLOCK_MIN_DROP_SECONDS
                 ):
                     video_gap = video_time - self.last_video_time
                     clock_drop = previous_seconds - current_seconds
@@ -623,19 +606,19 @@ class ClockTracker:
                         # sequence poison the next genuine reading.
                         self.pending_gapped_clock_drop = None
                         self.pending_gapped_clock_backfills = ()
-                        return self._reject(
-                            "gapped_clock_drop_faster_than_video"
-                        )
+                        return self._reject("gapped_clock_drop_faster_than_video")
                     self.pending_gapped_clock_drop = (
                         current_seconds,
                         video_time,
                         1,
                     )
-                    self.pending_gapped_clock_backfills = ((
-                        video_time,
-                        self.period,
-                        clock,
-                    ),)
+                    self.pending_gapped_clock_backfills = (
+                        (
+                            video_time,
+                            self.period,
+                            clock,
+                        ),
+                    )
                     return self._reject("gapped_clock_drop_confirmation_pending")
 
                 if not confirmed_period_rebase and not confirmed_gapped_clock_drop:
@@ -645,7 +628,7 @@ class ClockTracker:
                         allowed_downward_jump = min(
                             allowed_downward_jump,
                             elapsed_video_time + 5,
-                    )
+                        )
                     if -change > allowed_downward_jump:
                         return self._reject("downward_jump_faster_than_video")
 
@@ -677,7 +660,9 @@ class ClockTracker:
         return self.period, clock
 
 
-def roi_pixels(profile: dict[str, Any], frame_width: int, frame_height: int) -> tuple[int, int, int, int]:
+def roi_pixels(
+    profile: dict[str, Any], frame_width: int, frame_height: int
+) -> tuple[int, int, int, int]:
     roi = profile["roi"]
     x = max(0, min(frame_width - 1, round(float(roi["x"]) * frame_width)))
     y = max(0, min(frame_height - 1, round(float(roi["y"]) * frame_height)))
@@ -909,7 +894,9 @@ def run_ocr(
         debug_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Processing {youtube_url}")
-    print(f"FPS: {fps:.2f}; starting at {start_seconds:.2f}s; sampling every {interval_seconds:.2f}s")
+    print(
+        f"FPS: {fps:.2f}; starting at {start_seconds:.2f}s; sampling every {interval_seconds:.2f}s"
+    )
 
     while frame_count <= 0 or frame_id < frame_count:
         capture.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
@@ -924,8 +911,7 @@ def run_ocr(
             if trace_frames:
                 video_time = frame_id / fps
                 print(
-                    f"[TRACE FRAME] {video_time:.2f}s frame={frame_id} "
-                    "decision=discard_empty_roi"
+                    f"[TRACE FRAME] {video_time:.2f}s frame={frame_id} decision=discard_empty_roi"
                 )
             frame_id += frame_step
             continue
@@ -952,8 +938,7 @@ def run_ocr(
             clock = parse_clock(raw_text)
             if not clock:
                 frame_trace.append(
-                    f"raw={raw_text!r} confidence={confidence:.2f} "
-                    "decision=unparseable_clock"
+                    f"raw={raw_text!r} confidence={confidence:.2f} decision=unparseable_clock"
                 )
                 continue
             if tracker.last_clock is None:
@@ -980,10 +965,7 @@ def run_ocr(
                 retained_results = [
                     result
                     for result in results
-                    if not (
-                        result[1] == invalid_period
-                        and result[0] >= invalid_start
-                    )
+                    if not (result[1] == invalid_period and result[0] >= invalid_start)
                 ]
                 removed_count = len(results) - len(retained_results)
                 results = retained_results
@@ -1031,10 +1013,7 @@ def run_ocr(
                 completed_period_video_time = video_time
 
         if trace_frames:
-            print(
-                f"[TRACE FRAME] {video_time:.2f}s frame={frame_id} "
-                + " | ".join(frame_trace)
-            )
+            print(f"[TRACE FRAME] {video_time:.2f}s frame={frame_id} " + " | ".join(frame_trace))
 
         frame_id += frame_step
         if (
@@ -1051,7 +1030,9 @@ def run_ocr(
 
     capture.release()
     if not results:
-        raise RuntimeError("No valid clock readings found. Check the selected OCR profile and start hint.")
+        raise RuntimeError(
+            "No valid clock readings found. Check the selected OCR profile and start hint."
+        )
 
     trace = print if trace_frames else None
     results, removed_points = sanitize_timeline_results(results, trace=trace)
@@ -1062,9 +1043,7 @@ def run_ocr(
     removed_points += temporal_removed
     completeness_errors = timeline_completeness_errors(results)
     if completeness_errors:
-        raise RuntimeError(
-            "Incomplete full-game OCR timeline: " + "; ".join(completeness_errors)
-        )
+        raise RuntimeError("Incomplete full-game OCR timeline: " + "; ".join(completeness_errors))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle, lineterminator="\n")
@@ -1208,9 +1187,7 @@ def write_run_metrics(
                 elapsed_seconds / scanned_minutes if scanned_minutes else None
             ),
             "scanned_video_seconds_per_processing_second": (
-                statistics.scanned_video_seconds / elapsed_seconds
-                if elapsed_seconds
-                else None
+                statistics.scanned_video_seconds / elapsed_seconds if elapsed_seconds else None
             ),
         },
         "environment": {
@@ -1223,9 +1200,7 @@ def write_run_metrics(
             "python_executable": Path(sys.executable).name,
             "packages": {
                 "easyocr": installed_package_version("easyocr"),
-                "opencv": installed_package_version(
-                    "opencv-python", "opencv-python-headless"
-                ),
+                "opencv": installed_package_version("opencv-python", "opencv-python-headless"),
                 "torch": installed_package_version("torch"),
                 "yt_dlp": installed_package_version("yt-dlp"),
             },
@@ -1242,7 +1217,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--game-code", default="333")
     parser.add_argument("--youtube-url")
     parser.add_argument("--youtube-id")
-    parser.add_argument("--video-file", type=Path, help="Use a downloaded local video instead of YouTube")
+    parser.add_argument(
+        "--video-file", type=Path, help="Use a downloaded local video instead of YouTube"
+    )
     parser.add_argument("--profile", help="Override the OCR profile from the game catalog")
     parser.add_argument("--profiles-file", type=Path, default=DEFAULT_PROFILES_FILE)
     parser.add_argument("--catalog-file", type=Path, default=DEFAULT_CATALOG_FILE)
@@ -1325,7 +1302,9 @@ def main(argv: list[str] | None = None) -> int:
                     f"{video_seconds:.0f}s={clock} ({confidence:.2f})"
                     for video_seconds, clock, confidence in readings[:8]
                 )
-                print(f"{candidate_name}: {len(readings)} valid samples{': ' + preview if preview else ''}")
+                print(
+                    f"{candidate_name}: {len(readings)} valid samples{': ' + preview if preview else ''}"
+                )
             return 0
         started_at = datetime.now(timezone.utc)
         started_counter = time.perf_counter()
@@ -1343,11 +1322,7 @@ def main(argv: list[str] | None = None) -> int:
         elapsed_seconds = time.perf_counter() - started_counter
         if args.metrics_output:
             metrics_path = resolve_repo_path(args.metrics_output)
-            source = (
-                args.video_file.name
-                if args.video_file is not None
-                else str(youtube_url)
-            )
+            source = args.video_file.name if args.video_file is not None else str(youtube_url)
             write_run_metrics(
                 metrics_path,
                 season_code=args.season_code,

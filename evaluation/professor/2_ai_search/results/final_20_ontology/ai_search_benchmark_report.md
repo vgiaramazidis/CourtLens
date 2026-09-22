@@ -3,7 +3,7 @@
 Generated: 2026-09-10T15:42:00.529315+00:00
 
 API: `http://127.0.0.1:8000/api/chat`  
-Questions: `/Users/vgiaramazidis/EuroleagueProject/evaluation/professor/2_ai_search/benchmark_questions.json`
+Questions: `evaluation/fixtures/ai_search_questions.json`
 
 Completed: 40/40 across 2 configurations.
 

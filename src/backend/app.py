@@ -1,4 +1,5 @@
-# src/backend/app.py
+"""Serve CourtLens analysis, synchronized video and basketball game APIs."""
+
 import asyncio
 import csv
 import json
@@ -19,22 +20,44 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from analysis_queries import AnalysisFilterError
-from quiz_support import game_stage, quiz_player_profile, missing_lineup
-from search_validation import validate_read_only, unsupported_shot_style
-from search_answers import profile_subject, profile_query, profile_answer, evidence_for_answer, ANSWER_PROMPT, action_answer
-from sparql_queries import (
-    get_filtered_player_query, get_game_lineups_query, get_games_list_query,
-    get_match_playbyplay_query, get_play_context_query, query_sparql_requests,
-    get_filtered_shots_query, get_player_name_query, get_top_assist_duos_query,
-    get_second_chance_points_query, get_top_lineups_query, get_clutch_time_performers_query,
-    get_points_off_turnovers_query, get_fast_break_specialists_query,
-    get_foul_drawn_gravity_query, get_defensive_anchors_query, get_simulator_crunch_time_query,get_game_roster_query
-    ,get_timeouts_query, get_team_roster_query, get_simulator_crunch_time_query
-)
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+
+from .database import query_sparql_requests
+from .prompts import AI_SEARCH_PROMPTS
+from .queries import (
+    AnalysisFilterError,
+    get_clutch_time_performers_query,
+    get_defensive_anchors_query,
+    get_fast_break_specialists_query,
+    get_filtered_player_query,
+    get_filtered_shots_query,
+    get_foul_drawn_gravity_query,
+    get_game_lineups_query,
+    get_game_roster_query,
+    get_games_list_query,
+    get_match_playbyplay_query,
+    get_play_context_query,
+    get_player_name_query,
+    get_points_off_turnovers_query,
+    get_second_chance_points_query,
+    get_simulator_crunch_time_query,
+    get_team_roster_query,
+    get_timeouts_query,
+    get_top_assist_duos_query,
+    get_top_lineups_query,
+)
+from .quiz_support import game_stage, missing_lineup, quiz_player_profile
+from .search_answers import (
+    ANSWER_PROMPT,
+    action_answer,
+    evidence_for_answer,
+    profile_answer,
+    profile_query,
+    profile_subject,
+)
+from .search_validation import bounded_editor_query, unsupported_shot_style, validate_read_only
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VIDEO_CATALOG_PATH = REPO_ROOT / "src" / "data_pipeline" / "video_games.json"
@@ -58,6 +81,7 @@ _ai_search_cache_lock = threading.Lock()
 
 @lru_cache(maxsize=8)
 def _load_video_catalog(catalog_mtime_ns):
+    """Cache the catalog until its file modification time changes."""
     try:
         with VIDEO_CATALOG_PATH.open(encoding="utf-8") as handle:
             payload = json.load(handle)
@@ -106,16 +130,19 @@ def resolve_timeline_path(timeline_file):
 
 @lru_cache(maxsize=64)
 def _load_video_timeline(path_string, timeline_mtime_ns):
+    """Cache parsed rows until the timeline file changes."""
     path = Path(path_string)
     timeline = []
     try:
         with path.open(mode="r", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
-                timeline.append({
-                    "video_sec": float(row["video_time_sec"]),
-                    "clock": row["game_clock"].strip(),
-                    "quarter": row["quarter"].strip(),
-                })
+                timeline.append(
+                    {
+                        "video_sec": float(row["video_time_sec"]),
+                        "clock": row["game_clock"].strip(),
+                        "quarter": row["quarter"].strip(),
+                    }
+                )
     except (KeyError, TypeError, ValueError, OSError) as exc:
         print(f"Attention: Could not load video timeline {path}: {exc}")
         return ()
@@ -210,16 +237,22 @@ async def query_sparql(sparql_query, *, use_cache=True):
     query_function = _query_sparql_cached if use_cache else query_sparql_requests
     return await asyncio.to_thread(query_function, sparql_query)
 
+
 app = FastAPI(title="CourtLens API")
+
 
 @app.exception_handler(AnalysisFilterError)
 async def invalid_analysis_filter(_request, error):
     return JSONResponse(status_code=422, content={"detail": str(error)})
 
+
 async def analysis_data(query):
     data = await query_sparql(query)
     if data is None:
-        raise HTTPException(status_code=502, detail="The basketball database did not respond. Please retry your analysis.")
+        raise HTTPException(
+            status_code=502,
+            detail="The basketball database did not respond. Please retry your analysis.",
+        )
     return data
 
 
@@ -269,12 +302,14 @@ async def get_available_video_games(season_code: str = Query(None)):
         timeline = load_video_timeline(str(game_config.get("timeline_file", "")))
         if not game_config.get("youtube_id") or not timeline:
             continue
-        games.append({
-            "season_code": catalog_season,
-            "game_code": catalog_game,
-            "youtube_id": game_config.get("youtube_id"),
-            "ocr_profile": game_config.get("ocr_profile"),
-        })
+        games.append(
+            {
+                "season_code": catalog_season,
+                "game_code": catalog_game,
+                "youtube_id": game_config.get("youtube_id"),
+                "ocr_profile": game_config.get("ocr_profile"),
+            }
+        )
 
     games.sort(key=lambda game: (game["season_code"], int(game["game_code"])))
     return {
@@ -282,9 +317,11 @@ async def get_available_video_games(season_code: str = Query(None)):
         "games": games,
     }
 
-# Βοηθητική συνάρτηση για τα δευτερόλεπτα
+
 def time_to_seconds(t_str):
-    if not t_str: return None
+    """Parse minute-second or decimal clocks; return None for missing or invalid input."""
+    if not t_str:
+        return None
     try:
         if ":" in t_str:
             m, s = map(int, t_str.split(":"))
@@ -294,12 +331,14 @@ def time_to_seconds(t_str):
     except ValueError:
         return None
 
+
 def get_bool(result, field, default=False):
     value = result.get(field, {}).get("value")
     if value is None:
         return default
 
     return value in ("1", "true", "True")
+
 
 def find_video_seconds(play_time, quarter, season_code, game_code, action_type=None):
     target_sec = time_to_seconds(play_time)
@@ -334,9 +373,7 @@ def find_video_seconds(play_time, quarter, season_code, game_code, action_type=N
         and abs(target_sec - period_seconds) < 0.001
     )
     elapsed_seconds = period_seconds - target_sec
-    is_opening_jump_ball = (
-        action_name == "JumpBall" and 0 <= elapsed_seconds <= 1
-    )
+    is_opening_jump_ball = action_name == "JumpBall" and 0 <= elapsed_seconds <= 1
     tolerance = 12 if is_opening_metadata or is_opening_jump_ball else 5
     return (
         video_values[closest_index]
@@ -355,9 +392,7 @@ def video_sync_clock_for_action(action_type, row, play_time, quarter):
     """
     if str(action_type) == "Assist":
         shot_clock = row.get("relatedShotClock", {}).get("value", "")
-        shot_quarter = normalize_quarter(
-            row.get("relatedShotQuarter", {}).get("value", "")
-        )
+        shot_quarter = normalize_quarter(row.get("relatedShotQuarter", {}).get("value", ""))
         if time_to_seconds(shot_clock) is not None and shot_quarter:
             return shot_clock, shot_quarter
     return play_time, quarter
@@ -365,9 +400,7 @@ def video_sync_clock_for_action(action_type, row, play_time, quarter):
 
 def playback_lead_for_action(game_config, action_type):
     """Return a contextual lead without changing the synchronized timestamp."""
-    base_lead = max(
-        0, min(15, float((game_config or {}).get("playback_lead_seconds", 5)))
-    )
+    base_lead = max(0, min(15, float((game_config or {}).get("playback_lead_seconds", 5))))
     if str(action_type) != "Assist":
         return base_lead
     return max(
@@ -381,14 +414,14 @@ def playback_lead_for_action(game_config, action_type):
         ),
     )
 
-# ==========================================
-# ENDPOINTS
-# ==========================================
+
+# Player, game and video endpoints.
+
 
 @app.get("/api/player/{player_id}")
 async def get_player_name(player_id: str):
-    # Εάν μας έρθει ολόκληρο όνομα (έχει κενό) αντί για ID,
-    # δεν ρωτάμε τη βάση γιατί το SPARQL θα σκάσει. Επιστρέφουμε κατευθείαν το όνομα!
+    # A full name is already resolved; only IDs need a database lookup.
+
     if " " in player_id:
         return {"id": player_id, "name": player_id}
 
@@ -397,13 +430,14 @@ async def get_player_name(player_id: str):
 
     name = player_id
 
-    # Ασφαλής προσπέλαση ΜΟΝΟ αν το data δεν είναι None (ώστε να μην κρασάρει ο server)
+    # Keep the ID as a fallback when the data source is unavailable.
     if data and isinstance(data, dict):
         bindings = data.get("results", {}).get("bindings", [])
         if bindings:
             name = bindings[0].get("name", {}).get("value", name)
 
     return {"id": player_id, "name": name}
+
 
 @app.get("/api/shots")
 async def get_shots(
@@ -416,10 +450,8 @@ async def get_shots(
     filter_id: str = Query(None),
     quarter: str = Query(None),
     min_start: str = Query(None),
-    min_end: str = Query(None)
+    min_end: str = Query(None),
 ):
-    # Κλήση στο SPARQL (Προσάρμοσε τις παραμέτρους αν η συνάρτησή σου δέχεται διαφορετικές)
-    # ΔΙΟΡΘΩΣΗ: Περνάμε τα arguments με το ΟΝΟΜΑ τους
     sparql_query = get_filtered_shots_query(
         game_code=game_code,
         season_code=season_code,
@@ -430,7 +462,7 @@ async def get_shots(
         quarter=quarter,
         min_start=min_start,
         min_end=min_end,
-        lineup_uri=lineup_uri
+        lineup_uri=lineup_uri,
     )
     data = await analysis_data(sparql_query)
 
@@ -464,27 +496,30 @@ async def get_shots(
         road_score = result.get("roadScore", {}).get("value", "0")
         video_seconds = find_video_seconds(play_time, quarter_val, season_code, game_code)
 
-        shots.append({
-            "action_uri": result.get("action", {}).get("value", ""),
-            "action_type":action_type,
-            "x": float(x),
-            "y": float(y),
-            "isMade": "Made" in action_type,
-            "isFastBreak": fast_break,
-            "isSecondChance": second_chance,
-            "isFromTurnover": from_turnover,
-            "runningHomeTeamLineup": home_lineup,
-            "runningRoadTeamLineup": road_lineup,
-            "playTime": play_time,
-            "quarter": quarter_val,
-            "homeScore": int(home_score) if home_score.isdigit() else 0,
-            "roadScore": int(road_score) if road_score.isdigit() else 0,
-            "videoSeconds": video_seconds,
-            "playerName": player_name,
-            "teamType": result.get("teamType", {}).get("value", "")
-        })
+        shots.append(
+            {
+                "action_uri": result.get("action", {}).get("value", ""),
+                "action_type": action_type,
+                "x": float(x),
+                "y": float(y),
+                "isMade": "Made" in action_type,
+                "isFastBreak": fast_break,
+                "isSecondChance": second_chance,
+                "isFromTurnover": from_turnover,
+                "runningHomeTeamLineup": home_lineup,
+                "runningRoadTeamLineup": road_lineup,
+                "playTime": play_time,
+                "quarter": quarter_val,
+                "homeScore": int(home_score) if home_score.isdigit() else 0,
+                "roadScore": int(road_score) if road_score.isdigit() else 0,
+                "videoSeconds": video_seconds,
+                "playerName": player_name,
+                "teamType": result.get("teamType", {}).get("value", ""),
+            }
+        )
 
     return {"shots": shots}
+
 
 @app.get("/api/player")
 async def get_player(player: str = Query(None)):
@@ -513,6 +548,7 @@ async def get_player(player: str = Query(None)):
 
     return {"player": clean_player}
 
+
 @app.get("/api/match/playbyplay")
 async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(...)):
     sparql_query = get_match_playbyplay_query(game_code, season_code)
@@ -534,33 +570,36 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
             action_type_name, row, play_time, quarter
         )
 
-        actions.append({
-            "uri": row.get("action", {}).get("value", ""),
-            "action_type": action_type_name,
-            "playTime": play_time,
-            "quarter": quarter,
-            "sequence": int(row.get("sequence", {}).get("value", "0") or 0),
-            "teamType": row.get("teamType", {}).get("value", "neutral"),
-            "homeScore": int(home_score) if home_score.isdigit() else 0,
-            "roadScore": int(road_score) if road_score.isdigit() else 0,
-            "playerName": row.get("playerLabel", {}).get("value", ""),
-            "isMade": "Made" in action_type_name,
-            "isFastBreak": get_bool(row, "isFastBreak"),
-            "isSecondChance": get_bool(row, "isSecondChance"),
-            "isFromTurnover": get_bool(row, "isFromTurnover"),
-            "videoSeconds": find_video_seconds(
-                sync_clock,
-                sync_quarter,
-                season_code,
-                game_code,
-                action_type=action_type_name,
-            ),
-            "playbackLeadSeconds": playback_lead_for_action(
-                game_config, action_type_name
-            ),
-        })
+        actions.append(
+            {
+                "uri": row.get("action", {}).get("value", ""),
+                "action_type": action_type_name,
+                "playTime": play_time,
+                "quarter": quarter,
+                "sequence": int(row.get("sequence", {}).get("value", "0") or 0),
+                "teamType": row.get("teamType", {}).get("value", "neutral"),
+                "homeScore": int(home_score) if home_score.isdigit() else 0,
+                "roadScore": int(road_score) if road_score.isdigit() else 0,
+                "playerName": row.get("playerLabel", {}).get("value", ""),
+                "homeLineup": row.get("homeLineup", {}).get("value"),
+                "roadLineup": row.get("roadLineup", {}).get("value"),
+                "isMade": "Made" in action_type_name,
+                "isFastBreak": get_bool(row, "isFastBreak"),
+                "isSecondChance": get_bool(row, "isSecondChance"),
+                "isFromTurnover": get_bool(row, "isFromTurnover"),
+                "videoSeconds": find_video_seconds(
+                    sync_clock,
+                    sync_quarter,
+                    season_code,
+                    game_code,
+                    action_type=action_type_name,
+                ),
+                "playbackLeadSeconds": playback_lead_for_action(game_config, action_type_name),
+            }
+        )
 
     return {"actions": actions}
+
 
 @app.get("/api/play/context")
 async def get_play_context(action_uri: str = Query(...)):
@@ -580,8 +619,9 @@ async def get_play_context(action_uri: str = Query(...)):
 
     return {
         "avgHeight": round(float(avg_height), 2) if avg_height else None,
-        "playersOnCourt": players
+        "playersOnCourt": players,
     }
+
 
 @app.get("/api/teams")
 async def get_teams():
@@ -597,8 +637,13 @@ async def get_teams():
     for row in data.get("results", {}).get("bindings", []):
         uri = row.get("team", {}).get("value", "")
         logo = row.get("logo", {}).get("value", "")
-        teams.append({"id": uri.rstrip('/').split('/')[-1], "name": row.get("name", {}).get("value", ""),
-                      "logo": logo if logo.startswith(('https://', 'http://')) else None})
+        teams.append(
+            {
+                "id": uri.rstrip("/").split("/")[-1],
+                "name": row.get("name", {}).get("value", ""),
+                "logo": logo if logo.startswith(("https://", "http://")) else None,
+            }
+        )
     return {"teams": teams}
 
 
@@ -614,14 +659,17 @@ async def get_games(season_code: str = Query(...)):
     for row in data.get("results", {}).get("bindings", []):
         home_label = row.get("homeLabel", {}).get("value", "")
         away_label = row.get("awayLabel", {}).get("value", "")
-        games.append({
-            "gameCode": row.get("gameCode", {}).get("value", ""),
-            "matchup": f"{home_label} vs {away_label}",
-            "stage": game_stage(row),
-            "round": row.get("round", {}).get("value", "")
-        })
+        games.append(
+            {
+                "gameCode": row.get("gameCode", {}).get("value", ""),
+                "matchup": f"{home_label} vs {away_label}",
+                "stage": game_stage(row),
+                "round": row.get("round", {}).get("value", ""),
+            }
+        )
 
     return {"games": games}
+
 
 @app.get("/api/game/lineups")
 async def get_game_lineups(game_code: str = Query(...), season_code: str = Query(...)):
@@ -641,17 +689,13 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
         players_str = row.get("players", {}).get("value", "")
         homeScore = row.get("homeScore", {}).get("value", "")
         roadScore = row.get("roadScore", {}).get("value", "")
-        lineups.append({
-            "uri": lineup_uri,
-            "teamType": team_type,
-            "players": players_str
-        })
+        lineups.append({"uri": lineup_uri, "teamType": team_type, "players": players_str})
 
-    return {"homeScore": homeScore,"roadScore": roadScore,"lineups": lineups}
+    return {"homeScore": homeScore, "roadScore": roadScore, "lineups": lineups}
 
-# ==========================================
-# ANALYTICS ENDPOINTS
-# ==========================================
+
+# Statistical reports and coach simulation.
+
 
 @app.get("/api/analytics/assist-duos")
 async def get_assist_duos(
@@ -661,9 +705,11 @@ async def get_assist_duos(
     min_start: str = Query(None),
     min_end: str = Query(None),
     game_code: str = Query(None),
-    season_code: str = Query(None)
+    season_code: str = Query(None),
 ):
-    query = get_top_assist_duos_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
+    query = get_top_assist_duos_query(
+        filter_type, filter_id, quarter, min_start, min_end, game_code, season_code
+    )
     data = await analysis_data(query)
 
     results = []
@@ -673,13 +719,16 @@ async def get_assist_duos(
         scorer_id = row.get("scorer", {}).get("value", "").split("/")[-1]
         passer_id = row.get("passer", {}).get("value", "").split("/")[-1]
 
-        results.append({
-            "scorer_id": scorer_id,
-            "passer_id": passer_id,
-            "total_assists": int(row.get("totalAssists", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "scorer_id": scorer_id,
+                "passer_id": passer_id,
+                "total_assists": int(row.get("totalAssists", {}).get("value", 0)),
+            }
+        )
 
     return {"assist_duos": results}
+
 
 @app.get("/api/analytics/second-chance")
 async def get_second_chance(
@@ -690,9 +739,11 @@ async def get_second_chance(
     min_end: str = Query(None),
     game_code: str = Query(None),
     season_code: str = Query(None),
-    player_id: str = Query(None)
+    player_id: str = Query(None),
 ):
-    query = get_second_chance_points_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code, player_id)
+    query = get_second_chance_points_query(
+        filter_type, filter_id, quarter, min_start, min_end, game_code, season_code, player_id
+    )
     data = await analysis_data(query)
 
     results = []
@@ -701,12 +752,15 @@ async def get_second_chance(
     for row in bindings:
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
 
-        results.append({
-            "player_id": player_id,
-            "total_points": int(row.get("totalSecondChancePoints", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "player_id": player_id,
+                "total_points": int(row.get("totalSecondChancePoints", {}).get("value", 0)),
+            }
+        )
 
     return {"second_chance_points": results}
+
 
 @app.get("/api/analytics/lineups")
 async def get_top_lineups(
@@ -716,9 +770,11 @@ async def get_top_lineups(
     min_start: str = Query(None),
     min_end: str = Query(None),
     game_code: str = Query(None),
-    season_code: str = Query(None) # ΠΡΟΣΘΗΚΗ
+    season_code: str = Query(None),
 ):
-    query = get_top_lineups_query(filter_type, filter_id, quarter, min_start, min_end, game_code, season_code)
+    query = get_top_lineups_query(
+        filter_type, filter_id, quarter, min_start, min_end, game_code, season_code
+    )
     data = await analysis_data(query)
 
     results = []
@@ -731,13 +787,16 @@ async def get_top_lineups(
         else:
             lineup_ids = []
 
-        results.append({
-            "lineup_url": lineup_url,
-            "players": lineup_ids,
-            "total_points": int(row.get("totalPoints", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "lineup_url": lineup_url,
+                "players": lineup_ids,
+                "total_points": int(row.get("totalPoints", {}).get("value", 0)),
+            }
+        )
 
     return {"top_lineups": results}
+
 
 @app.get("/api/analytics/fouls-drawn")
 async def get_fouls_drawn(
@@ -749,9 +808,19 @@ async def get_fouls_drawn(
     fouled_id: str = Query(None),
     fouling_id: str = Query(None),
     game_code: str = Query(None),
-    season_code: str = Query(None)
+    season_code: str = Query(None),
 ):
-    query = get_foul_drawn_gravity_query(filter_type, filter_id, quarter, min_start, min_end, fouled_id, fouling_id, game_code,season_code)
+    query = get_foul_drawn_gravity_query(
+        filter_type,
+        filter_id,
+        quarter,
+        min_start,
+        min_end,
+        fouled_id,
+        fouling_id,
+        game_code,
+        season_code,
+    )
     data = await analysis_data(query)
 
     results = []
@@ -759,12 +828,15 @@ async def get_fouls_drawn(
 
     for row in bindings:
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
-        results.append({
-            "player_id": player_id,
-            "total_fouls_drawn": int(row.get("totalFoulsDrawn", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "player_id": player_id,
+                "total_fouls_drawn": int(row.get("totalFoulsDrawn", {}).get("value", 0)),
+            }
+        )
 
     return {"fouls_drawn": results}
+
 
 @app.get("/api/analytics/defensive-anchors")
 async def get_defensive_anchors(
@@ -776,9 +848,19 @@ async def get_defensive_anchors(
     shooter_id: str = Query(None),
     blocker_id: str = Query(None),
     game_code: str = Query(None),
-    season_code: str = Query(None)
+    season_code: str = Query(None),
 ):
-    query = get_defensive_anchors_query(filter_type, filter_id, quarter, min_start, min_end, shooter_id, blocker_id, game_code,season_code)
+    query = get_defensive_anchors_query(
+        filter_type,
+        filter_id,
+        quarter,
+        min_start,
+        min_end,
+        shooter_id,
+        blocker_id,
+        game_code,
+        season_code,
+    )
     data = await analysis_data(query)
 
     results = []
@@ -786,12 +868,15 @@ async def get_defensive_anchors(
 
     for row in bindings:
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
-        results.append({
-            "player_id": player_id,
-            "total_blocks": int(row.get("totalBlocks", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "player_id": player_id,
+                "total_blocks": int(row.get("totalBlocks", {}).get("value", 0)),
+            }
+        )
 
     return {"defensive_anchors": results}
+
 
 @app.get("/api/analytics/clutch-performers")
 async def get_clutch_performers():
@@ -804,13 +889,16 @@ async def get_clutch_performers():
     for row in bindings:
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
 
-        results.append({
-            "player_id": player_id,
-            "clutch_points": int(row.get("clutchPoints", {}).get("value", 0)),
-            "clutch_actions": int(row.get("clutchActions", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "player_id": player_id,
+                "clutch_points": int(row.get("clutchPoints", {}).get("value", 0)),
+                "clutch_actions": int(row.get("clutchActions", {}).get("value", 0)),
+            }
+        )
 
     return {"clutch_performers": results}
+
 
 @app.get("/api/analytics/points-off-turnovers")
 async def get_points_off_turnovers():
@@ -824,12 +912,15 @@ async def get_points_off_turnovers():
         team_url = row.get("team", {}).get("value", "")
         team_code = team_url.split("/")[-1] if team_url else "Unknown"
 
-        results.append({
-            "team": team_code,
-            "points_off_turnovers": int(row.get("pointsOffTurnovers", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "team": team_code,
+                "points_off_turnovers": int(row.get("pointsOffTurnovers", {}).get("value", 0)),
+            }
+        )
 
     return {"points_off_turnovers": results}
+
 
 @app.get("/api/analytics/fast-break")
 async def get_fast_break_specialists():
@@ -842,13 +933,16 @@ async def get_fast_break_specialists():
     for row in bindings:
         player_id = row.get("player", {}).get("value", "").split("/")[-1]
 
-        results.append({
-            "player_id": player_id,
-            "fast_break_points": int(row.get("fastBreakPoints", {}).get("value", 0)),
-            "total_attempts": int(row.get("totalAttempts", {}).get("value", 0))
-        })
+        results.append(
+            {
+                "player_id": player_id,
+                "fast_break_points": int(row.get("fastBreakPoints", {}).get("value", 0)),
+                "total_attempts": int(row.get("totalAttempts", {}).get("value", 0)),
+            }
+        )
 
     return {"fast_break_specialists": results}
+
 
 @app.get("/api/simulator/crunch-time")
 async def run_simulator(
@@ -859,7 +953,7 @@ async def run_simulator(
     p5: str = Query(...),
     game_code: str = Query(None),
     quarter: str = Query(None),
-    season_code: str = Query(None)
+    season_code: str = Query(None),
 ):
     query = get_simulator_crunch_time_query(game_code, quarter, [p1, p2, p3, p4, p5], season_code)
     data = await query_sparql(query)
@@ -880,7 +974,7 @@ async def run_simulator(
         lineup_team = row.get("lineupTeam", {}).get("value", "")
         points = int(row.get("totalPoints", {}).get("value", 0))
 
-        # Αν η ομάδα που σκόραρε είναι η ομάδα της πεντάδας μας, είναι Υπέρ. Αλλιώς, Κατά.
+        # Attribute each score to our lineup or its opponent.
         if action_team == lineup_team:
             points_for += points
         else:
@@ -888,18 +982,15 @@ async def run_simulator(
 
     plus_minus = points_for - points_against
 
-    return {
-        "points_for": points_for,
-        "points_against": points_against,
-        "plus_minus": plus_minus
-    }
+    return {"points_for": points_for, "points_against": points_against, "plus_minus": plus_minus}
+
 
 @app.get("/api/game/roster")
 async def get_game_roster(game_code: str = Query(...)):
     query = get_game_roster_query(game_code)
     data = await query_sparql(query)
 
-    # Προσθήκη ελέγχου για αποφυγή σφαλμάτων (timeout)
+    # The data source can return no result after a timeout.
     if not data:
         return {"roster": []}
 
@@ -920,9 +1011,9 @@ async def get_game_roster(game_code: str = Query(...)):
     roster = [{"id": pid, "name": "Loading…"} for pid in player_ids]
     return {"roster": roster}
 
+
 @app.get("/api/simulator/scenario")
 async def get_simulator_scenario(season_code: str = Query(...)):
-    # 1. Φέρνουμε όλα τα Timeouts του 4ου δεκαλέπτου
     query = get_timeouts_query(season_code)
     data = await query_sparql(query)
 
@@ -930,7 +1021,6 @@ async def get_simulator_scenario(season_code: str = Query(...)):
     if not bindings:
         return {"error": "No scenarios found"}
 
-    # 2. Διαλέγουμε ένα στην ΤΥΧΗ!
     random_timeout = random.choice(bindings)
 
     game_uri = random_timeout.get("game", {}).get("value", "")
@@ -943,10 +1033,14 @@ async def get_simulator_scenario(season_code: str = Query(...)):
     home_lineup = random_timeout.get("homeLineup", {}).get("value", "")
     road_lineup = random_timeout.get("roadLineup", {}).get("value", "")
 
-    home_team = home_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in home_lineup else "Home"
-    road_team = road_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in road_lineup else "Road"
+    home_team = (
+        home_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in home_lineup else "Home"
+    )
+    road_team = (
+        road_lineup.split("teams/-/")[1].split("#")[0] if "teams/-/" in road_lineup else "Road"
+    )
 
-    # 3. Σε κάνουμε προπονητή ΜΟΝΟ της ομάδας που ΧΑΝΕΙ (ή στην τύχη αν έχουμε ισοπαλία)!
+    # Coach the trailing team, or choose either team when the scores are tied.
     h_score_int = int(home_score)
     r_score_int = int(road_score)
 
@@ -962,7 +1056,7 @@ async def get_simulator_scenario(season_code: str = Query(...)):
     user_score = home_score if is_home else road_score
     opp_score = road_score if is_home else home_score
 
-    # 4. Φέρνουμε ΜΟΝΟ τους δικούς σου παίκτες (όσους έπαιξαν σε αυτό το ματς)
+    # Limit available players to this team and game.
     roster_query = get_team_roster_query(game_code, user_team, season_code)
     roster_data = await query_sparql(roster_query)
 
@@ -983,342 +1077,33 @@ async def get_simulator_scenario(season_code: str = Query(...)):
         "game_season_name": game_season_name,
         "user_team": user_team,
         "opponent": opponent,
-        "user_team_name": random_timeout.get("homeLabel" if is_home else "awayLabel", {}).get("value", user_team),
-        "opponent_name": random_timeout.get("awayLabel" if is_home else "homeLabel", {}).get("value", opponent),
+        "user_team_name": random_timeout.get("homeLabel" if is_home else "awayLabel", {}).get(
+            "value", user_team
+        ),
+        "opponent_name": random_timeout.get("awayLabel" if is_home else "homeLabel", {}).get(
+            "value", opponent
+        ),
         "user_score": user_score,
         "opp_score": opp_score,
         "clock": clock,
-        "roster": roster
+        "roster": roster,
     }
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 AI_SEARCH_PROVIDER = os.getenv("AI_SEARCH_PROVIDER", "openai").strip().lower()
-AI_SEARCH_PROMPT_VARIANT = os.getenv(
-    "AI_SEARCH_PROMPT_VARIANT", "ontology"
-).strip().lower()
+AI_SEARCH_PROMPT_VARIANT = os.getenv("AI_SEARCH_PROMPT_VARIANT", "ontology").strip().lower()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash").strip()
 OPENAI_MODEL = "gpt-5-mini"
-OPENAI_BASE_URL = os.getenv(
-    "OPENAI_BASE_URL", "https://api.openai.com/v1"
-).rstrip("/")
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
 OPENAI_TIMEOUT_SECONDS = max(1, int(os.getenv("OPENAI_TIMEOUT_SECONDS", "90")))
-OPENAI_MAX_OUTPUT_TOKENS = max(
-    1000, int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "4000"))
-)
+OPENAI_MAX_OUTPUT_TOKENS = max(1000, int(os.getenv("OPENAI_MAX_OUTPUT_TOKENS", "4000")))
 
 # The backend can still start without Gemini configured; /api/chat reports a clear 503 instead.
 client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-# Production AI Search prompts
-euroleague_system_prompt = """
-You are an expert SPARQL developer specializing in semantic sports data and the FORTH Basketball Ontology.
-Translate each English user question into exactly one valid SPARQL query.
-Return only the query. Do not return Markdown fences, HTML, explanations, comments, or any other text.
-Only read-only SELECT and ASK queries are allowed. UPDATE operations and SERVICE clauses are forbidden.
 
-Always include these namespaces:
-PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-CORE CLASSES (rdf:type):
-- Shots: bball:ThreePointShotMade, bball:ThreePointShotMissed, bball:TwoPointShotMade, bball:TwoPointShotMissed, bball:FreeThrowMade, bball:FreeThrowMissed
-- Creation and possession: bball:Assist, bball:OffensiveRebound, bball:DefensiveRebound, bball:Turnover, bball:Steal
-- Fouls and defense: bball:FoulDrawn, bball:DefensiveFoul, bball:OffensiveFoul, bball:BenchFoul, bball:UnsportsmanlikeFoul, bball:TechnicalFoul, bball:CoachFoul, bball:Block
-- Game flow: bball:PeriodStart, bball:JumpBall, bball:PlayerIn, bball:PlayerOut
-
-STRICT VOCABULARY AND QUERY RULES — NEVER INVENT PROPERTIES:
-1. Game and season structure:
-   ?game a bball:Game ; bball:hasSeason ?season ; bball:hasCode ?gameCode .
-   ?season bball:hasCode ?seasonCode .
-   ?game bball:homeTeam ?homeTeam ; bball:roadTeam ?roadTeam .
-   Always use the exact game and season codes supplied in the Required request context.
-   If a season or game context contains comma-separated codes, never search for the combined string. Split the codes and use FILTER IN.
-   Correct example: FILTER(?seasonCode IN ("SEASON_CODE_1", "SEASON_CODE_2"))
-2. Action connection:
-   ?game bball:hasPlayByPlayAction ?action .
-   ?action bball:hasPlayByPlaySequence ?order .
-3. Action statistics:
-   - Points: bball:pointsAwarded ?points . Always aggregate points with SUM(xsd:integer(?points)).
-   - Acting player: bball:actionPlayer ?player .
-   - Acting team: bball:actionTeam ?team .
-   - Assist relation: ?shot bball:hasAssist ?assist . ?assist bball:actionPlayer ?assistingPlayer .
-   - Running score: bball:runningHomeTeamScore ?homeScore and bball:runningRoadTeamScore ?roadScore.
-     These properties belong to ?action, never to ?game. bball:homeScore and bball:roadScore do not exist.
-   - Shot zone: bball:shotZone ?shotZone. Stored values are codes "A" through "J" or an empty string, never words such as "paint" or "left corner".
-     A/B/C = close range and paint; D/E/F/G = two-point range outside the paint;
-     H = left three-point perimeter; I = right three-point perimeter; J = very long three-pointer.
-   - Exact shot position: bball:shotCoords ?coords, stored as an "x,y" string in centimeters relative to the basket center.
-     x is the horizontal axis (negative means left) and y is the distance toward the court interior.
-     Parse geometric coordinates with:
-     BIND(xsd:decimal(STRBEFORE(str(?coords), ",")) AS ?shotX)
-     BIND(xsd:decimal(STRAFTER(str(?coords), ",")) AS ?shotY)
-     For "paint", use FILTER(?shotZone IN ("A", "B", "C")). For the exact left three-point corner, use
-     FILTER(str(?shotZone) = "H" && ?shotX <= -600 && ?shotY <= 175).
-   - Action time: ?action bball:quarter ?quarter ; bball:clock ?clock .
-     ?quarter is a string: "1st", "2nd", "3rd", "4th", "1OT", "2OT", and so on; it is never numeric.
-     For the fourth quarter, use FILTER(str(?quarter) = "4th").
-     ?clock is an "MM:SS" string. Convert it to remaining seconds with:
-     BIND((xsd:integer(STRBEFORE(str(?clock), ":")) * 60 + xsd:integer(STRAFTER(str(?clock), ":"))) AS ?secondsRemaining)
-     Never use the nonexistent properties bball:period, bball:gameClock, or bball:hasQuarter.
-4. On-court lineups:
-   bball:runningHomeTeamLineup and bball:runningRoadTeamLineup always belong to ?action, never to ?game or a possession:
-   ?action bball:runningHomeTeamLineup ?homeLineup ; bball:runningRoadTeamLineup ?roadLineup .
-   ?lineup bball:includesPlayer ?player .
-   To test whether a player was on court, connect the lineup of the same scoring or shot ?action to the player through bball:includesPlayer.
-   For a starting lineup, take the lineup on the first bball:PeriodStart in the "1st" quarter. Keep only actions whose
-   runningHomeTeamLineup or runningRoadTeamLineup is exactly the same URI. Never invent Lineup properties such as
-   bball:hasPlayByPlaySequence, and never attach a running lineup directly to ?game.
-   Never assume that a named team is home or road. Resolve ?targetTeam by rdfs:label and use two explicit UNION branches.
-   Never join the player members of both lineups simultaneously.
-
-   CANONICAL PATTERN — actions while a named team's starting lineup was on court:
-   ?targetTeam rdfs:label ?targetTeamName .
-   FILTER(regex(str(?targetTeamName), '(^|[^A-Za-z0-9])TEAM_NAME([^A-Za-z0-9]|$)', 'i'))
-   ?game bball:hasPlayByPlayAction ?periodStart, ?action .
-   ?periodStart rdf:type bball:PeriodStart ; bball:quarter "1st" .
-   VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed bball:FreeThrowMade bball:FreeThrowMissed }
-   ?action rdf:type ?actionType .
-   {
-     ?game bball:homeTeam ?targetTeam .
-     ?periodStart bball:runningHomeTeamLineup ?startingLineup .
-     ?action bball:runningHomeTeamLineup ?startingLineup .
-   } UNION {
-     ?game bball:roadTeam ?targetTeam .
-     ?periodStart bball:runningRoadTeamLineup ?startingLineup .
-     ?action bball:runningRoadTeamLineup ?startingLineup .
-   }
-   If the question asks for actions while the lineup was on court, do not constrain bball:actionTeam: the actions may belong
-   to either team. Constrain bball:actionTeam to ?targetTeam only when the user explicitly requests that team's actions.
-
-   CANONICAL PATTERN — points scored by a named team while a named player was on court:
-   ?targetTeam rdfs:label ?targetTeamName .
-   ?player rdfs:label ?playerName .
-   ?action bball:actionTeam ?targetTeam ; bball:pointsAwarded ?points .
-   FILTER(xsd:integer(?points) > 0)
-   {
-     ?game bball:homeTeam ?targetTeam .
-     ?action bball:runningHomeTeamLineup ?lineup .
-   } UNION {
-     ?game bball:roadTeam ?targetTeam .
-     ?action bball:runningRoadTeamLineup ?lineup .
-   }
-   ?lineup bball:includesPlayer ?player .
-   A regex filter is mandatory for both ?targetTeamName and ?playerName. A player's presence in a lineup does not replace
-   the explicit filter for the team named by the user.
-   For total points, repeat exactly the same team/home-road/lineup logic inside the aggregate subquery. Use the same
-   variable names ?targetTeam and ?player consistently in SELECT, WHERE, and GROUP BY:
-   {
-     SELECT ?game ?targetTeam ?player (SUM(xsd:integer(?subPoints)) AS ?totalPoints) WHERE {
-       ?game bball:hasSeason ?subSeason ; bball:hasCode ?subGameCode ; bball:hasPlayByPlayAction ?subAction .
-       ?subSeason bball:hasCode ?subSeasonCode .
-       FILTER(str(?subSeasonCode) = "SEASON_CODE")
-       FILTER(str(?subGameCode) = "GAME_CODE")
-       ?targetTeam rdfs:label ?subTargetTeamName .
-       FILTER(regex(str(?subTargetTeamName), '(^|[^A-Za-z0-9])TEAM_NAME([^A-Za-z0-9]|$)', 'i'))
-       ?player rdfs:label ?subPlayerName .
-       FILTER(regex(str(?subPlayerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
-       ?subAction bball:actionTeam ?targetTeam ; bball:pointsAwarded ?subPoints .
-       FILTER(xsd:integer(?subPoints) > 0)
-       {
-         ?game bball:homeTeam ?targetTeam .
-         ?subAction bball:runningHomeTeamLineup ?subLineup .
-       } UNION {
-         ?game bball:roadTeam ?targetTeam .
-         ?subAction bball:runningRoadTeamLineup ?subLineup .
-       }
-       ?subLineup bball:includesPlayer ?player .
-     } GROUP BY ?game ?targetTeam ?player
-   }
-   "SEASON_CODE", "GAME_CODE", TEAM_NAME, and PLAYER_NAME are placeholders and must be replaced from the request context.
-   Never SELECT or GROUP BY a variable different from the one actually bound inside the subquery.
-   In this pattern, never introduce ?subTargetTeam or ?subPlayer for labels and then use ?targetTeam or ?player elsewhere.
-   That creates a Cartesian product and may time out. Use exactly ?targetTeam and ?player throughout the subquery.
-   The expression ?actionTeam = ?game/bball:homeTeam is forbidden: a property path is not a value expression inside FILTER.
-   First bind ?game bball:homeTeam ?targetTeam or ?game bball:roadTeam ?targetTeam.
-   Dummy triples such as ?team ?predicate ?value are forbidden.
-5. Player information:
-   - Height: bball:hasHeight ?height . Use AVG(xsd:float(?height)) for an average.
-   - Birth date: bball:hasBirthDate ?date .
-6. Possessions:
-   ?game bball:hasPossession ?possession .
-   ?possession bball:hasPossessionSequence ?seq .
-   ?possession bball:possessionTeam ?team ;
-               bball:startsAfterAction ?startAction ;
-               bball:endsWithAction ?endAction ;
-               bball:containsAction ?containedAction .
-   ?seq is a literal sequence value, not a resource with bball:hasPlayByPlayAction.
-7. Direct relations and flags:
-   - Missed shot followed by a rebound:
-     ?action bball:leadsToRebound ?reboundAction .
-     ?reboundAction rdf:type bball:OffensiveRebound .
-   - Fast-break score: ?scoreAction bball:isFastBreak "true"^^xsd:boolean ; bball:pointsAwarded ?points .
-   - Points after a turnover: ?scoreAction bball:isFromTurnover "true"^^xsd:boolean .
-   - Turnover that starts a possession containing fast-break points:
-     ?action rdf:type bball:Turnover .
-     ?possession bball:startsAfterAction ?action ; bball:containsAction ?scoreAction .
-     ?scoreAction bball:isFastBreak "true"^^xsd:boolean ; bball:pointsAwarded ?points .
-
-PLAY-BY-PLAY CONNECTION:
-- When a question requests concrete plays or a player's actions, SELECT must include DISTINCT ?action.
-- ?action must be the exact action URI connected through ?game bball:hasPlayByPlayAction ?action.
-- ASSISTS: ?action must be the bball:Assist action itself, not the shot. Use:
-  ?game bball:hasPlayByPlayAction ?action .
-  ?action rdf:type bball:Assist ; bball:actionPlayer ?assistingPlayer .
-  VALUES ?madeShotType { bball:TwoPointShotMade bball:ThreePointShotMade bball:FreeThrowMade }
-  ?shot rdf:type ?madeShotType ; bball:hasAssist ?action ; bball:actionPlayer ?receivingPlayer .
-  bball:FreeThrowMade may have an assist when the pass led to a shooting foul and at least one resulting free throw was made.
-  Therefore, a request for PLAYER_A's assists to PLAYER_B must return Assist cards in Play-by-Play, not Shot cards.
-- Points: use bball:pointsAwarded ?points and FILTER(xsd:integer(?points) > 0).
-- Rebounds: use VALUES ?actionType { bball:OffensiveRebound bball:DefensiveRebound } and ?action rdf:type ?actionType.
-- Turnovers: use ?action rdf:type bball:Turnover.
-- Fouls drawn: use ?action rdf:type bball:FoulDrawn. Do not confuse this with a foul committed by another player.
-- Fouls committed by a team: use VALUES ?foulType { bball:DefensiveFoul bball:OffensiveFoul bball:BenchFoul bball:UnsportsmanlikeFoul bball:TechnicalFoul bball:CoachFoul },
-  then ?action rdf:type ?foulType ; bball:actionTeam ?team and connect ?team to the game's homeTeam or roadTeam. Do not include FoulDrawn or Block.
-- Substitutions: use VALUES ?actionType { bball:PlayerIn bball:PlayerOut } and
-  ?action rdf:type ?actionType ; bball:actionPlayer ?player. The properties/classes bball:Substitution,
-  bball:SubstitutionIn, bball:SubstitutionOut, bball:playerIn, and bball:playerOut do not exist.
-- For each action list, include when available: ?playerName, ?points, ?quarter, ?clock, ?homeScore, ?roadScore, and ?order.
-  Use OPTIONAL for fields that may be absent. Scores must be read only with:
-  OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore ; bball:runningRoadTeamScore ?roadScore . }
-- For total points, total made shots, or total missed shots, return both the aggregate and DISTINCT ?action through an
-  aggregate subquery so the matching plays can filter the Play-by-Play overlay.
-- For "how many points" or "total points", the outer SELECT must contain DISTINCT ?action and ?totalPoints.
-  Calculate ?totalPoints in an inner aggregate subquery grouped by ?game and ?player, then join it to the individual scoring
-  ?action values for that same game and player. The final result must contain one row per scoring action and repeat the same
-  ?totalPoints value on every row.
-- For "how many rebounds" or another action count connected to Play-by-Play, return DISTINCT ?action and the aggregate,
-  such as ?totalRebounds. Inside the aggregate subquery, repeat the same action-type VALUES and the player, season, and game
-  filters. Variables and VALUES from the outer query are not automatically available inside a subquery.
-- For a pure ranking such as "which player had the most...", return only the player and COUNT/SUM with GROUP BY,
-  ORDER BY DESC, and LIMIT. Do not add an outer ?action just to activate the overlay because that would select an unrelated play.
-- Every comparison must appear inside FILTER(...). Wrong: ?points != 0. Correct: FILTER(xsd:integer(?points) > 0).
-- Only aggregates that do not logically map to a play list, such as percentage or average, should omit ?action.
-- For total points, use (SUM(xsd:integer(?points)) AS ?totalPoints), never COUNT actions.
-- For a shooting percentage, always return all three fields: ?made, ?attempts, and ?percentage.
-  Two-point example:
-  VALUES ?actionType { bball:TwoPointShotMade bball:TwoPointShotMissed }
-  ?action rdf:type ?actionType .
-  BIND(IF(?actionType = bball:TwoPointShotMade, 1, 0) AS ?madeValue)
-  SELECT must contain (SUM(?madeValue) AS ?made), (COUNT(?action) AS ?attempts), and
-  (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage).
-  For three-pointers, use ThreePointShotMade/Missed; for free throws, use FreeThrowMade/Missed.
-  Do not return an action list when the user requests a percentage; return the aggregate only.
-- For a yes/no question, use ASK and keep exactly the same game, season, and player filters.
-
-NAME LOOKUP — ALWAYS USE REGEX:
-?player rdfs:label ?playerName .
-FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
-Do not use word-boundary escapes. The SPARQL string parser may convert them into control characters before evaluating regex.
-The application accepts English questions, player names, and team names. Do not transliterate Greek or Greeklish input.
-
-FINAL CHECK BEFORE RETURNING THE QUERY:
-- After PREFIX declarations, the query begins with SELECT or ASK. Every SELECT query contains LIMIT.
-- No bare variable comparison exists outside FILTER.
-- After a semicolon, write only the next predicate/object, never the subject again.
-  Correct: ?x rdf:type bball:PeriodStart ; bball:quarter "1st" .
-- VALUES binds the exact variable used by the triple pattern: VALUES ?actionType { ... } followed by ?action rdf:type ?actionType.
-  Never use FILTER(?actionType IN (?differentVariable)).
-- The query contains exactly the season/game filters supplied by the Required request context.
-- When concrete or countable plays are requested, the outer SELECT includes DISTINCT ?action for the Play-by-Play overlay.
-- Only percentages, averages, and pure summary rankings may omit ?action.
-
-EXAMPLE:
-Question: "Who assisted the first made three-pointer?"
-Answer:
-PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT ?assistingPlayerName WHERE {
-  ?game a bball:Game ; bball:hasPlayByPlayAction ?action .
-  ?action rdf:type bball:ThreePointShotMade ; bball:hasPlayByPlaySequence ?order ; bball:hasAssist ?assist .
-  ?assist bball:actionPlayer ?assistingPlayer .
-  ?assistingPlayer rdfs:label ?assistingPlayerName .
-} ORDER BY ASC(xsd:integer(?order)) LIMIT 1
-"""
-
-simple_sparql_system_prompt = """
-Translate the English user question into exactly one valid, read-only SPARQL SELECT or ASK query for the FORTH Basketball Ontology.
-This baseline prompt provides only a flat vocabulary. It intentionally does not explain how the properties and classes connect and does not include query templates.
-Return only the SPARQL query, without Markdown, comments, or explanation.
-Use these prefixes:
-PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-
-AVAILABLE PROPERTIES:
-- rdf:type, rdfs:label, rdfs:comment, skos:altLabel, foaf:depiction
-- bball:hasBio, bball:hasWebsite, bball:teamVenue, bball:hasLeague
-- bball:eventEnded, bball:eventStarted, bball:hasExtraTime, bball:hasHeadCoach
-- bball:dnp, bball:hasCapacity, bball:hasCode, bball:gameVenue
-- bball:hasAchievements, bball:hasAddress, bball:hasAudience, bball:hasBiography
-- bball:wasBornIn, bball:hasBirthDate, bball:hasCountry, bball:hasDate
-- bball:hasHeight, bball:hasHomeTeamScore, bball:hasJerseyName, bball:hasJerseyNumber
-- bball:hasPhase, bball:hasPhaseGroup, bball:hasPlayerParticipation
-- bball:hasPlayerStatline, bball:hasPosition, bball:hasReferee
-- bball:hasRoadTeamScore, bball:hasRound, bball:hasScore, bball:hasSeason
-- bball:hasTeamBoxscore, bball:hasTeamStatline, bball:hasWeight
-- bball:homeTeam, bball:losingTeam, bball:overPlayer, bball:overTeam
-- bball:roadTeam, bball:startYear, bball:startingFive, bball:teamCountry
-- bball:winningTeam, bball:endYear, bball:lineupTeam, bball:includesPlayer
-- bball:PIR, bball:assists, bball:blocks, bball:blocksAgainst
-- bball:defensiveRebounds, bball:offensiveRebounds, bball:totalRebounds
-- bball:fieldGoalsAttempted2, bball:fieldGoalsAttempted3, bball:fieldGoalsAttemptedTotal
-- bball:fieldGoalsMade2, bball:fieldGoalsMade3, bball:fieldGoalsMadeTotal
-- bball:fieldGoalsPer, bball:fieldGoalsPer2, bball:fieldGoalsPer3
-- bball:foulsCommitted, bball:foulsReceived
-- bball:freeThrowsAttempted, bball:freeThrowsMade, bball:freeThrowsPer
-- bball:plusMinus, bball:points, bball:timePlayed, bball:turnovers, bball:steals
-- bball:quarter1points, bball:quarter2points, bball:quarter3points, bball:quarter4points
-- bball:endOfQuarter1points, bball:endOfQuarter2points, bball:endOfQuarter3points, bball:endOfQuarter4points
-- bball:belongsToPossession, bball:actionCoach, bball:actionPlayer, bball:actionTeam
-- bball:blockedBy, bball:causedByFoul, bball:causedBySteal, bball:occuredByFoul
-- bball:clock, bball:hasAssist, bball:hasPlayByPlayAction, bball:hasPlayByPlaySequence
-- bball:isFastBreak, bball:isFromTurnover, bball:isSecondChance
-- bball:leadsToRebound, bball:pointsAwarded, bball:quarter, bball:quarterSecondsRemaining
-- bball:runningHomeTeamLineup, bball:runningHomeTeamScore
-- bball:runningRoadTeamLineup, bball:runningRoadTeamScore
-- bball:shotCoords, bball:shotZone
-- bball:hasPossession, bball:containsAction, bball:endsWithAction
-- bball:possessionTeam, bball:startsAfterAction, bball:hasPossessionSequence
-- bball:correspondsToOCRObservation, bball:hasBroadcastVideo, bball:hasOCRObservation
-- bball:isVideoEnabled, bball:ocrClock, bball:ocrProfile, bball:ocrQuarter
-- bball:ocrSequence, bball:playbackLeadSeconds, bball:videoTimeSeconds, bball:youtubeURL
-
-AVAILABLE CLASSES:
-- bball:Coach, bball:League, bball:Game, bball:Country, bball:Player
-- bball:PlayerParticipation, bball:Referee, bball:Season, bball:Statline
-- bball:Team, bball:TeamBoxscore, bball:Venue, bball:Lineup, bball:Possession
-- bball:PeriodStart, bball:PeriodEnd, bball:GameEnd, bball:JumpBall
-- bball:TwoPointShotMade, bball:TwoPointShotMissed
-- bball:ThreePointShotMade, bball:ThreePointShotMissed
-- bball:FreeThrowMade, bball:FreeThrowMissed
-- bball:OffensiveRebound, bball:DefensiveRebound, bball:Assist
-- bball:Turnover, bball:Steal, bball:Block, bball:FoulDrawn
-- bball:DefensiveFoul, bball:OffensiveFoul, bball:CoachFoul, bball:BenchFoul
-- bball:TechnicalFoul, bball:UnsportsmanlikeFoul
-- bball:PlayerIn, bball:PlayerOut, bball:Timeout, bball:TimeoutTV, bball:Challenge
-- bball:BroadcastVideo, bball:OCRObservation
-
-BASELINE GUIDELINES:
-- Never use a class as a property.
-- Team, player, coach, referee, and country names are English rdfs:label values.
-- Use SELECT DISTINCT when returning resources. Use COUNT(DISTINCT ?game) when counting games.
-- Cast a denominator to xsd:double when performing division.
-- Honor the Required request context exactly.
-- Do not use UPDATE operations or SERVICE clauses.
-""".strip()
-
-AI_SEARCH_PROMPTS = {
-    "simple": simple_sparql_system_prompt,
-    "ontology": euroleague_system_prompt,
-}
 def extract_openai_output_text(payload: dict) -> str:
     """Extract assistant text from a raw Responses API payload."""
     direct_text = payload.get("output_text")
@@ -1374,9 +1159,7 @@ def extract_openai_usage(payload: dict) -> dict[str, int]:
         "reasoning_tokens": min(
             output_tokens, _non_negative_int(output_details.get("reasoning_tokens"))
         ),
-        "total_tokens": _non_negative_int(
-            usage.get("total_tokens", input_tokens + output_tokens)
-        ),
+        "total_tokens": _non_negative_int(usage.get("total_tokens", input_tokens + output_tokens)),
     }
 
 
@@ -1388,9 +1171,7 @@ def extract_gemini_usage(response) -> dict[str, int]:
         input_tokens,
         _non_negative_int(getattr(usage, "cached_content_token_count", 0)),
     )
-    visible_output_tokens = _non_negative_int(
-        getattr(usage, "candidates_token_count", 0)
-    )
+    visible_output_tokens = _non_negative_int(getattr(usage, "candidates_token_count", 0))
     reasoning_tokens = _non_negative_int(getattr(usage, "thoughts_token_count", 0))
     output_tokens = visible_output_tokens + reasoning_tokens
     return {
@@ -1404,9 +1185,7 @@ def extract_gemini_usage(response) -> dict[str, int]:
     }
 
 
-def request_openai_text(
-    message: str, system_prompt: str, model: str
-) -> tuple[str, dict[str, int]]:
+def request_openai_text(message: str, system_prompt: str, model: str) -> tuple[str, dict[str, int]]:
     response = requests.post(
         f"{OPENAI_BASE_URL}/responses",
         headers={
@@ -1438,9 +1217,7 @@ def ai_search_configuration(
     requested_openai_model: str | None,
 ) -> tuple[str, str, str]:
     provider = (requested_provider or AI_SEARCH_PROVIDER).strip().lower()
-    prompt_variant = (
-        requested_prompt_variant or AI_SEARCH_PROMPT_VARIANT
-    ).strip().lower()
+    prompt_variant = (requested_prompt_variant or AI_SEARCH_PROMPT_VARIANT).strip().lower()
     if provider not in {"gemini", "openai"}:
         raise ValueError("AI_SEARCH_PROVIDER must be 'gemini' or 'openai'.")
     if prompt_variant not in AI_SEARCH_PROMPTS:
@@ -1470,19 +1247,23 @@ def available_ai_search_models() -> list[dict[str, str | bool]]:
     """Return only AI models whose provider key is configured."""
     models = []
     if OPENAI_API_KEY:
-        models.append({
-            "provider": "openai",
-            "model": OPENAI_MODEL,
-            "label": "GPT-5 Mini",
-            "is_default": AI_SEARCH_PROVIDER == "openai",
-        })
+        models.append(
+            {
+                "provider": "openai",
+                "model": OPENAI_MODEL,
+                "label": "GPT-5 Mini",
+                "is_default": AI_SEARCH_PROVIDER == "openai",
+            }
+        )
     if GEMINI_API_KEY and client is not None:
-        models.append({
-            "provider": "gemini",
-            "model": GEMINI_MODEL,
-            "label": f"Gemini ({GEMINI_MODEL})",
-            "is_default": AI_SEARCH_PROVIDER == "gemini",
-        })
+        models.append(
+            {
+                "provider": "gemini",
+                "model": GEMINI_MODEL,
+                "label": f"Gemini ({GEMINI_MODEL})",
+                "is_default": AI_SEARCH_PROVIDER == "gemini",
+            }
+        )
 
     if models and not any(model["is_default"] for model in models):
         models[0]["is_default"] = True
@@ -1509,9 +1290,8 @@ async def generate_ai_search_text(
             config=types.GenerateContentConfig(system_instruction=system_prompt),
         )
         return response.text, extract_gemini_usage(response)
-    return await asyncio.to_thread(
-        request_openai_text, message, system_prompt, model
-    )
+    return await asyncio.to_thread(request_openai_text, message, system_prompt, model)
+
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
@@ -1521,6 +1301,7 @@ class ChatRequest(BaseModel):
     prompt_variant: Literal["simple", "ontology"] | None = None
     openai_model: Literal["gpt-5-mini"] | None = None
     include_query: bool = False
+    show_query: bool = False
     include_answer: bool = False
     workspace: Literal["explore", "video"] = "explore"
 
@@ -1549,23 +1330,18 @@ def build_ai_scope_context(
         ("game", "gameCode", game_code),
     )
     for label, variable, raw_value in scopes:
-        values = [
-            value.strip()
-            for value in str(raw_value or "").split(",")
-            if value.strip()
-        ]
+        values = [value.strip() for value in str(raw_value or "").split(",") if value.strip()]
         if not values:
             continue
         if len(values) == 1:
             context.append(
-                f'Restrict the query to the selected {label} using '
-                f'bball:hasCode "{values[0]}".'
+                f'Restrict the query to the selected {label} using bball:hasCode "{values[0]}".'
             )
             continue
         quoted_values = ", ".join(f'"{value}"' for value in values)
         context.append(
-            f'Restrict the query to the selected {label} codes using '
-            f'FILTER(?{variable} IN ({quoted_values})).'
+            f"Restrict the query to the selected {label} codes using "
+            f"FILTER(?{variable} IN ({quoted_values}))."
         )
     return context
 
@@ -1604,7 +1380,14 @@ def extract_playbyplay_action_uris(results: list[dict]) -> list[str]:
     for result in results:
         for key, binding in result.items():
             normalized_key = re.sub(r"[^a-z0-9]", "", key.lower())
-            if normalized_key not in {"action", "actionuri", "play", "playuri", "event", "eventuri"}:
+            if normalized_key not in {
+                "action",
+                "actionuri",
+                "play",
+                "playuri",
+                "event",
+                "eventuri",
+            }:
                 continue
             value = binding.get("value") if isinstance(binding, dict) else None
             if value and value not in seen:
@@ -1614,20 +1397,42 @@ def extract_playbyplay_action_uris(results: list[dict]) -> list[str]:
 
 
 def query_mentions_assists(message: str) -> bool:
-    return bool(re.search(r"\bassist(?:s|ed|ing)?\b|\basist(?:s)?\b|ασ[ίι]στ", message or "", flags=re.IGNORECASE))
+    # Unicode escapes preserve legacy input recognition in this English source.
+    return bool(
+        re.search(
+            r"\bassist(?:s|ed|ing)?\b|\basist(?:s)?\b|\u03b1\u03c3[\u03af\u03b9]\u03c3\u03c4",
+            message or "",
+            flags=re.IGNORECASE,
+        )
+    )
 
 
 def classify_playbyplay_action_kind(message: str) -> str:
     normalized = message or ""
     intent_patterns = [
-        ("assists", r"\bassist(?:s|ed|ing)?\b|\basist(?:s)?\b|ασ[ίι]στ"),
-        ("rebounds", r"\brebound(?:s|ed|ing)?\b|\bribaund(?:s)?\b|ριμπ[άα]ουντ"),
-        ("turnovers", r"\bturnover(?:s)?\b|\blath(?:os|i)\b|λ[άα]θ(?:ος|η)"),
-        ("fouls", r"\bfoul(?:s|ed)?\b|\bfaoul\b|φ[άα]ουλ"),
-        ("steals", r"\bsteal(?:s)?\b|\bkleps(?:imo|imata)\b|κλ[έε]ψιμο"),
-        ("blocks", r"\bblock(?:s|ed)?\b|\btap(?:a|es)\b|τ[άα]πα"),
-        ("shots", r"\bshot(?:s)?\b|free[ -]?throw|three-pointer|two-pointer|tripont|dipont|τρ[ίι]ποντ|δ[ίι]ποντ|σουτ"),
-        ("points", r"\bpoint(?:s)?\b|\bpont(?:os|oi|ous|a)\b|π[όο]ντ"),
+        (
+            "assists",
+            r"\bassist(?:s|ed|ing)?\b|\basist(?:s)?\b|\u03b1\u03c3[\u03af\u03b9]\u03c3\u03c4",
+        ),
+        (
+            "rebounds",
+            r"\brebound(?:s|ed|ing)?\b|\bribaund(?:s)?\b|\u03c1\u03b9\u03bc\u03c0[\u03ac\u03b1]\u03bf\u03c5\u03bd\u03c4",
+        ),
+        (
+            "turnovers",
+            r"\bturnover(?:s)?\b|\blath(?:os|i)\b|\u03bb[\u03ac\u03b1]\u03b8(?:\u03bf\u03c2|\u03b7)",
+        ),
+        ("fouls", r"\bfoul(?:s|ed)?\b|\bfaoul\b|\u03c6[\u03ac\u03b1]\u03bf\u03c5\u03bb"),
+        (
+            "steals",
+            r"\bsteal(?:s)?\b|\bkleps(?:imo|imata)\b|\u03ba\u03bb[\u03ad\u03b5]\u03c8\u03b9\u03bc\u03bf",
+        ),
+        ("blocks", r"\bblock(?:s|ed)?\b|\btap(?:a|es)\b|\u03c4[\u03ac\u03b1]\u03c0\u03b1"),
+        (
+            "shots",
+            r"\bshot(?:s)?\b|free[ -]?throw|three-pointer|two-pointer|tripont|dipont|\u03c4\u03c1[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03b4[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03c3\u03bf\u03c5\u03c4",
+        ),
+        ("points", r"\bpoint(?:s)?\b|\bpont(?:os|oi|ous|a)\b|\u03c0[\u03cc\u03bf]\u03bd\u03c4"),
     ]
     for action_kind, pattern in intent_patterns:
         if re.search(pattern, normalized, flags=re.IGNORECASE):
@@ -1696,27 +1501,70 @@ async def resolve_assist_action_uris(action_uris: list[str]) -> list[str]:
         return []
     return extract_playbyplay_action_uris(data.get("results", {}).get("bindings", []))
 
+
 async def readable_answer(request, provider, model, results, boolean):
     if not results and boolean is None:
-        return {"kind": "analysis", "paragraphs": ["No matching data was found in the selected scope. Try another spelling or a broader season/game selection."]}
+        return {
+            "kind": "analysis",
+            "paragraphs": [
+                "No matching data was found in the selected scope. Try another spelling or a broader season/game selection."
+            ],
+        }
     evidence = json.dumps(evidence_for_answer(results, boolean, request), ensure_ascii=False)
+
     async def generate():
         if provider == "gemini":
             response = await client.aio.models.generate_content(
-                model=model, contents=evidence,
-                config=types.GenerateContentConfig(system_instruction=ANSWER_PROMPT, max_output_tokens=1800))
+                model=model,
+                contents=evidence,
+                config=types.GenerateContentConfig(
+                    system_instruction=ANSWER_PROMPT, max_output_tokens=1800
+                ),
+            )
             return response.text
-        result, _usage = await asyncio.to_thread(request_openai_text, evidence, ANSWER_PROMPT, model)
+        result, _usage = await asyncio.to_thread(
+            request_openai_text, evidence, ANSWER_PROMPT, model
+        )
         return result
+
     try:
         answer = (await asyncio.wait_for(generate(), timeout=25) or "").strip()
         if not answer or re.search(r"[\u0370-\u03ff\u1f00-\u1fff]", answer):
             return None
-        return {"kind": "analysis", "paragraphs": [p.strip() for p in re.split(r"\n\s*\n", answer) if p.strip()][:3],
-                "note": "AI explanation based on the returned basketball data. Check the supporting results below."}
+        return {
+            "kind": "analysis",
+            "paragraphs": [p.strip() for p in re.split(r"\n\s*\n", answer) if p.strip()][:3],
+            "note": "AI explanation based on the returned basketball data. Check the supporting results below.",
+        }
     except Exception:
         # Explanation failure must not discard a successful query or video action matches.
         return None
+
+
+class SparqlRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=16000)
+
+
+@app.post("/api/query")
+async def run_editor_query(request: SparqlRequest):
+    try:
+        query = bounded_editor_query(request.query)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    data = await query_sparql(query, use_cache=False)
+    if data is None:
+        raise HTTPException(
+            status_code=502,
+            detail="The query could not be completed. Check its syntax or try again when the database is available.",
+        )
+    rows = data.get("results", {}).get("bindings", [])[:200]
+    matches_actions = query_selects_playbyplay_actions(request.query)
+    return {
+        "results": rows,
+        "boolean": data.get("boolean"),
+        "playbyplay_filter": matches_actions,
+        "action_uris": extract_playbyplay_action_uris(rows) if matches_actions else [],
+    }
 
 
 @app.post("/api/chat")
@@ -1724,19 +1572,39 @@ async def ai_chat_handler(request: ChatRequest):
     try:
         shot_styles = unsupported_shot_style(request.message)
         if shot_styles:
-            return {"results": [], "playbyplay_filter": False, "action_uris": [],
-                    "answer": {"kind": "capability", "paragraphs": [
-                        "This dataset does not label " + " or ".join(shot_styles) + ", so I cannot reliably identify those plays.",
-                        "It records two-pointers, three-pointers, free throws, assists, fast breaks and shot locations. An assisted shot near the basket is not necessarily an alley-oop. Try ‘Show assisted two-point shots in this game’ as a broader search."],
-                        "note": "Shot-style information is unavailable; this does not mean the game had no such plays."}}
-        subject = profile_subject(request.message) if request.include_answer and request.workspace == "explore" else None
+            return {
+                "results": [],
+                "playbyplay_filter": False,
+                "action_uris": [],
+                "answer": {
+                    "kind": "capability",
+                    "paragraphs": [
+                        "This dataset does not label "
+                        + " or ".join(shot_styles)
+                        + ", so I cannot reliably identify those plays.",
+                        "It records two-pointers, three-pointers, free throws, assists, fast breaks and shot locations. An assisted shot near the basket is not necessarily an alley-oop. Try ‘Show assisted two-point shots in this game’ as a broader search.",
+                    ],
+                    "note": "Shot-style information is unavailable; this does not mean the game had no such plays.",
+                },
+            }
+        subject = (
+            profile_subject(request.message)
+            if request.include_answer and request.workspace == "explore"
+            else None
+        )
         if subject:
             query = profile_query(subject)
             data = await analysis_data(query)
             rows = data.get("results", {}).get("bindings", [])
             if rows:
-                payload = {"results": rows, "answer": profile_answer(rows, subject), "playbyplay_filter": False, "action_uris": [], "sparql_query": query}
-                return ai_search_response(payload, request.include_query)
+                payload = {
+                    "results": rows,
+                    "answer": profile_answer(rows, subject),
+                    "playbyplay_filter": False,
+                    "action_uris": [],
+                    "sparql_query": query,
+                }
+                return ai_search_response(payload, request.include_query or request.show_query)
         provider, prompt_variant, model = ai_search_configuration(
             request.provider,
             request.prompt_variant,
@@ -1749,12 +1617,13 @@ async def ai_chat_handler(request: ChatRequest):
             request.season_code or "",
             request.game_code or "",
             " ".join(request.message.lower().split()),
-            str(request.include_answer), request.workspace,
+            str(request.include_answer),
+            request.workspace,
         )
         if not request.include_query:
             cached_payload = _get_cached_ai_search(cache_key)
             if cached_payload is not None:
-                return ai_search_response(cached_payload, False)
+                return ai_search_response(cached_payload, request.show_query)
 
         context = build_ai_scope_context(
             request.season_code,
@@ -1762,9 +1631,7 @@ async def ai_chat_handler(request: ChatRequest):
         )
         contextual_message = request.message
         if context:
-            contextual_message += (
-                "\n\nRequired request context:\n- " + "\n- ".join(context)
-            )
+            contextual_message += "\n\nRequired request context:\n- " + "\n- ".join(context)
 
         generated_query, ai_usage = await generate_ai_search_text(
             provider,
@@ -1779,9 +1646,13 @@ async def ai_chat_handler(request: ChatRequest):
             if request.include_query:
                 raise
             generated_query, ai_usage = await generate_ai_search_text(
-                provider, prompt_variant, model,
-                contextual_message + "\nThe previous attempt failed validation: " + str(validation_error)
-                + "\nReturn exactly one read-only SELECT or ASK query. Do not use update commands or SERVICE."
+                provider,
+                prompt_variant,
+                model,
+                contextual_message
+                + "\nThe previous attempt failed validation: "
+                + str(validation_error)
+                + "\nReturn exactly one read-only SELECT or ASK query. Do not use update commands or SERVICE.",
             )
             clean_sparql_query = clean_and_validate_sparql(generated_query)
         data = await query_sparql(clean_sparql_query, use_cache=False)
@@ -1823,17 +1694,24 @@ async def ai_chat_handler(request: ChatRequest):
             "action_uris": action_uris,
         }
         if request.include_answer:
-            if playbyplay_filter and request.game_code and request.season_code and ',' not in request.game_code + request.season_code:
+            if (
+                playbyplay_filter
+                and request.game_code
+                and request.season_code
+                and "," not in request.game_code + request.season_code
+            ):
                 try:
                     pbp = await get_match_pbp(request.game_code, request.season_code)
                     payload["answer"] = action_answer(pbp["actions"], action_uris, request)
                 except HTTPException:
                     payload["answer"] = None
             else:
-                payload["answer"] = await readable_answer(request, provider, model, results, data.get("boolean"))
+                payload["answer"] = await readable_answer(
+                    request, provider, model, results, data.get("boolean")
+                )
         if not request.include_query:
             _cache_ai_search(cache_key, payload)
-        return ai_search_response(payload, request.include_query)
+        return ai_search_response(payload, request.include_query or request.show_query)
     except HTTPException:
         raise
     except ValueError as error:
@@ -1849,7 +1727,11 @@ async def ai_chat_handler(request: ChatRequest):
                     "ai_usage": ai_usage,
                 },
             ) from error
-        detail = "We couldn't complete this search. Try rephrasing your question or choosing another AI provider in Search options." if "generated_query" in locals() else str(error)
+        detail = (
+            "We couldn't complete this search. Try rephrasing your question or choosing another AI provider in Search options."
+            if "generated_query" in locals()
+            else str(error)
+        )
         raise HTTPException(status_code=422, detail=detail) from error
     except Exception as e:
         print(f"AI Search failed: {e}")
@@ -1860,20 +1742,32 @@ async def ai_chat_handler(request: ChatRequest):
                 detail="The selected AI provider has reached its usage limit. Try another provider or try again later.",
             ) from e
         if "503" in error_text or "UNAVAILABLE" in error_text:
-            raise HTTPException(status_code=503, detail="The selected AI provider is temporarily unavailable. Choose another provider in Search options or try again later.") from e
-        raise HTTPException(status_code=502, detail="AI Search could not complete this request. Try another provider in Search options.") from e
+            raise HTTPException(
+                status_code=503,
+                detail="The selected AI provider is temporarily unavailable. Choose another provider in Search options or try again later.",
+            ) from e
+        raise HTTPException(
+            status_code=502,
+            detail="AI Search could not complete this request. Try another provider in Search options.",
+        ) from e
 
 
 def quiz_generation_error(error):
     message = str(error).upper()
     if any(word in message for word in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED")):
-        return HTTPException(status_code=503, detail="The quiz provider is temporarily unavailable. Try Top 5, or try this format again later.")
-    return HTTPException(status_code=502, detail="This quiz question could not be generated. Please try again.")
+        return HTTPException(
+            status_code=503,
+            detail="The quiz provider is temporarily unavailable. Try Top 5, or try this format again later.",
+        )
+    return HTTPException(
+        status_code=502, detail="This quiz question could not be generated. Please try again."
+    )
 
 
 def parse_english_quiz_response(response_text):
     """Keep generated quiz copy in the site's single supported language."""
     payload = json.loads(response_text.replace("```json", "").replace("```", "").strip())
+
     def check(value):
         if isinstance(value, str) and re.search(r"[\u0370-\u03ff\u1f00-\u1fff]", value):
             raise ValueError("The quiz provider returned a non-English question. Please try again.")
@@ -1883,6 +1777,7 @@ def parse_english_quiz_response(response_text):
         elif isinstance(value, list):
             for item in value:
                 check(item)
+
     if not isinstance(payload, dict):
         raise ValueError("The quiz provider returned an incomplete question. Please try again.")
     check(payload)
@@ -1891,18 +1786,31 @@ def parse_english_quiz_response(response_text):
 
 def require_quiz_provider():
     if not OPENAI_API_KEY:
-        raise HTTPException(status_code=503, detail="Quiz generation is unavailable. Configure OPENAI_API_KEY on the server.")
+        raise HTTPException(
+            status_code=503,
+            detail="Quiz generation is unavailable. Configure OPENAI_API_KEY on the server.",
+        )
 
 
 async def generate_quiz_text(prompt):
     """All generated Quiz Ball copy uses GPT-5 Mini, independently of Search."""
     require_quiz_provider()
     text, _ = await asyncio.to_thread(
-        request_openai_text, prompt,
+        request_openai_text,
+        prompt,
         "Write exclusively in English. Return only the requested JSON object. Use only the supplied basketball facts; do not invent facts.",
         OPENAI_MODEL,
     )
     return parse_english_quiz_response(text)
+
+
+def quiz_player_name(player_id):
+    """Resolve quiz identities consistently, preferring the canonical full name."""
+    if not player_id:
+        return ""
+    data = query_sparql_requests(get_player_name_query(player_id))
+    rows = (data or {}).get("results", {}).get("bindings", [])
+    return rows[0].get("name", {}).get("value", player_id) if rows else player_id
 
 
 async def load_quiz_player(player_id):
@@ -1914,11 +1822,10 @@ async def load_quiz_player(player_id):
 async def generate_who_am_i(difficulty: str = Query("medium")):
     require_quiz_provider()
 
-    # 1. Βρίσκουμε ένα τυχαίο παιχνίδι (π.χ. από το 1 έως το 300) για να τραβήξουμε ένα ρόστερ
-    import random
+    # Sample a historical game to build the quiz player pool.
     player_ids = set()
 
-    # Δοκιμάζουμε μέχρι 5 φορές να βρούμε ένα ματς με έγκυρο ρόστερ στη βάση
+    # Bound retries when sampled games have no recorded lineup.
     for _ in range(5):
         random_game = str(random.randint(1, 300))
         roster_query = get_game_roster_query(random_game)
@@ -1935,14 +1842,14 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
                         if pid:
                             player_ids.add(pid)
 
-        # Αν βρήκαμε παίκτες, σπάμε τη λούπα και προχωράμε!
         if player_ids:
             break
 
     if not player_ids:
-        raise HTTPException(status_code=404, detail="No players could be found in the database. Please try again.")
+        raise HTTPException(
+            status_code=404, detail="No players could be found in the database. Please try again."
+        )
 
-    # 2. Επιλέγουμε τυχαίο παίκτη και τραβάμε το βιογραφικό του
     secret_player_id = random.choice(list(player_ids))
     player_bio_query = get_filtered_player_query(secret_player_id)
     player_bio = query_sparql_requests(player_bio_query)
@@ -1951,7 +1858,6 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
     if not profile.get("name"):
         raise HTTPException(status_code=404, detail="This player has no profile. Please try again.")
 
-    # Generate clues from the stored biography.
     prompt = f"""
     Write exclusively in English. We are playing 'Who am I?'.
     The secret basketball player's database biography is:
@@ -1967,35 +1873,36 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
     """
 
     try:
-        import json
         result = await generate_quiz_text(prompt)
         result["secret_player_name"] = profile["name"]
         result["secret_player"] = profile
-        if not isinstance(result.get("hints"), list) or len(result["hints"]) != 3 or not all(isinstance(hint, str) and hint.strip() for hint in result["hints"]):
+        if (
+            not isinstance(result.get("hints"), list)
+            or len(result["hints"]) != 3
+            or not all(isinstance(hint, str) and hint.strip() for hint in result["hints"])
+        ):
             raise ValueError("The quiz needs three clues.")
         return result
     except Exception as e:
         raise quiz_generation_error(e) from e
 
+
 @app.get("/api/quiz/who-is-missing")
 async def generate_who_is_missing(difficulty: str = Query("medium")):
     require_quiz_provider()
 
-    import random
     lineup_players = []
     matchup_text = "Unknown game"
     season_text = ""
 
-    # 1. Διαλέγουμε τυχαία σεζόν
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
     random_season_code, season_text = random.choice(seasons)
 
-    # 2. Τραβάμε τα παιχνίδια της συγκεκριμένης σεζόν
     games_query = get_games_list_query(random_season_code)
     games_data = query_sparql_requests(games_query)
     games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
 
-    # 3. Βρίσκουμε μια πραγματική 5άδα
+    # Use an actual five-player lineup from a recorded action.
     for _ in range(5):
         if not games_bindings:
             break
@@ -2012,10 +1919,9 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
         if not bindings:
             continue
 
-        # Διαλέγουμε μια τυχαία φάση και παίρνουμε την πεντάδα
         random_row = random.choice(bindings)
         lineup_uri = random_row.get("homeLineup", {}).get("value", "")
-        if random.choice([True, False]):  # 50% πιθανότητα να πάρουμε τους φιλοξενούμενους
+        if random.choice([True, False]):  # Give home and road lineups equal selection probability.
             lineup_uri = random_row.get("roadLineup", {}).get("value", "")
 
         if "#Lineup_" in lineup_uri:
@@ -2027,23 +1933,26 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
                 break
 
     if len(lineup_players) != 5:
-        raise HTTPException(status_code=404, detail="No complete five-player lineup was found. Please try again.")
+        raise HTTPException(
+            status_code=404, detail="No complete five-player lineup was found. Please try again."
+        )
 
     profiles = await asyncio.gather(*(load_quiz_player(pid) for pid in lineup_players))
     if any(not profile.get("name") for profile in profiles):
-        raise HTTPException(status_code=404, detail="This lineup has incomplete player profiles. Please try again.")
+        raise HTTPException(
+            status_code=404, detail="This lineup has incomplete player profiles. Please try again."
+        )
     player_names = [profile["name"] for profile in profiles]
 
-    # 5. Κρύβουμε 1 παίκτη τυχαία
+    # Hide one player while retaining the authoritative identity for scoring.
     secret_index = random.randint(0, 4)
     secret_player = player_names[secret_index]
     known_players = [name for i, name in enumerate(player_names) if i != secret_index]
 
-    # 6. Prompt στο Gemini
-    import json
+    # GPT writes the clue; database values remain the answer authority.
     prompt = f"""
     Write exclusively in English. We are playing 'Who is missing?'.
-    Four players in a real EuroLeague lineup: {', '.join(known_players)}.
+    Four players in a real EuroLeague lineup: {", ".join(known_players)}.
     The secret fifth player is {secret_player}. Difficulty: {difficulty.upper()}.
     Give one short clue without revealing the answer. Use only the supplied names;
     do not invent statistics, nationality, or biographical facts not supplied here.
@@ -2055,7 +1964,7 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
     try:
         result_data = await generate_quiz_text(prompt)
 
-        # Προσθέτουμε τα metadata του αγώνα στο τελικό JSON
+        # Preserve the sampled game and player identities in the response.
         result_data["secret_player_name"] = secret_player
         result_data["known_players"] = known_players
         result_data["secret_player"] = profiles[secret_index]
@@ -2068,17 +1977,32 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
     except Exception as e:
         raise quiz_generation_error(e) from e
 
+
 @app.get("/api/quiz/higher-or-lower")
 async def generate_higher_or_lower(difficulty: str = Query("medium")):
     require_quiz_provider()
 
-    import random
     import itertools
 
     categories = [
-        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
-        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
-        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"}
+        {
+            "id": "blocks",
+            "name": "blocked shots",
+            "func": get_defensive_anchors_query,
+            "stat_key": "totalBlocks",
+        },
+        {
+            "id": "fouls",
+            "name": "fouls drawn",
+            "func": get_foul_drawn_gravity_query,
+            "stat_key": "totalFoulsDrawn",
+        },
+        {
+            "id": "second_chance",
+            "name": "second-chance points",
+            "func": get_second_chance_points_query,
+            "stat_key": "totalSecondChancePoints",
+        },
     ]
     selected_category = random.choice(categories)
 
@@ -2088,30 +2012,38 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
     matchup_text = season_text = ""
     quarter_text = ""
 
-    # --- ΒΕΛΤΙΩΜΕΝΗ ΛΟΓΙΚΗ ΔΙΑΦΟΡΑΣ ---
+    # Difficulty changes the preferred gap between the two statistics.
     def is_valid_gap(stat1, stat2, diff_level, is_quarter):
         gap = abs(stat1 - stat2)
-        if gap == 0: return False # Ποτέ ισοπαλία!
+        if gap == 0:
+            return False  # A tie has no correct higher/lower answer.
 
-        # Αν είναι δεκάλεπτο, τα νούμερα είναι μικρά, άρα μικραίνουμε τις απαιτήσεις
+        # Quarter totals are smaller, so accept smaller statistical gaps.
         if is_quarter:
-            if diff_level == "easy": return gap >= 2
-            if diff_level == "medium": return gap == 1
-            if diff_level == "hard": return gap == 1
+            if diff_level == "easy":
+                return gap >= 2
+            if diff_level == "medium":
+                return gap == 1
+            if diff_level == "hard":
+                return gap == 1
         else:
-            if diff_level == "easy": return gap >= 3
-            if diff_level == "medium": return gap in [1, 2]
-            if diff_level == "hard": return gap == 1
+            if diff_level == "easy":
+                return gap >= 3
+            if diff_level == "medium":
+                return gap in [1, 2]
+            if diff_level == "hard":
+                return gap == 1
         return True
 
-    # Αυξάνουμε τις προσπάθειες σε 30
+    # Bound the search for a usable comparison.
     for _ in range(30):
         random_season_code, season_text = random.choice(seasons)
         games_query = get_games_list_query(random_season_code)
         games_data = query_sparql_requests(games_query)
         games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
 
-        if not games_bindings: continue
+        if not games_bindings:
+            continue
 
         random_game_row = random.choice(games_bindings)
         game_code = random_game_row.get("gameCode", {}).get("value", "")
@@ -2128,9 +2060,7 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
             is_quarter = True
 
         stat_query = selected_category["func"](
-            game_code=game_code,
-            season_code=random_season_code,
-            quarter=target_quarter
+            game_code=game_code, season_code=random_season_code, quarter=target_quarter
         )
 
         stat_data = query_sparql_requests(stat_query)
@@ -2138,7 +2068,7 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
 
         if len(bindings) >= 2:
             valid_pairs = []
-            backup_pairs = [] # Σχέδιο Β: Οποιοδήποτε ζευγάρι χωρίς ισοπαλία
+            backup_pairs = []  # Fall back to any pair with different totals.
 
             for b1, b2 in itertools.combinations(bindings, 2):
                 s1 = int(b1.get(selected_category["stat_key"], {}).get("value", 0))
@@ -2149,7 +2079,7 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
                     if is_valid_gap(s1, s2, difficulty.lower(), is_quarter):
                         valid_pairs.append((b1, b2))
 
-            # Αν δεν βρει τέλειο ζευγάρι, παίρνει το Backup για να μην βγάλει 404!
+            # Prefer the requested difficulty, then fall back to an unequal pair.
             if valid_pairs:
                 sampled = random.choice(valid_pairs)
             elif backup_pairs:
@@ -2157,15 +2087,8 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
             else:
                 continue
 
-            def get_name(row):
-                pid = row.get("player", {}).get("value", "").split("/")[-1]
-                res = query_sparql_requests(get_player_name_query(pid))
-                if res and res.get("results", {}).get("bindings"):
-                    return res["results"]["bindings"][0].get("name", {}).get("value", pid)
-                return pid
-
-            name_a = get_name(sampled[0])
-            name_b = get_name(sampled[1])
+            name_a = quiz_player_name(sampled[0].get("player", {}).get("value", "").split("/")[-1])
+            name_b = quiz_player_name(sampled[1].get("player", {}).get("value", "").split("/")[-1])
             stat_a = int(sampled[0].get(selected_category["stat_key"], {}).get("value", 0))
             stat_b = int(sampled[1].get(selected_category["stat_key"], {}).get("value", 0))
 
@@ -2181,22 +2104,23 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
                 break
 
     if not player_a or not player_b:
-        raise HTTPException(status_code=404, detail="No suitable player statistics were found. Please try again.")
+        raise HTTPException(
+            status_code=404, detail="No suitable player statistics were found. Please try again."
+        )
 
-    import json
     prompt = f"""
     Write exclusively in English. Create a concise EuroLeague 'Higher or lower' question.
-    Category: {selected_category['name']}. Time frame: {quarter_text}.
-    {player_a['name']} recorded {player_a['stat']}; {player_b['name']} recorded {player_b['stat']}.
+    Category: {selected_category["name"]}. Time frame: {quarter_text}.
+    {player_a["name"]} recorded {player_a["stat"]}; {player_b["name"]} recorded {player_b["stat"]}.
     Game: {matchup_text}. Difficulty: {difficulty.upper()}.
     Ask whether player B recorded more or fewer than player A in this exact time frame.
     Do not reveal player B's number in question_text. Use only these facts.
     Return only valid JSON, without Markdown:
     {{
         "question_text": "One or two sentences in English",
-        "player_a": {{"name": "{player_a['name']}", "stat": {player_a['stat']}}},
-        "player_b": {{"name": "{player_b['name']}", "stat": {player_b['stat']}}},
-        "category_name": "{selected_category['name']} ({quarter_text})",
+        "player_a": {{"name": "{player_a["name"]}", "stat": {player_a["stat"]}}},
+        "player_b": {{"name": "{player_b["name"]}", "stat": {player_b["stat"]}}},
+        "category_name": "{selected_category["name"]} ({quarter_text})",
         "matchup": "{matchup_text}", "season": "EuroLeague Season {season_text}"
     }}
     """
@@ -2204,24 +2128,57 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
     try:
         result = await generate_quiz_text(prompt)
         # The model writes the question, never the scoring facts.
-        result.update(player_a=player_a, player_b=player_b,
-                      category_name=f"{selected_category['name']} ({quarter_text})",
-                      matchup=matchup_text, season=f"EuroLeague Season {season_text}", game_code=game_code)
+        result.update(
+            player_a=player_a,
+            player_b=player_b,
+            category_name=f"{selected_category['name']} ({quarter_text})",
+            matchup=matchup_text,
+            season=f"EuroLeague Season {season_text}",
+            game_code=game_code,
+        )
         return result
     except Exception as e:
         raise quiz_generation_error(e) from e
 
+
 @app.get("/api/quiz/top-5")
 async def generate_top_5(difficulty: str = Query("medium")):
-
-    import random
-
     categories = [
-        {"id": "assist_duos", "name": "passing pairs (passer and scorer)", "func": get_top_assist_duos_query, "stat_key": "totalAssists", "stat_label": "assists"},
-        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks", "stat_label": "blocks"},
-        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn", "stat_label": "fouls"},
-        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints", "stat_label": "points"},
-        {"id": "fast_break", "name": "fast-break points", "func": get_fast_break_specialists_query, "stat_key": "fastBreakPoints", "stat_label": "points"}
+        {
+            "id": "assist_duos",
+            "name": "passing pairs (passer and scorer)",
+            "func": get_top_assist_duos_query,
+            "stat_key": "totalAssists",
+            "stat_label": "assists",
+        },
+        {
+            "id": "blocks",
+            "name": "blocked shots",
+            "func": get_defensive_anchors_query,
+            "stat_key": "totalBlocks",
+            "stat_label": "blocks",
+        },
+        {
+            "id": "fouls",
+            "name": "fouls drawn",
+            "func": get_foul_drawn_gravity_query,
+            "stat_key": "totalFoulsDrawn",
+            "stat_label": "fouls",
+        },
+        {
+            "id": "second_chance",
+            "name": "second-chance points",
+            "func": get_second_chance_points_query,
+            "stat_key": "totalSecondChancePoints",
+            "stat_label": "points",
+        },
+        {
+            "id": "fast_break",
+            "name": "fast-break points",
+            "func": get_fast_break_specialists_query,
+            "stat_key": "fastBreakPoints",
+            "stat_label": "points",
+        },
     ]
 
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
@@ -2237,16 +2194,15 @@ async def generate_top_5(difficulty: str = Query("medium")):
         game_code = None
         target_quarter = None
 
-        # Λογική Δυσκολίας
+        # Easy covers a season; medium a game; hard one quarter.
         if difficulty == "easy":
-            # Ολόκληρη η σεζόν
             question_context = f"in the {season_text} season"
         elif difficulty == "medium" or difficulty == "hard":
-            # Πρέπει να βρούμε ένα τυχαίο ματς
             games_query = get_games_list_query(random_season_code)
             games_data = query_sparql_requests(games_query)
             games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
-            if not games_bindings: continue
+            if not games_bindings:
+                continue
 
             random_game_row = random.choice(games_bindings)
             game_code = random_game_row.get("gameCode", {}).get("value", "")
@@ -2257,70 +2213,93 @@ async def generate_top_5(difficulty: str = Query("medium")):
                 question_context = f"in {home_team} vs {away_team} ({season_text})"
             else:
                 target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
-                question_context = f"in the {target_quarter} quarter of {home_team} vs {away_team} ({season_text})"
+                question_context = (
+                    f"in the {target_quarter} quarter of {home_team} vs {away_team} ({season_text})"
+                )
 
-        stat_query = selected_category["func"](game_code=game_code, season_code=random_season_code, quarter=target_quarter)
+        stat_query = selected_category["func"](
+            game_code=game_code, season_code=random_season_code, quarter=target_quarter
+        )
 
         stat_data = query_sparql_requests(stat_query)
         bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
 
         if len(bindings) >= 5:
             top_5_results = []
-            # Βοηθητική συνάρτηση για τα ονόματα
-            def get_name(pid):
-                if not pid: return ""
-                res = query_sparql_requests(get_player_name_query(pid))
-                if res and res.get("results", {}).get("bindings"):
-                    return res["results"]["bindings"][0].get("name", {}).get("value", pid)
-                return pid
 
-            # Διαβάζουμε τους 5 πρώτους
+            # Reveal only the first five ranked results.
             for b in bindings[:5]:
                 stat_val = int(b.get(selected_category["stat_key"], {}).get("value", 0))
 
                 if selected_category["id"] == "assist_duos":
                     scorer_pid = b.get("scorer", {}).get("value", "").split("/")[-1]
                     passer_pid = b.get("passer", {}).get("value", "").split("/")[-1]
-                    name_str = f"{get_name(passer_pid)} & {get_name(scorer_pid)}"
+                    name_str = f"{quiz_player_name(passer_pid)} & {quiz_player_name(scorer_pid)}"
                 else:
                     pid = b.get("player", {}).get("value", "").split("/")[-1]
-                    name_str = get_name(pid)
+                    name_str = quiz_player_name(pid)
 
-                top_5_results.append({
-                    "name": name_str,
-                    "stat": f"{stat_val} {selected_category['stat_label']}"
-                })
+                top_5_results.append(
+                    {"name": name_str, "stat": f"{stat_val} {selected_category['stat_label']}"}
+                )
             break
 
     if len(top_5_results) < 5:
-        raise HTTPException(status_code=404, detail="Five results could not be found for these criteria. Please try again.")
+        raise HTTPException(
+            status_code=404,
+            detail="Five results could not be found for these criteria. Please try again.",
+        )
 
-    # Προετοιμασία της ερώτησης
     if selected_category["id"] == "assist_duos":
         question_text = f"Which five passing pairs (passer and scorer) led {question_context}?"
     else:
-        question_text = f"Who were the top five players for {selected_category['name']} {question_context}?"
+        question_text = (
+            f"Who were the top five players for {selected_category['name']} {question_context}?"
+        )
 
     return {
         "question_text": question_text,
         "answers": top_5_results,
         "category_name": selected_category["name"],
-        "difficulty": difficulty
+        "difficulty": difficulty,
     }
+
 
 @app.get("/api/quiz/fifty-fifty")
 async def generate_fifty_fifty(difficulty: str = Query("medium")):
     require_quiz_provider()
 
-    import random
-
-    # --- ΠΡΟΣΘΗΚΗ: Top Assist Duos και Top Lineups ---
     categories = [
-        {"id": "blocks", "name": "blocked shots", "func": get_defensive_anchors_query, "stat_key": "totalBlocks"},
-        {"id": "fouls", "name": "fouls drawn", "func": get_foul_drawn_gravity_query, "stat_key": "totalFoulsDrawn"},
-        {"id": "second_chance", "name": "second-chance points", "func": get_second_chance_points_query, "stat_key": "totalSecondChancePoints"},
-        {"id": "assist_duos", "name": "assists between a passer and scorer", "func": get_top_assist_duos_query, "stat_key": "totalAssists"},
-        {"id": "top_lineups", "name": "points scored by a five-player lineup", "func": get_top_lineups_query, "stat_key": "totalPoints"}
+        {
+            "id": "blocks",
+            "name": "blocked shots",
+            "func": get_defensive_anchors_query,
+            "stat_key": "totalBlocks",
+        },
+        {
+            "id": "fouls",
+            "name": "fouls drawn",
+            "func": get_foul_drawn_gravity_query,
+            "stat_key": "totalFoulsDrawn",
+        },
+        {
+            "id": "second_chance",
+            "name": "second-chance points",
+            "func": get_second_chance_points_query,
+            "stat_key": "totalSecondChancePoints",
+        },
+        {
+            "id": "assist_duos",
+            "name": "assists between a passer and scorer",
+            "func": get_top_assist_duos_query,
+            "stat_key": "totalAssists",
+        },
+        {
+            "id": "top_lineups",
+            "name": "points scored by a five-player lineup",
+            "func": get_top_lineups_query,
+            "stat_key": "totalPoints",
+        },
     ]
 
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
@@ -2332,7 +2311,8 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         games_query = get_games_list_query(random_season_code)
         games_data = query_sparql_requests(games_query)
         games_bindings = games_data.get("results", {}).get("bindings", []) if games_data else []
-        if not games_bindings: continue
+        if not games_bindings:
+            continue
 
         random_game_row = random.choice(games_bindings)
         game_code = random_game_row.get("gameCode", {}).get("value", "")
@@ -2348,24 +2328,30 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
             target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
             context_text += f", in the {target_quarter} quarter"
 
-        # Το on_court filter δεν έχει νόημα όταν ψάχνουμε ολόκληρες πεντάδες ή δίδυμα
+        # Individual on-court filters do not apply to pair or lineup questions.
         if difficulty == "hard" and selected_category["id"] not in ["assist_duos", "top_lineups"]:
             roster_query = get_game_roster_query(game_code, random_season_code)
             roster_data = query_sparql_requests(roster_query)
             r_bindings = roster_data.get("results", {}).get("bindings", []) if roster_data else []
             p_ids = set()
             for r in r_bindings:
-                for uri in [r.get("homeLineup", {}).get("value", ""), r.get("roadLineup", {}).get("value", "")]:
+                for uri in [
+                    r.get("homeLineup", {}).get("value", ""),
+                    r.get("roadLineup", {}).get("value", ""),
+                ]:
                     if "#Lineup_" in uri:
                         for pid in uri.split("#Lineup_")[1].split("_"):
-                            if pid: p_ids.add(pid)
+                            if pid:
+                                p_ids.add(pid)
             if p_ids:
                 filter_id = random.choice(list(p_ids))
                 filter_type = "on_court"
                 res = query_sparql_requests(get_player_name_query(filter_id))
                 on_court_name = filter_id
                 if res and res.get("results", {}).get("bindings"):
-                    on_court_name = res["results"]["bindings"][0].get("name", {}).get("value", filter_id)
+                    on_court_name = (
+                        res["results"]["bindings"][0].get("name", {}).get("value", filter_id)
+                    )
                 context_text += f", while {on_court_name} was on court"
 
         stat_query = selected_category["func"](
@@ -2373,58 +2359,53 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
             season_code=random_season_code,
             quarter=target_quarter,
             filter_type=filter_type,
-            filter_id=filter_id
+            filter_id=filter_id,
         )
 
         stat_data = query_sparql_requests(stat_query)
         bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
 
-        valid_bindings = [b for b in bindings if int(b.get(selected_category["stat_key"], {}).get("value", 0)) > 0]
+        valid_bindings = [
+            b for b in bindings if int(b.get(selected_category["stat_key"], {}).get("value", 0)) > 0
+        ]
         if not valid_bindings:
             continue
 
         selected_stat_row = random.choice(valid_bindings)
         stat_val = int(selected_stat_row.get(selected_category["stat_key"], {}).get("value", 0))
 
-        def get_name(pid):
-            if not pid: return ""
-            res = query_sparql_requests(get_player_name_query(pid))
-            if res and res.get("results", {}).get("bindings"):
-                return res["results"]["bindings"][0].get("name", {}).get("value", pid)
-            return pid
-
-        # --- ΠΡΟΣΘΗΚΗ: Έξυπνη διαχείριση Ονομάτων (Δίδυμα & Πεντάδες) ---
+        # Describe the entity being ranked: one player, a passing pair, or a lineup.
         player_name = ""
         if selected_category["id"] == "assist_duos":
             scorer_pid = selected_stat_row.get("scorer", {}).get("value", "").split("/")[-1]
             passer_pid = selected_stat_row.get("passer", {}).get("value", "").split("/")[-1]
-            player_name = f"the pair {get_name(passer_pid)} (passer) and {get_name(scorer_pid)} (scorer)"
+            player_name = f"the pair {quiz_player_name(passer_pid)} (passer) and {quiz_player_name(scorer_pid)} (scorer)"
         elif selected_category["id"] == "top_lineups":
             lineup_uri = selected_stat_row.get("lineup", {}).get("value", "")
             if "#Lineup_" in lineup_uri:
                 pids = [p for p in lineup_uri.split("#Lineup_")[1].split("_") if p]
-                names = [get_name(p) for p in pids]
+                names = [quiz_player_name(p) for p in pids]
                 player_name = f"the five-player lineup ({', '.join(names)})"
             else:
                 player_name = "the selected five-player lineup"
         else:
             pid = selected_stat_row.get("player", {}).get("value", "").split("/")[-1]
-            player_name = f"the player {get_name(pid)}"
+            player_name = f"the player {quiz_player_name(pid)}"
 
         correct_val = stat_val
-        # Στις πεντάδες, τα νούμερα πόντων μπορεί να είναι μεγάλα, άρα βάζουμε +/- 1 ή 2 πόντους διαφορά
+        # Keep the incorrect option close to the true total and non-negative.
         offset = 1 if correct_val <= 5 else random.choice([1, 2])
         wrong_val = correct_val + offset if random.choice([True, False]) else correct_val - offset
-        if wrong_val < 0: wrong_val = correct_val + offset
+        if wrong_val < 0:
+            wrong_val = correct_val + offset
 
         options = [correct_val, wrong_val]
         random.shuffle(options)
         correct_index = options.index(correct_val)
 
-        import json
         prompt = f"""
         Write exclusively in English. Write one short, direct question for '50/50'.
-        Subject: {player_name}. Category: {selected_category['name']}.
+        Subject: {player_name}. Category: {selected_category["name"]}.
         Context: {context_text}. Ask for the numeric statistic without revealing it.
         Use only the supplied facts. Return only valid JSON, without Markdown:
         {{"question_text": "One short question in English"}}
@@ -2441,8 +2422,10 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         except Exception as error:
             raise quiz_generation_error(error) from error
 
-    raise HTTPException(status_code=404, detail="No suitable question data was found. Please try again.")
+    raise HTTPException(
+        status_code=404, detail="No suitable question data was found. Please try again."
+    )
 
-# --- Block εκτέλεσης ---
+
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("src.backend.app:app", host="127.0.0.1", port=8000, reload=True)

@@ -1,7 +1,6 @@
 /* 3D court geometry and pointer interaction. Text equivalents live in main.js. */
 (() => {
 try {
-// court.js
 
 const container = document.getElementById("courtContainer");
 

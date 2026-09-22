@@ -18,14 +18,12 @@ except ImportError:  # Direct script execution from the repository root.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 DEFAULT_ALL_ACTIONS_DIR = DEFAULT_PROCESSED_DIR / "all_actions"
-DEFAULT_PLAYBYPLAY_TRIPLETS_DIR = (
-    DEFAULT_PROCESSED_DIR / "playbyplay_triplets"
-)
+DEFAULT_PLAYBYPLAY_TRIPLETS_DIR = DEFAULT_PROCESSED_DIR / "playbyplay_triplets"
 BASKETBALL_NS = "http://www.ics.forth.gr/isl/Basketball#"
 RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
 NTRIPLE_PATTERN = re.compile(
     r'^<[^>]+> <[^>]+> (?:<[^>]+>|"(?:[^"\\]|\\.)*"'
-    r'(?:@[A-Za-z]+(?:-[A-Za-z0-9]+)*|\^\^<[^>]+>)?) \.$'
+    r"(?:@[A-Za-z]+(?:-[A-Za-z0-9]+)*|\^\^<[^>]+>)?) \.$"
 )
 TRIPLE_PARTS_PATTERN = re.compile(r"^<([^>]+)> <([^>]+)> (.+) \.$")
 FILE_PATTERN = re.compile(r"^AllActions_(E\d{4})_(\d+)\.json$")
@@ -136,10 +134,7 @@ def validate_action_payload(payload: object) -> tuple[list[dict[str, object]], l
             errors.append(f"Action {position} has invalid clock: {exc}")
         else:
             if abs(clock_seconds - seconds) > 0.001:
-                errors.append(
-                    f"Action {position} clock does not match "
-                    "quarterSecondsRemaining"
-                )
+                errors.append(f"Action {position} clock does not match quarterSecondsRemaining")
 
     possession_reference_fields = (
         "startsAfterAction",
@@ -161,9 +156,7 @@ def validate_action_payload(payload: object) -> tuple[list[dict[str, object]], l
             references.extend(contains)
         missing = [value for value in references if value not in valid_event_ids]
         if missing:
-            errors.append(
-                f"Possession {position} references missing actions: {missing[:10]}"
-            )
+            errors.append(f"Possession {position} references missing actions: {missing[:10]}")
     return action_rows, errors
 
 
@@ -198,11 +191,11 @@ def validate_action_artifacts(
         ]
     except OSError as exc:
         errors.append(f"Could not read N-Triples: {exc}")
-        return ActionValidationResult(
-            season_code, game_code, len(actions), 0, tuple(errors)
-        )
+        return ActionValidationResult(season_code, game_code, len(actions), 0, tuple(errors))
 
-    malformed = [number for number, line in enumerate(lines, start=1) if not NTRIPLE_PATTERN.fullmatch(line)]
+    malformed = [
+        number for number, line in enumerate(lines, start=1) if not NTRIPLE_PATTERN.fullmatch(line)
+    ]
     if malformed:
         errors.append(f"Malformed N-Triples lines: {malformed[:10]}")
     duplicate_count = len(lines) - len(set(lines))
@@ -275,8 +268,7 @@ def validate_action_artifacts(
         errors.append(f"RDF has {len(unexpected_types)} unexpected action types")
     if sequenced_actions != expected_action_uris:
         errors.append(
-            "RDF is missing sequences for "
-            f"{len(expected_action_uris - sequenced_actions)} actions"
+            f"RDF is missing sequences for {len(expected_action_uris - sequenced_actions)} actions"
         )
     return ActionValidationResult(
         season_code,
@@ -347,8 +339,7 @@ def main(argv: list[str] | None = None) -> int:
         total_triples += result.triples
         if result.ok:
             print(
-                f"OK {season_code}/{game_code}: "
-                f"{result.actions} actions, {result.triples} triples"
+                f"OK {season_code}/{game_code}: {result.actions} actions, {result.triples} triples"
             )
         else:
             failures += 1

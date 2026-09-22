@@ -24,15 +24,19 @@ import requests
 try:
     from .parser import (
         create_api_session,
-        process_game as generate_action_artifacts,
         season_label_from_code,
+    )
+    from .parser import (
+        process_game as generate_action_artifacts,
     )
     from .validate_action_artifacts import validate_action_artifacts
 except ImportError:  # Direct execution from the repository root.
     from parser import (
         create_api_session,
-        process_game as generate_action_artifacts,
         season_label_from_code,
+    )
+    from parser import (
+        process_game as generate_action_artifacts,
     )
     from validate_action_artifacts import validate_action_artifacts
 
@@ -41,9 +45,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CATALOG_FILE = Path(__file__).resolve().with_name("video_games.json")
 DEFAULT_PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 DEFAULT_ALL_ACTIONS_DIR = DEFAULT_PROCESSED_DIR / "all_actions"
-DEFAULT_PLAYBYPLAY_TRIPLETS_DIR = (
-    DEFAULT_PROCESSED_DIR / "playbyplay_triplets"
-)
+DEFAULT_PLAYBYPLAY_TRIPLETS_DIR = DEFAULT_PROCESSED_DIR / "playbyplay_triplets"
 DEFAULT_OCR_OUTPUT_DIR = DEFAULT_PROCESSED_DIR / "ocr_triplets"
 
 BASKETBALL_NS = "http://www.ics.forth.gr/isl/Basketball#"
@@ -97,9 +99,7 @@ def normalize_quarter(value: object) -> str:
 
     overtime_match = re.fullmatch(r"(?:(\d+)OT|OT(\d+))", normalized)
     if overtime_match:
-        overtime_number = int(
-            overtime_match.group(1) or overtime_match.group(2)
-        )
+        overtime_number = int(overtime_match.group(1) or overtime_match.group(2))
         return "OT" if overtime_number <= 1 else f"{overtime_number}OT"
     return str(value or "").strip()
 
@@ -167,10 +167,7 @@ def load_selected_games(
         for game in games
         if isinstance(game, dict)
         if str(game.get("season_code", "")).strip() == season_code
-        and (
-            game_code is None
-            or str(game.get("game_code", "")).strip() == str(game_code)
-        )
+        and (game_code is None or str(game.get("game_code", "")).strip() == str(game_code))
     ]
     selected.sort(key=lambda game: int(str(game.get("game_code", "0"))))
     if game_code is not None and not selected:
@@ -193,9 +190,7 @@ def load_observations(
                 seconds_remaining = clock_to_seconds(game_clock)
                 quarter = normalize_quarter(row["quarter"])
             except (KeyError, TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"Invalid OCR row {sequence} in {timeline_path}: {exc}"
-                ) from exc
+                raise ValueError(f"Invalid OCR row {sequence} in {timeline_path}: {exc}") from exc
             observations.append(
                 OCRObservation(
                     sequence=sequence,
@@ -266,17 +261,14 @@ def find_nearest_observation(
 def synchronization_tolerance(action: PlayByPlayAction) -> float:
     """Allow opening metadata to use the first visible clock of a period."""
     normalized_quarter = normalize_quarter(action.quarter)
-    period_seconds = (
-        600.0 if normalized_quarter in {"1st", "2nd", "3rd", "4th"} else 300.0
-    )
+    period_seconds = 600.0 if normalized_quarter in {"1st", "2nd", "3rd", "4th"} else 300.0
     is_period_start_metadata = (
         action.action_info in PERIOD_START_ACTION_TYPES
         and abs(action.quarter_seconds_remaining - period_seconds) < 0.001
     )
     elapsed_seconds = period_seconds - action.quarter_seconds_remaining
     is_opening_jump_ball = (
-        action.action_info == "JB"
-        and 0 <= elapsed_seconds <= OPENING_JUMP_BALL_MAX_ELAPSED_SECONDS
+        action.action_info == "JB" and 0 <= elapsed_seconds <= OPENING_JUMP_BALL_MAX_ELAPSED_SECONDS
     )
     if is_period_start_metadata or is_opening_jump_ball:
         return PERIOD_START_SYNC_DIFFERENCE_SECONDS
@@ -324,8 +316,7 @@ def load_actions(
         assist_timing = action_timings.get(assist_uri)
         if (
             assist_timing
-            and normalize_quarter(assist_timing[0])
-            == normalize_quarter(shot_timing[0])
+            and normalize_quarter(assist_timing[0]) == normalize_quarter(shot_timing[0])
             and abs(assist_timing[1] - shot_timing[1]) <= 5
         ):
             assist_anchors[assist_uri] = shot_timing
@@ -337,17 +328,11 @@ def load_actions(
             quarter = str(row["quarter"]).strip()
             seconds = float(row["quarterSecondsRemaining"])
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(
-                f"Invalid local Play-by-Play action {position}: {exc}"
-            ) from exc
+            raise ValueError(f"Invalid local Play-by-Play action {position}: {exc}") from exc
         if not quarter:
-            raise ValueError(
-                f"Invalid local Play-by-Play action {position}: empty quarter"
-            )
+            raise ValueError(f"Invalid local Play-by-Play action {position}: empty quarter")
         action_uri = f"{current_game_uri}#PlayByPlay_J{event_id}"
-        sync_quarter, sync_seconds = assist_anchors.get(
-            action_uri, (quarter, seconds)
-        )
+        sync_quarter, sync_seconds = assist_anchors.get(action_uri, (quarter, seconds))
         actions.append(
             PlayByPlayAction(
                 uri=action_uri,
@@ -400,9 +385,7 @@ def ensure_action_artifacts(
             overwrite=True,
         )
         if status != "generated":
-            raise ValueError(
-                f"Could not generate action artifacts for {season_code}/{game_code}"
-            )
+            raise ValueError(f"Could not generate action artifacts for {season_code}/{game_code}")
         generated = True
 
     validation = validate_action_artifacts(
@@ -413,12 +396,10 @@ def ensure_action_artifacts(
     )
     if not validation.ok:
         raise ValueError(
-            "Generated action artifacts failed validation: "
-            + "; ".join(validation.errors[:5])
+            "Generated action artifacts failed validation: " + "; ".join(validation.errors[:5])
         )
     print(
-        f"  -> Action artifacts valid: {validation.actions} actions, "
-        f"{validation.triples} triples."
+        f"  -> Action artifacts valid: {validation.actions} actions, {validation.triples} triples."
     )
     return load_actions(json_path, game_uri(season_code, game_code)), generated
 
@@ -434,9 +415,7 @@ def generate_game_triplets(
     video_uri = f"{current_game_uri}#BroadcastVideo"
     youtube_url = str(game.get("youtube_url", "")).strip()
     if not re.fullmatch(r"https?://[^\s<>]+", youtube_url):
-        raise ValueError(
-            f"Invalid youtube_url for {season_code}/{game_code}: {youtube_url!r}"
-        )
+        raise ValueError(f"Invalid youtube_url for {season_code}/{game_code}: {youtube_url!r}")
     observation_index = build_observation_index(observations)
     matches: list[tuple[PlayByPlayAction, OCRObservation]] = []
     unmatched_actions = 0
@@ -454,9 +433,7 @@ def generate_game_triplets(
 
     linked_uris = {observation.uri for _action, observation in matches}
     linked_observations = [
-        observation
-        for observation in observations
-        if observation.uri in linked_uris
+        observation for observation in observations if observation.uri in linked_uris
     ]
 
     bball = BASKETBALL_NS
@@ -492,33 +469,35 @@ def generate_game_triplets(
     ]
 
     for observation in linked_observations:
-        triples.extend([
-            triple(video_uri, f"{bball}hasOCRObservation", iri(observation.uri)),
-            triple(observation.uri, RDF_TYPE, iri(f"{bball}OCRObservation")),
-            triple(
-                observation.uri,
-                f"{bball}ocrSequence",
-                literal(observation.sequence, f"{XSD_NS}integer"),
-            ),
-            triple(
-                observation.uri,
-                f"{bball}videoTimeSeconds",
-                literal(
-                    decimal_text(observation.video_seconds),
-                    f"{XSD_NS}decimal",
+        triples.extend(
+            [
+                triple(video_uri, f"{bball}hasOCRObservation", iri(observation.uri)),
+                triple(observation.uri, RDF_TYPE, iri(f"{bball}OCRObservation")),
+                triple(
+                    observation.uri,
+                    f"{bball}ocrSequence",
+                    literal(observation.sequence, f"{XSD_NS}integer"),
                 ),
-            ),
-            triple(
-                observation.uri,
-                f"{bball}ocrQuarter",
-                literal(observation.quarter),
-            ),
-            triple(
-                observation.uri,
-                f"{bball}ocrClock",
-                literal(observation.game_clock),
-            ),
-        ])
+                triple(
+                    observation.uri,
+                    f"{bball}videoTimeSeconds",
+                    literal(
+                        decimal_text(observation.video_seconds),
+                        f"{XSD_NS}decimal",
+                    ),
+                ),
+                triple(
+                    observation.uri,
+                    f"{bball}ocrQuarter",
+                    literal(observation.quarter),
+                ),
+                triple(
+                    observation.uri,
+                    f"{bball}ocrClock",
+                    literal(observation.game_clock),
+                ),
+            ]
+        )
 
     for action, observation in matches:
         triples.append(
@@ -646,10 +625,7 @@ def main(argv: list[str] | None = None) -> int:
 
     generated = skipped = unavailable = failed = 0
     api_session = create_api_session()
-    print(
-        f"Generating OCR triples for {args.season_code}: "
-        f"{len(games)} catalog game(s)..."
-    )
+    print(f"Generating OCR triples for {args.season_code}: {len(games)} catalog game(s)...")
     for index, game in enumerate(games, start=1):
         game_code = str(game.get("game_code", ""))
         print(f"\n[{index}/{len(games)}] Game {game_code}")

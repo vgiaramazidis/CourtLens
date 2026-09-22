@@ -1,4 +1,4 @@
-// YouTube playback, lead-in, and embed error handling.
+/* YouTube playback, lead-in timing and embed error handling. */
 
 var player;
 var youtubePlayerReady = false;

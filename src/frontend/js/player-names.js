@@ -1,4 +1,4 @@
-// Optional name suggestions retained from the original Quiz Ball.
+/* Fallback player names for Quiz Ball suggestions and answer matching. */
 window.QUIZ_PLAYER_NAMES = [
             "Kendrick Nunn", "Kostas Sloukas", "Mathias Lessort", "Lorenzo Brown",
             "Jerian Grant", "Dinos Mitoglou", "Marius Grigonis", "Juancho Hernangomez",

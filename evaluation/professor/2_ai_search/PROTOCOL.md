@@ -4,7 +4,7 @@ This benchmark evaluates the complete natural-language-to-SPARQL path: generated
 
 ## Fixed benchmark
 
-`benchmark_questions.json` contains 20 fixed questions for `E2023/333`. They cover event retrieval, player statistics, percentages, assist relations, shot locations, lineups, event chains, and temporal/score conditions.
+[`evaluation/fixtures/ai_search_questions.json`](../../fixtures/ai_search_questions.json) contains 20 fixed questions for `E2023/333`. They cover event retrieval, player statistics, percentages, assist relations, shot locations, lineups, event chains, and temporal/score conditions.
 
 The available providers and models are:
 
@@ -39,7 +39,7 @@ Gemini as the default frontend provider:
 ```bash
 export GEMINI_API_KEY="your-gemini-key"
 export AI_SEARCH_PROVIDER="gemini"
-.venv/bin/uvicorn app:app --app-dir src/backend --host 127.0.0.1 --port 8000
+.venv/bin/uvicorn src.backend.app:app --host 127.0.0.1 --port 8000 --env-file .env
 ```
 
 OpenAI GPT-5 mini as the default frontend provider:
@@ -47,10 +47,10 @@ OpenAI GPT-5 mini as the default frontend provider:
 ```bash
 export OPENAI_API_KEY="your-openai-key"
 export AI_SEARCH_PROVIDER="openai"
-.venv/bin/uvicorn app:app --app-dir src/backend --host 127.0.0.1 --port 8000
+.venv/bin/uvicorn src.backend.app:app --host 127.0.0.1 --port 8000 --env-file .env
 ```
 
-The frontend does not need a code change. It uses the provider selected when the backend starts.
+The frontend defaults to the configured provider and also offers a per-search provider selector. Configure `SPARQL_ENDPOINT` in `.env`; see the root README for setup.
 
 ## Run evaluations
 
@@ -58,7 +58,7 @@ Run the five-question, two-provider ontology pilot before spending credits on th
 full benchmark:
 
 ```bash
-.venv/bin/python src/backend/ai_search_evaluation.py \
+.venv/bin/python -m tools.evaluation.ai_search \
   --question-id Q01 \
   --question-id Q06 \
   --question-id Q09 \
@@ -67,22 +67,22 @@ full benchmark:
   --provider gemini \
   --provider openai \
   --prompt-variant ontology \
-  --output-dir evaluation/professor/2_ai_search/results/pilot_5_gemini_vs_openai
+  --output-dir outputs/evaluation/ai_search/pilot_5_gemini_vs_openai
 ```
 
 Repeated `--question-id` options preserve the requested order and keep pilot
 runs separate from the full 20-question benchmark.
 
-Run the current Gemini production configuration:
+Run the current default OpenAI configuration:
 
 ```bash
-.venv/bin/python src/backend/ai_search_evaluation.py
+.venv/bin/python -m tools.evaluation.ai_search
 ```
 
 Run only OpenAI GPT-5 mini:
 
 ```bash
-.venv/bin/python src/backend/ai_search_evaluation.py \
+.venv/bin/python -m tools.evaluation.ai_search \
   --provider openai \
   --prompt-variant ontology
 ```
@@ -90,7 +90,7 @@ Run only OpenAI GPT-5 mini:
 Run the professor's two-provider/two-prompt comparison using GPT-5 mini:
 
 ```bash
-.venv/bin/python src/backend/ai_search_evaluation.py \
+.venv/bin/python -m tools.evaluation.ai_search \
   --provider gemini \
   --provider openai \
   --prompt-variant simple \
@@ -103,7 +103,7 @@ When the Gemini project has a five-requests-per-minute quota, add
 `--gemini-delay-seconds 13` so a full run does not fail because of the rate
 limit. The delay is applied only between Gemini requests.
 
-Results are written to `evaluation/professor/2_ai_search/results/`. Evaluation requests bypass the AI cache and receive the generated SPARQL plus provider/model metadata. Normal frontend responses continue to use caching and do not expose those internal fields.
+New results are written to `outputs/evaluation/ai_search/`. The reviewed files in `results/` are preserved historical evidence; do not overwrite them with a new run. Evaluation requests bypass the AI cache and receive query/model metadata. Normal searches retain caching; Video Analysis can display the generated query in its optional editor.
 
 Each evaluation row also records the provider-reported input, cached-input,
 output, reasoning, and total token counts. `estimated_standard_cost_usd` applies

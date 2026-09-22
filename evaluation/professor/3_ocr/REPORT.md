@@ -165,7 +165,7 @@ The full quantitative and qualitative breakdown is available in
 
 Production RDF stores only OCR observations linked to at least one PBP action;
 all raw OCR observations remain in timeline CSV files for evaluation and
-debugging. The delivery contains 28 RDF files with:
+debugging. The original delivery contained 28 RDF files, preserved in the local research archive, with:
 
 - 57,412 RDF triples.
 - 7,053 linked OCR observations.
@@ -188,8 +188,9 @@ debugging. The delivery contains 28 RDF files with:
 
 ## Reproducibility
 
-Machine-readable results are stored in `results/`, the human annotations are in
-`ground_truth/`, and the controlled runtime record is in `efficiency/`. Older
-baselines and generated per-game reports are preserved in
-`evaluation/_internal/ocr/` for reproducibility and are not part of the main
-professor-facing deliverables.
+Machine-readable results are stored in [results/](results/), the human annotation CSVs are in
+[evaluation/fixtures/ocr/ground_truth/](../../fixtures/ocr/ground_truth/), and the controlled runtime record is in [efficiency/](efficiency/).
+The 28 baseline timelines are versioned in [evaluation/fixtures/ocr/baseline/](../../fixtures/ocr/baseline/).
+Original annotation workbooks, generated per-game reports and RDF exports remain in the ignored local archive at
+`archive/research/pre-cleanup-2026-09-20/evaluation/`. They are not included in a new clone.
+See [README.md](README.md) for current reproduction commands.

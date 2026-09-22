@@ -1,6 +1,6 @@
 # Database and SPARQL query benchmark
 
-Endpoint: `http://93.115.20.167:8890/sparql`. Repetitions per query: 3.
+Endpoint: the configured basketball SPARQL database (`SPARQL_ENDPOINT`); deployment address omitted. Repetitions per query: 3.
 
 Times are client-observed HTTP response times and include network latency plus SPARQL execution and JSON transfer.
 

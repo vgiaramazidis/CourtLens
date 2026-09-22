@@ -1,4 +1,4 @@
-/* Shared, independently testable rules for request ownership and result filtering. */
+/* Request ownership, result filtering and player-name matching. */
 (function(root) {
   function createRequestScope() {
     let generation = 0;
@@ -67,9 +67,16 @@
         && !(shot.isSecondChance && rules.secondchance===false);
     });
   }
+  function filterActions(actions, filters, category) {
+    return actions.filter(action=>(!filters.actionUris || filters.actionUris.has(action.uri))
+      && (!filters.types || filters.types.has(category(action)))
+      && (!filters.player || action.playerName===filters.player)
+      && (!filters.quarter || period(action.quarter)===period(filters.quarter)))
+      .sort((a,b)=>periodOrder(a.quarter)-periodOrder(b.quarter) || clockSeconds(b.playTime)-clockSeconds(a.playTime) || Number(a.sequence)-Number(b.sequence));
+  }
   function csvValue(value) { let text=String(value ?? ''); if (/^[=+@\-\t\r]/.test(text)) text="'"+text; return '"'+text.replace(/"/g,'""')+'"'; }
   function videoGamesForSeason(games,catalog,season) { const allowed=new Set(catalog.filter(game=>game.season_code===season).map(game=>String(game.game_code)));return games.filter(game=>allowed.has(String(game.gameCode))); }
-  const api={createRequestScope,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,csvValue,videoGamesForSeason};
+  const api={createRequestScope,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,filterActions,csvValue,videoGamesForSeason};
   if (typeof module!=='undefined' && module.exports) module.exports=api;
   else root.EuroleagueState=api;
 })(typeof window!=='undefined' ? window : globalThis);

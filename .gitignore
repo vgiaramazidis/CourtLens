@@ -4,6 +4,7 @@ venv/
 env/
 
 # Python
+.ruff_cache/
 __pycache__/
 *.py[cod]
 *.pyo
@@ -32,8 +33,16 @@ outputs/
 evaluation/ocr_triplets_candidate/
 *.numbers
 
+# Local research archive (not a substitute for cleaning Git history)
+archive/
+
 # Secrets / Environment Variables
 .env
+.env.*
+!.env.example
+credentials/
+*.pem
+*.key
 
 # Logs
 *.log

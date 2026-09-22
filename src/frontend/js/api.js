@@ -1,3 +1,4 @@
+/* HTTP requests and user-facing errors for the CourtLens API. */
 const API_BASE_URL = window.EUROLEAGUE_API_BASE_URL
   || `${window.location.protocol==='https:'?'https:':'http:'}//${window.location.hostname || 'localhost'}:8000`;
 
@@ -27,7 +28,7 @@ async function apiRequest(path, params = {}, options = {}) {
 }
 
 function fetchAiChat(message, game_code, season_code, provider, signal, workspace = 'explore') {
-  return apiRequest('/api/chat', {}, {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({message,game_code:game_code || null,season_code,provider:provider || null,include_answer:true,workspace})});
+  return apiRequest('/api/chat', {}, {method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({message,game_code:game_code || null,season_code,provider:provider || null,include_answer:true,show_query:workspace==='video',workspace})});
 }
 function fetchAvailableVideoGames(season_code, signal) { return apiRequest('/api/video/games',{season_code},{signal}); }
 function fetchMatchPlayByPlay(game_code, season_code, signal) { return apiRequest('/api/match/playbyplay',{game_code,season_code},{signal}).then(data=>data.actions || []); }

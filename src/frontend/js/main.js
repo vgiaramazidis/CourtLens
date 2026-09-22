@@ -1,4 +1,4 @@
-/* Courtside Editorial: three isolated workspaces, English-only presentation. */
+/* CourtLens navigation, workspace rendering and user interactions. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -8,12 +8,12 @@
   const positions = ['Point guard','Shooting guard','Small forward','Power forward','Center'];
   const quizNames = {'who-am-i':'Who am I?','who-is-missing':'Who is missing?','higher-or-lower':'Higher or lower','top-5':'Top 5','fifty-fifty':'50/50'};
   const categories = [
-    ['shots','Shots',/PointShot/],['free-throws','Free throws',/FreeThrow/],['rebounds','Rebounds',/Rebound/],
+    ['two-pointers','2-point shots',/TwoPointShot/],['three-pointers','3-point shots',/ThreePointShot/],['free-throws','Free throws',/FreeThrow/],['rebounds','Rebounds',/Rebound/],
     ['assists','Assists',/Assist/],['turnovers','Turnovers',/Turnover/],['fouls','Fouls',/Foul/],['steals','Steals',/Steal/],
     ['blocks','Blocks',/Block|ShotRejected/],['substitutions','Substitutions',/Substitution|PlayerIn|PlayerOut/],
     ['timeouts','Timeouts',/Timeout/],['jump-balls','Jump balls',/JumpBall/],['periods','Period events',/BeginPeriod|EndPeriod|PeriodStart|PeriodEnd|GameEnd|EndGame/],['other','Other',/.*/]
   ];
-  const state = {exploreMode:'ask',section:'explore',mode:'coach',shots:[],actions:[],roster:[],players:new Map(),games:[],videoCatalog:[],models:[],teams:[],table:[],columns:[],tableLimit:50,pbpLimit:50,aiUris:null,shotUris:null,selectedAction:null,scenario:null,lineup:Array(5).fill(null),slot:0,quiz:null,tableIsShots:false};
+  const state = {exploreMode:'browse',section:'video',videoView:'court',mode:'coach',shots:[],actions:[],roster:[],players:new Map(),games:[],videoCatalog:[],models:[],teams:[],table:[],columns:[],tableLimit:50,pbpLimit:50,aiUris:null,shotUris:null,selectedAction:null,scenario:null,lineup:Array(5).fill(null),slot:0,quiz:null,tableIsShots:false};
   window.App = { get section(){return state.section;}, selectShot:shot=>selectShot(shot), clearShotSelection };
   window.homePlayersSet = new Set();
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -61,9 +61,9 @@
     document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
     state.shots=[];state.actions=[];state.table=[];state.columns=[];state.aiUris=null;state.shotUris=null;state.selectedAction=null;state.tableIsShots=false;state.roster=[];state.players.clear();
     window.homePlayersSet.clear();
-    ['aiPlaySearchResult','evidencePanel','courtPanel','videoPanel','pbpPanel','gameHeading','selectedShot','lineupDetails','mobileViewSwitch'].forEach(id=>show(id,false));
+    ['videoCompanion','videoEmptyState','aiPlaySearchResult','evidencePanel','courtPanel','videoPanel','pbpPanel','gameHeading','selectedShot','lineupDetails','mobileViewSwitch'].forEach(id=>show(id,false));
     ['resultTable','pbpList','lineupContent','quarterFilters','rosterFilters','teamShotFilters','pbpActionFilters','playerOptions'].forEach(id=>$(id).replaceChildren());
-    $('aiPlaySearchInput').value=''; $('analysisForm').reset();updateTopicFilters();updateAnalysisFilterSummary(); $('followVideo').checked=false;
+    $('sparqlQuery').value='';message('queryStatus','');setBusy('runQuery',false,'Run query');$('pbpPlayer').innerHTML='<option value="">All players</option>';$('aiPlaySearchInput').value=''; $('analysisForm').reset();updateTopicFilters();updateAnalysisFilterSummary(); $('followVideo').checked=false;
     $('courtPlayerSearch').value='';show('clearShotSelection',false);text('courtFocusNote','Select a shot to isolate it. Drag to rotate; scroll to zoom.');text('shotFilterCount','');
     $('shotTeam').value='';$('shotTeam').options[1].textContent='Home team';$('shotTeam').options[2].textContent='Away team';$('shotResult').value='';$('pbpQuarter').innerHTML='<option value="">All periods</option>';
     document.querySelectorAll('#analysisSection details').forEach(el=>el.open=false);
@@ -72,7 +72,7 @@
     $('aiPlaySearchResult').removeAttribute('aria-busy');
     window.setYouTubeVideo?.(null);window.drawShots?.([]);window.highlightShot?.(null);
     setMobileView('results');
-    show('exploreSuggestions',state.section==='explore' && state.exploreMode==='ask');
+    show('exploreSuggestions',state.section==='explore' && state.exploreMode==='ask');show('videoEmptyState',state.section==='video');
   }
   function resetGames() {
     state.scenario=null;state.lineup=Array(5).fill(null);state.slot=0;state.quiz=null;
@@ -81,7 +81,8 @@
     message('coachStatus','');setBusy('startChallenge',false,'Start challenge');setBusy('runSimulation',true,'Run simulation');
   }
   function navigate(section,mode='coach') {
-    requests.reset();state.section=section;state.mode=mode;state.exploreMode='ask';
+    // Invalidate pending responses before another workspace can render them.
+    requests.reset();state.section=section;state.mode=mode;state.exploreMode='browse';state.videoView='court';
     clearAnalysis();resetGames();
     document.querySelectorAll('[data-section]').forEach(link=>{if(link.dataset.section===section)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
     document.querySelectorAll('[data-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
@@ -89,12 +90,17 @@
     const video=section==='video';
     $(video?'scopeDock':'searchScopeDock').append($('scopeBar'));
     $('workspaceGrid').classList.toggle('video-mode',video);
+    show('videoSearch',video);show('queryDetails',video);
+    // Move the existing panels so their event listeners and the video player survive view changes.
+    if(video){$('videoCompanion').append($('courtPanel'),$('pbpPanel'));$('videoSearchDock').append($('aiSearchPanel'));$('pbpEvidenceDock').append($('evidencePanel'));}
+    else {$('workspaceGrid').prepend($('aiSearchPanel'));$('workspaceGrid').append($('courtPanel'),$('pbpPanel'),$('evidencePanel'));$('courtPanel').append($('momentDetails'));}
+    setVideoView(state.videoView);
     text('pageEyebrow',video ? 'SYNCHRONIZED GAME FILM':'EUROLEAGUE ANALYSIS');
     text('pageTitle',video ? 'Video Analysis':'Explore');
-    text('pageDescription',video ? 'Game film, shot locations, and possession-level search. Available videos only.':'Search players, teams, and possessions across EuroLeague seasons.');
+    text('pageDescription',video ? 'Watch the game alongside its shot chart or Play-by-Play.':'Browse game statistics, shot locations, and player performance across seasons.');
     text('searchLabel',video ? 'AI Search in this game':'AI Search');
     $('aiPlaySearchInput').placeholder=video ? 'Search this game':'Ask about a player, team, or game';
-    text('aiSearchNote',video ? 'Choose a game, then ask a question to find its matching plays.':'Search across all available seasons, or narrow your question to a game.');
+    text('aiSearchNote',video ? 'Try: All shots by Mathias Lessort when Walter Tavares was on the court.':'Search across all available seasons, or narrow your question to a game.');
     document.querySelector('[data-view="results"]').textContent=video ? 'Actions':'Results';
     show('exploreModes',section==='explore');setExploreModeUI();
     $('seasonSelect').innerHTML=video ? '<option value="">Choose a season</option>' : '<option value="ALL">All available seasons</option>'+Object.entries(seasons).map(([key,label])=>`<option value="${key}">${label}</option>`).join('');
@@ -105,6 +111,17 @@
     if(section!=='games') loadModels();
     window.scrollTo({top:0,behavior:'instant'});
   }
+  function setVideoView(view) {
+    state.videoView=view==='pbp'?'pbp':'court';
+    $('workspaceGrid').dataset.videoView=state.videoView;
+    document.querySelectorAll('[data-video-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.videoView===state.videoView)));
+    if(state.section!=='video')return;
+    const loaded=!$('videoPanel').hidden;show('videoCompanion',loaded);
+    show('courtPanel',loaded && state.videoView==='court');show('pbpPanel',loaded && state.videoView==='pbp');show('mobileViewSwitch',false);
+    $(state.videoView==='pbp'?'pbpMomentDock':'courtPanel').append($('momentDetails'));
+    requestAnimationFrame(()=>window.resizeCourt?.());
+  }
+  document.querySelectorAll('[data-video-view]').forEach(button=>button.onclick=()=>setVideoView(button.dataset.videoView));
   function setExploreModeUI() {
     const browse=state.section==='explore' && state.exploreMode==='browse';
     show('analysisTools',browse);show('searchForm',!browse);$('aiSearchPanel').setAttribute('aria-label',browse?'Statistics workspace':'AI Search');
@@ -117,7 +134,7 @@
     $('seasonSelect').value='ALL';$('gameSelect').innerHTML='<option value="">All games</option>';$('gameSelect').disabled=true;
     setExploreModeUI();loadModels();
   });
-  function readRoute() { const [section,mode]=location.hash.slice(1).split('/');navigate(['explore','video','games'].includes(section)?section:'explore',mode==='quiz'?'quiz':'coach'); }
+  function readRoute() { const [section,mode]=location.hash.slice(1).split('/');navigate(['explore','video','games'].includes(section)?section:'video',mode==='quiz'?'quiz':'coach'); }
   window.addEventListener('hashchange',()=>{readRoute();$('mainContent').focus({preventScroll:true});});
   document.querySelector('.skip-link').addEventListener('click',event=>{event.preventDefault();$('mainContent').focus();$('mainContent').scrollIntoView();});
   document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{location.hash=button.dataset.mode==='quiz'?'games/quiz':'games';}));
@@ -145,6 +162,7 @@
   document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{setMobileView(button.dataset.view);$('mobileViewSwitch').scrollIntoView({block:'start'});}));
   document.querySelectorAll('[data-prompt]').forEach(button=>button.addEventListener('click',()=>{$('aiPlaySearchInput').value=button.dataset.prompt;$('aiPlaySearchInput').focus();$('aiSearchPanel').scrollIntoView({block:'center'});}));
 
+  // Game and provider loading.
   async function loadModels() {
     const ticket=requests.start('models');
     try {
@@ -208,14 +226,15 @@
       if(!video)return;
       if(!config?.available || !config.timeline_available){message('workspaceStatus','This game’s synchronized video is no longer available. Choose another game.',true);return;}
       state.shots=shots.shots || [];state.actions=actions || [];
-      show('videoPanel');show('courtPanel');show('pbpPanel');show('mobileViewSwitch');show('gameHeading');
+      show('videoPanel');show('gameHeading');show('videoEmptyState',false);setVideoView(state.videoView);
       $('gameHeading').innerHTML=`${teamMarkup(home)}<span class="game-score">${esc(roster.homeScore ?? '—')} – ${esc(roster.roadScore ?? '—')}<small>Final score</small></span>${teamMarkup(away)}<span class="muted">${esc(seasons[params.season_code])} · Full game</span>`;
       $('shotTeam').options[1].textContent=home;$('shotTeam').options[2].textContent=away;
       window.setYouTubeVideo(config.youtube_id,config.playback_lead_seconds);
-      buildShotFilters();buildActionFilters();renderActions();applyShotFilters();
+      buildShotFilters();buildActionFilters();renderActions();applyShotFilters();$('sparqlQuery').value=defaultVideoQuery();
     } catch(error){if(ticket.current())message('workspaceStatus',error.message,true);}
   }
 
+  // Shot filters and synchronized Play-by-Play.
   function buildShotFilters() {
     const periods=[...new Set(state.shots.map(shot=>S.period(shot.quarter)).filter(Boolean))].sort((a,b)=>S.periodOrder(a)-S.periodOrder(b));
     $('quarterFilters').innerHTML=periods.map(q=>`<label class="filter-chip"><input type="checkbox" aria-label="${esc(periodName(q))}" data-shot-quarter="${esc(q)}" checked><span>${esc(S.periodOrder(q)<=4?'Q'+S.periodOrder(q):q)}</span></label>`).join('');
@@ -242,6 +261,10 @@
   $('shotFilters').addEventListener('change',applyShotFilters);
   $('courtFilterDialog').addEventListener('change',applyShotFilters);
   function buildActionFilters() {
+    const selectedPlayer=$('pbpPlayer').value;
+    const names=[...new Set(state.actions.map(action=>action.playerName).filter(Boolean))].sort((a,b)=>playerName(a).localeCompare(playerName(b)));
+    $('pbpPlayer').innerHTML='<option value="">All players</option>'+names.map(name=>`<option value="${esc(name)}">${esc(playerName(name))}</option>`).join('');
+    if(names.includes(selectedPlayer))$('pbpPlayer').value=selectedPlayer;
     const active=new Set(state.actions.map(cat));
     $('pbpActionFilters').innerHTML=categories.filter(entry=>active.has(entry[0])).map(([id,label])=>`<label><input data-action-type="${id}" type="checkbox" checked>${label}</label>`).join('');
     const periods=[...new Set(state.actions.map(action=>S.period(action.quarter)))].sort((a,b)=>S.periodOrder(a)-S.periodOrder(b));
@@ -249,45 +272,55 @@
   }
   function filteredActions() {
     const allowed=new Set([...document.querySelectorAll('[data-action-type]:checked')].map(el=>el.dataset.actionType));
-    return state.actions.filter(action=>(!state.aiUris || state.aiUris.has(action.uri)) && allowed.has(cat(action)) && (!$('pbpQuarter').value || S.period(action.quarter)===$('pbpQuarter').value)).sort((a,b)=>S.periodOrder(a.quarter)-S.periodOrder(b.quarter) || S.clockSeconds(b.playTime)-S.clockSeconds(a.playTime) || Number(a.sequence)-Number(b.sequence));
+    return S.filterActions(state.actions,{actionUris:state.aiUris,types:allowed,player:$('pbpPlayer').value,quarter:$('pbpQuarter').value},cat);
   }
   function renderActions() {
-    const actions=filteredActions();const shown=actions.slice(0,state.pbpLimit);let lastPeriod='';
+    const actions=filteredActions();
+    if(state.section==='video' && state.videoView==='pbp' && state.selectedAction && !actions.some(action=>action.uri===state.selectedAction)){clearShotSelection();return;}
+    const shown=actions.slice(0,state.pbpLimit);let lastPeriod='';
     $('pbpList').innerHTML=shown.map(action=>{
       const divider=S.period(action.quarter)!==lastPeriod?`<li class="period-divider">${esc(periodName(action.quarter))}</li>`:'';lastPeriod=S.period(action.quarter);
       const playable=Number.isFinite(action.videoSeconds) && action.videoSeconds>=0;
       return `${divider}<li class="pbp-event ${state.selectedAction===action.uri?'active':''}" data-action-uri="${esc(action.uri)}"><span class="pbp-clock">${esc(action.playTime || '—')}<small>remaining</small></span><div><strong>${esc(playerName(action.playerName || 'Game event'))}</strong><p>${esc(actionText(action))}</p><p>Score ${esc(action.homeScore ?? '—')}–${esc(action.roadScore ?? '—')}${action.isFastBreak?' · Fast break':''}${action.isSecondChance?' · Second chance':''}${action.isFromTurnover?' · After turnover':''}</p>${state.selectedAction===action.uri && !state.shots.some(shot=>shot.action_uri===action.uri)?'<p>This action has no shot location.</p>':''}</div><button class="text-button" data-watch="${esc(action.uri)}" aria-label="${playable && state.section==='video'?'Watch':'Inspect'} ${esc(actionText(action))} by ${esc(action.playerName || 'game event')} at ${esc(action.playTime)}">${playable && state.section==='video'?'Watch':'Details'}</button></li>`;
-    }).join('') || '<li class="empty-message">No actions match these filters. Try another period or action type.</li>';
-    text('pbpSummary',`${actions.length} ${state.aiUris?'matching ':''}actions · Showing ${shown.length}${state.aiUris?' · Search filter applied':''}`);show('clearAiFilter',Boolean(state.aiUris));show('moreActions',actions.length>shown.length);
+    }).join('') || '<li class="empty-message">No actions match these filters. Try another player, period or action type.</li>';
+    text('pbpSummary',`${actions.length} ${state.aiUris?'matching ':''}${actions.length===1?'action':'actions'} · Showing ${shown.length}${state.aiUris?' · Search filter applied':''}`);show('clearAiFilter',Boolean(state.aiUris));show('moreActions',actions.length>shown.length);
   }
   $('pbpList').addEventListener('click',event=>{const button=event.target.closest('[data-watch]');if(button)selectAction(state.actions.find(action=>action.uri===button.dataset.watch),true);});
   $('pbpQuarter').addEventListener('change',()=>{state.pbpLimit=50;renderActions();});$('pbpActionFilters').addEventListener('change',()=>{state.pbpLimit=50;renderActions();});
+  $('pbpPlayer').addEventListener('change',()=>{state.pbpLimit=50;renderActions();});
+  $('clearActionTypes').onclick=()=>{document.querySelectorAll('[data-action-type]').forEach(el=>el.checked=false);state.pbpLimit=50;renderActions();};
   $('allActionTypes').onclick=()=>{document.querySelectorAll('[data-action-type]').forEach(el=>el.checked=true);renderActions();};
   $('moreActions').onclick=()=>{state.pbpLimit+=50;renderActions();};
-  $('clearAiFilter').onclick=()=>{state.aiUris=null;state.shotUris=null;state.pbpLimit=50;$('pbpQuarter').value='';document.querySelectorAll('[data-action-type]').forEach(el=>el.checked=true);renderActions();applyShotFilters();message('aiPlaySearchResult','Search filter cleared. Showing all game actions.');};
+  $('clearAiFilter').onclick=()=>{state.aiUris=null;state.shotUris=null;state.pbpLimit=50;$('pbpQuarter').value='';$('pbpPlayer').value='';document.querySelectorAll('[data-action-type]').forEach(el=>el.checked=true);renderActions();applyShotFilters();message('aiPlaySearchResult','Search filter cleared. Showing all game actions.');};
   function selectAction(action,watch=false) {
     if(!action)return;state.selectedAction=action.uri;
     const shot=state.shots.find(shot=>shot.action_uri===action.uri);
-    if(shot)selectShot(shot,false);else {requests.start('lineup');window.highlightShot?.(null);show('clearShotSelection');text('courtFocusNote','This action has no shot location.');show('lineupDetails',false);show('selectedShot');$('selectedShot').innerHTML=`<strong>${esc(playerName(action.playerName || 'Game event'))}</strong><p>${esc(actionText(action))} · ${esc(periodName(action.quarter))} · ${esc(action.playTime)} remaining</p><p class="muted">${Number.isFinite(action.videoSeconds)?'':'No synchronized video timestamp for this action. '}This action has no shot location.</p>`;}
+    if(shot)selectShot(shot,false);else {window.highlightShot?.(null);show('clearShotSelection');text('courtFocusNote','This action has no shot location.');show('lineupDetails',false);show('selectedShot');$('selectedShot').innerHTML=`<strong>${esc(playerName(action.playerName || 'Game event'))}</strong><p>${esc(actionText(action))} · ${esc(periodName(action.quarter))} · ${esc(action.playTime)} remaining</p><p class="muted">${Number.isFinite(action.videoSeconds)?'':'No synchronized video timestamp for this action. '}This action has no shot location.</p>`;loadMomentLineups(action);}
     renderActions();
     if(watch && state.section==='video' && Number.isFinite(action.videoSeconds) && action.videoSeconds>=0)window.playVideoAt?.(action.videoSeconds,action.playbackLeadSeconds);
   }
   async function selectShot(shot,watch=true) {
-    const ticket=requests.start('lineup');show('selectedShot');window.highlightShot?.(shot.action_uri);
+    show('selectedShot');window.highlightShot?.(shot.action_uri);
     const mapped=Number.isFinite(Number(shot.x)) && Number.isFinite(Number(shot.y)) && !(Number(shot.x)===-1 && Number(shot.y)===-1);
     show('clearShotSelection');text('courtFocusNote',mapped?'Selected shot in focus. Other shots are dimmed.':'This shot has no recorded court location.');
     $('selectedShot').innerHTML=`<strong>${esc(playerName(shot.playerName))}</strong><p>${shot.isMade?'Made':'Missed'} ${/ThreePoint/.test(shot.action_type)?'3-point':'2-point'} shot · ${esc(periodName(shot.quarter))} · ${esc(shot.playTime || '—')} remaining</p><p class="muted">Score at this moment: ${esc(shot.homeScore ?? '—')}–${esc(shot.roadScore ?? '—')}</p>`;
     state.selectedAction=shot.action_uri;updateSelectedResult(); if(state.actions.length)renderActions();
     if(watch && state.section==='video' && Number.isFinite(shot.videoSeconds))window.playVideoAt?.(shot.videoSeconds);
-    const lineups=[shot.runningHomeTeamLineup || shot.homeLineup,shot.runningRoadTeamLineup || shot.roadLineup];
-    show('lineupDetails',lineups.some(uri=>String(uri || '').includes('Lineup_')));$('lineupContent').textContent='Loading the players on court…';
+    await loadMomentLineups(shot);
+  }
+  async function loadMomentLineups(moment) {
+    const ticket=requests.start('lineup');
+    const lineups=[moment.runningHomeTeamLineup || moment.homeLineup,moment.runningRoadTeamLineup || moment.roadLineup];
+    show('lineupDetails');$('lineupDetails').open=true;
+    if(!lineups.some(uri=>String(uri || '').includes('Lineup_'))){text('lineupContent','On-court players were not recorded for this action.');return;}
+    $('lineupContent').textContent='Loading the players on court…';
     try {
       const groups=await Promise.all(lineups.map(async uri=>{
         const ids=String(uri || '').split('Lineup_')[1]?.split('_').filter(Boolean) || [];
         return Promise.all(ids.map(id=>getPlayer(id,ticket.signal)));
       }));
       if(!ticket.current())return;
-      $('lineupContent').innerHTML=groups.map((group,index)=>`<div><strong>${index?'Away team':'Home team'}</strong>${group.map(personMarkup).join('') || '<p>Lineup unavailable.</p>'}</div>`).join('');
+      $('lineupContent').innerHTML=groups.map((group,index)=>`<div><strong>${esc($('shotTeam').options[index+1].textContent)}</strong>${group.map(personMarkup).join('') || '<p>Lineup unavailable.</p>'}</div>`).join('');
     }catch(error){if(ticket.current())text('lineupContent',error.message);}
   }
   function clearShotSelection() {
@@ -305,10 +338,11 @@
   setInterval(()=>{
     if(state.section!=='video' || !$('followVideo').checked || !window.player || typeof window.player.getCurrentTime!=='function')return;
     const current=window.player.getCurrentTime();
-    const action=state.actions.filter(action=>Number.isFinite(action.videoSeconds) && action.videoSeconds<=current && current-action.videoSeconds<12).sort((a,b)=>b.videoSeconds-a.videoSeconds)[0];
+    const action=(state.videoView==='pbp'?filteredActions():state.actions).filter(action=>Number.isFinite(action.videoSeconds) && action.videoSeconds<=current && current-action.videoSeconds<12).sort((a,b)=>b.videoSeconds-a.videoSeconds)[0];
     if(action && action.uri!==state.selectedAction){selectAction(action);const row=[...$('pbpList').querySelectorAll('[data-action-uri]')].find(el=>el.dataset.actionUri===action.uri);if(row && $('pbpList').scrollHeight>$('pbpList').clientHeight)$('pbpList').scrollTop=row.offsetTop-$('pbpList').offsetTop;}
   },700);
 
+  // Result tables and AI answers.
   function valueOf(value) {
     if(value===null || value===undefined)return '—';
     const raw=typeof value==='object' && 'value' in value ? String(value.value):String(value);
@@ -369,7 +403,8 @@
     const params=scopeParams();
     if(state.section==='video' && (!params.game_code || $('videoPanel').hidden)){message('aiPlaySearchResult','Choose an available video game and wait for it to load first.',true);return;}
     const ticket=requests.start('query');
-    setBusy('aiPlaySearchButton',true,'Searching…');setBusy('runAnalysis',false,'Show results');$('aiPlaySearchResult').setAttribute('aria-busy','true');
+    if(state.section==='video'){$('sparqlQuery').value='';message('queryStatus','The query will appear when this search completes.');}
+    setBusy('runQuery',false,'Run query');setBusy('aiPlaySearchButton',true,'Searching…');setBusy('runAnalysis',false,'Show results');$('aiPlaySearchResult').setAttribute('aria-busy','true');
     show('evidencePanel',false);state.table=[];state.aiUris=null;state.shotUris=null;state.tableIsShots=false;state.tableLimit=50;state.pbpLimit=50;clearShotSelection();
     if(state.section==='explore'){show('courtPanel',false);show('pbpPanel',false);show('mobileViewSwitch',false);window.drawShots?.([]);}
     else {renderActions();applyShotFilters();}
@@ -378,6 +413,7 @@
       const season=params.season_code==='ALL'?Object.keys(seasons).join(','):params.season_code;
       const data=await fetchAiChat(question,params.game_code,season,$('aiModelSelect').value,ticket.signal,state.section);
       if(!ticket.current())return;
+      if(state.section==='video'){$('sparqlQuery').value=data.sparql_query || '';message('queryStatus',data.sparql_query?'Query from the latest search. You can edit and run it.':'This answer has no SPARQL query.');}
       let count=null;
       if(data.playbyplay_filter && params.game_code){
         let actions=state.actions;
@@ -385,7 +421,7 @@
         if(!ticket.current())return;
         state.actions=actions;state.aiUris=new Set(data.action_uris || []);
         count=actions.filter(action=>state.aiUris.has(action.uri)).length;
-        buildActionFilters();renderActions();show('pbpPanel');
+        if(state.section==='explore')buildActionFilters();renderActions();show('pbpPanel');
         const shotQuery=/shot/.test(data.playbyplay_action_kind || '') || /shot|three.point|two.point|3pt|2pt/i.test(question);
         if(shotQuery){
           if(state.section==='explore' || !state.shots.length){const loaded=await apiRequest('/api/shots',params,{signal:ticket.signal});if(!ticket.current())return;state.shots=loaded.shots || [];}
@@ -400,9 +436,42 @@
         if(state.columns.length){text('evidenceTitle','Search results');renderTable();}
       }
     } catch(error){if(ticket.current())message('aiPlaySearchResult',error.message,true);}
-    finally{if(ticket.current()){setBusy('aiPlaySearchButton',false,'Search');$('aiPlaySearchResult').removeAttribute('aria-busy');}}
+    finally{if(ticket.current()){if(state.section==='video')setVideoView(state.videoView);setBusy('aiPlaySearchButton',false,'Search');$('aiPlaySearchResult').removeAttribute('aria-busy');}}
   }
   $('searchForm').addEventListener('submit',runSearch);
+  function defaultVideoQuery() {
+    const scope=scopeParams();
+    return `PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+SELECT DISTINCT ?action WHERE {
+  ?game a bball:Game ; bball:hasCode "${scope.game_code}" ;
+        bball:hasSeason ?season ; bball:hasPlayByPlayAction ?action .
+  ?season bball:hasCode "${scope.season_code}" .
+}
+LIMIT 200`;
+  }
+  $('queryForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(state.section!=='video' || !$('gameSelect').value || $('videoPanel').hidden)return;
+    const ticket=requests.start('query');setBusy('runQuery',true,'Running…');setBusy('aiPlaySearchButton',false,'Search');$('aiPlaySearchResult').removeAttribute('aria-busy');
+    message('queryStatus','Running your read-only query…');
+    try {
+      const data=await apiRequest('/api/query',{}, {method:'POST',signal:ticket.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({query:$('sparqlQuery').value})});
+      if(!ticket.current())return;
+      clearShotSelection();state.aiUris=data.playbyplay_filter?new Set(data.action_uris || []):null;state.shotUris=state.aiUris;state.pbpLimit=50;
+      state.table=[];state.columns=[];state.tableIsShots=false;show('evidencePanel',false);message('aiPlaySearchResult','');
+      renderActions();applyShotFilters();
+      if(!data.playbyplay_filter){
+        state.table=(data.results || []).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,valueOf(value)])));
+        state.columns=[...new Set(state.table.flatMap(Object.keys))];state.tableLimit=50;
+        if(state.columns.length){text('evidenceTitle','Query results');renderTable();}
+      }
+      const matches=state.actions.filter(action=>state.aiUris?.has(action.uri)).length;
+      message('queryStatus',data.boolean!==undefined && data.boolean!==null ? `Query answer: ${data.boolean?'Yes':'No'}.` : data.playbyplay_filter?`${matches} matching ${matches===1?'action':'actions'} in this game. Player, period and action filters still apply. Up to 200 query rows.`:`${state.table.length} rows returned. Up to 200 query rows.`);
+      setVideoView('pbp');
+    }catch(error){if(ticket.current())message('queryStatus',error.message,true);}
+    finally{if(ticket.current())setBusy('runQuery',false,'Run query');}
+  });
+
   function playerId(input) {const value=$(input).value.trim();return state.roster.find(p=>S.normalizeName(p.name)===S.normalizeName(value) || S.normalizeName(playerName(p.name))===S.normalizeName(value))?.id || value;}
   function updateTopicFilters() {
     const type=$('analysisType').value;
@@ -461,6 +530,7 @@
   }
   $('analysisForm').addEventListener('submit',runAnalysis);
 
+  // Coach Challenge.
   async function startChallenge() {
     const ticket=requests.start('coach');requests.start('simulation');state.scenario=null;state.lineup=Array(5).fill(null);state.slot=0;
     show('coachWorkspace',false);show('simulatorResult',false);setBusy('startChallenge',true,'Finding a moment…');message('coachStatus','Finding a real fourth-quarter timeout…');
@@ -518,6 +588,7 @@
     finally{if(ticket.current())setBusy('runSimulation',false,'Run again');}
   };
 
+  // Quiz Ball.
   function quizMenu() { requests.start('quiz');state.quiz=null;show('quizSetup');show('quizGame',false);$('quizGame').replaceChildren();$('quizSetup').querySelector('input')?.focus(); }
   $('quizSetupForm').addEventListener('submit',event=>{event.preventDefault();const form=new FormData(event.currentTarget);startQuiz(form.get('category'),form.get('difficulty'));});
   async function startQuiz(category,difficulty,streak=0) {

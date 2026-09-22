@@ -48,8 +48,8 @@ from queries import (
     get_top_assist_duos_query,
     get_top_lineups_query,
 )
-from .quiz_support import game_stage, missing_lineup, quiz_player_profile
-from .search_answers import (
+from quiz_support import game_stage, missing_lineup, quiz_player_profile
+from search_answers import (
     ANSWER_PROMPT,
     action_answer,
     evidence_for_answer,
@@ -57,7 +57,7 @@ from .search_answers import (
     profile_query,
     profile_subject,
 )
-from .search_validation import bounded_editor_query, unsupported_shot_style, validate_read_only
+from search_validation import bounded_editor_query, unsupported_shot_style, validate_read_only
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VIDEO_CATALOG_PATH = REPO_ROOT / "src" / "data_pipeline" / "video_games.json"

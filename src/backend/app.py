@@ -24,9 +24,9 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
-from .database import query_sparql_requests
-from .prompts import AI_SEARCH_PROMPTS
-from .queries import (
+from database import query_sparql_requests
+from prompts import AI_SEARCH_PROMPTS
+from queries import (
     AnalysisFilterError,
     get_clutch_time_performers_query,
     get_defensive_anchors_query,

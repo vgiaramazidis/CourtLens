@@ -475,7 +475,7 @@ async def get_shots(
         action_uri = result.get("action", {}).get("value", "")
         if action_uri in shots:
             continue
-            
+
         raw_coords = result.get("coords", {}).get("value", "")
         try:
             x, y = map(float, raw_coords.split(","))
@@ -566,7 +566,7 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
         action_uri = row.get("action", {}).get("value", "")
         if action_uri in actions:
             continue
-            
+
         action_type_uri = row.get("actionType", {}).get("value", "")
         action_type_name = action_type_uri.split("#")[-1]
         play_time = row.get("clock", {}).get("value", "")
@@ -621,12 +621,12 @@ async def get_play_context(action_uri: str = Query(...)):
         if pid not in unique_players:
             unique_players[pid] = {
                 "label": row.get("playerLabel", {}).get("value", ""),
-                "height": float(row.get("height", {}).get("value", 0))
+                "height": float(row.get("height", {}).get("value", 0)),
             }
-            
+
     if not unique_players:
         return {"avgHeight": None, "playersOnCourt": ""}
-        
+
     avg_height = sum(p["height"] for p in unique_players.values()) / len(unique_players)
     players = ", ".join(p["label"] for p in unique_players.values())
 
@@ -700,7 +700,7 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
         lineup_uri = row.get("lineup", {}).get("value", "")
         team_type = row.get("teamType", {}).get("value", "")
         players_str = row.get("players", {}).get("value", "")
-        
+
         unique_players = {}
         for p in players_str.split(","):
             p = p.strip()
@@ -710,7 +710,7 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
             if pid not in unique_players:
                 unique_players[pid] = p
         players_str = ",".join(unique_players.values())
-        
+
         homeScore = row.get("homeScore", {}).get("value", "")
         roadScore = row.get("roadScore", {}).get("value", "")
         lineups.append({"uri": lineup_uri, "teamType": team_type, "players": players_str})

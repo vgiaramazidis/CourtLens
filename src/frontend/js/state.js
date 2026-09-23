@@ -56,15 +56,26 @@
     return shots.filter(shot => {
       const side=shot.teamType==='home' ? 'home' : 'road';
       const rules=filters.types?.[side] || {};
+      
+      const is3pt = /ThreePoint/.test(shot.action_type || '') || shot.is3P;
+      const basePass = rules[is3pt ? '3pt' : '2pt'] !== false;
+      const specialFails = 
+        (shot.isFastBreak && rules.fastbreak === false) ||
+        (shot.isFromTurnover && rules.turnover === false) ||
+        (shot.isSecondChance && rules.secondchance === false);
+      const specialPass = 
+        (shot.isFastBreak && rules.fastbreak !== false) ||
+        (shot.isFromTurnover && rules.turnover !== false) ||
+        (shot.isSecondChance && rules.secondchance !== false);
+      
+      const typePass = !specialFails && (basePass || specialPass);
+
       return (!filters.team || filters.team===side)
         && (!filters.result || (filters.result==='made')===Boolean(shot.isMade))
         && (!filters.periods || filters.periods.has(period(shot.quarter)))
         && (!filters.players || filters.players.has(shot.playerName))
         && (!filters.actionUris || filters.actionUris.has(shot.action_uri))
-        && rules[/ThreePoint/.test(shot.action_type || '') || shot.is3P ? '3pt':'2pt']!==false
-        && !(shot.isFastBreak && rules.fastbreak===false)
-        && !(shot.isFromTurnover && rules.turnover===false)
-        && !(shot.isSecondChance && rules.secondchance===false);
+        && typePass;
     });
   }
   function filterActions(actions, filters, category) {

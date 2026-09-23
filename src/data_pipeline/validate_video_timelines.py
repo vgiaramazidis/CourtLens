@@ -17,7 +17,7 @@ try:
         sanitize_timeline_results,
     )
 except ImportError:  # Direct script execution from the repository root.
-    from video_ocr import (
+    from src.data_pipeline.video_ocr import (
         DEFAULT_CATALOG_FILE,
         clock_to_seconds,
         load_game_catalog,

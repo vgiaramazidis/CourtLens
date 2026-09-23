@@ -31,14 +31,14 @@ try:
     )
     from validate_action_artifacts import validate_action_artifacts
 except ImportError:  # Direct execution from the repository root.
-    from parser import (
+    from src.data_pipeline.parser import (
         create_api_session,
         season_label_from_code,
     )
-    from parser import (
+    from src.data_pipeline.parser import (
         process_game as generate_action_artifacts,
     )
-    from validate_action_artifacts import validate_action_artifacts
+    from src.data_pipeline.validate_action_artifacts import validate_action_artifacts
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

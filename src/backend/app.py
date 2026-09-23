@@ -5,6 +5,11 @@ import csv
 import json
 import math
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import random
 import re
 import threading
@@ -12,7 +17,6 @@ import time
 from bisect import bisect_left
 from collections import OrderedDict, defaultdict
 from functools import lru_cache
-from pathlib import Path
 from typing import Literal
 
 import requests

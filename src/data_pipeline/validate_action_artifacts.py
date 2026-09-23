@@ -12,7 +12,7 @@ from pathlib import Path
 try:
     from parser import convert_action_info
 except ImportError:  # Direct script execution from the repository root.
-    from parser import convert_action_info
+    from src.data_pipeline.parser import convert_action_info
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

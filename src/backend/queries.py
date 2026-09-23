@@ -127,7 +127,7 @@ def get_filtered_shots_query(
         {scope}
         VALUES ?action_type {{ bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed }}
         ?action rdf:type ?action_type ; bball:actionTeam ?actionTeam ; bball:quarter ?quarter ; bball:actionPlayer ?playerNode .
-        {{ SELECT ?playerNode (SAMPLE(?name) AS ?playerName) WHERE {{ ?playerNode rdfs:label ?name . }} GROUP BY ?playerNode }}
+        ?playerNode rdfs:label ?playerName .
         OPTIONAL {{ ?playerNode foaf:depiction ?playerImg . }}
         BIND(IF(?actionTeam = ?homeTeam, "home", "road") AS ?teamType)
         OPTIONAL {{ ?action bball:shotCoords ?coords . }}
@@ -328,7 +328,7 @@ def get_match_playbyplay_query(game_code, season_code):
         OPTIONAL {{ ?action bball:actionTeam ?actionTeam . }}
         OPTIONAL {{ 
             ?action bball:actionPlayer ?player .
-            {{ SELECT ?player (SAMPLE(?lbl) AS ?playerLabel) WHERE {{ ?player rdfs:label ?lbl . }} GROUP BY ?player }}
+            ?player rdfs:label ?playerLabel .
         }}
         OPTIONAL {{
             ?relatedShot bball:hasAssist ?action ;
@@ -391,13 +391,14 @@ def get_filtered_player_query(player_id=None):
 def get_play_context_query(action_uri):
     return f"""
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     
-    SELECT (AVG(?height) AS ?avgHeight) (GROUP_CONCAT(?playerLabel; separator=", ") AS ?playersOnCourt)
+    SELECT DISTINCT ?player ?playerLabel ?height
     WHERE {{
         <{action_uri}> bball:runningHomeTeamLineup ?lineup .
         ?lineup bball:hasPlayer ?player .
-        {{ SELECT ?player (SAMPLE(?lbl) AS ?playerLabel) WHERE {{ ?player rdfs:label ?lbl . }} GROUP BY ?player }}
-        ?player bball:hasHeight ?height .
+        ?player rdfs:label ?playerLabel ;
+                bball:hasHeight ?height .
     }}
     """
 
@@ -473,7 +474,7 @@ def get_game_lineups_query(game_code, season_code):
                   bball:hasPlayerParticipation ?participation .
                   
         ?participation bball:overPlayer ?playerNode .
-        {{ SELECT ?playerNode (SAMPLE(?name) AS ?playerName) WHERE {{ ?playerNode rdfs:label ?name . }} GROUP BY ?playerNode }}
+        ?playerNode rdfs:label ?playerName .
         
         # Images and positions may be absent from older records.
         OPTIONAL {{ ?playerNode foaf:depiction ?img . }}

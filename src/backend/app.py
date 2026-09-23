@@ -469,10 +469,14 @@ async def get_shots(
     if not data:
         return {"error": "Failed to fetch data from SPARQL endpoint", "shots": []}
 
-    shots = []
+    shots = {}
     bindings = data.get("results", {}).get("bindings", [])
 
     for result in bindings:
+        action_uri = result.get("action", {}).get("value", "")
+        if action_uri in shots:
+            continue
+            
         raw_coords = result.get("coords", {}).get("value", "")
         try:
             x, y = map(float, raw_coords.split(","))
@@ -497,30 +501,28 @@ async def get_shots(
         road_score = result.get("roadScore", {}).get("value", "0")
         video_seconds = find_video_seconds(play_time, quarter_val, season_code, game_code)
 
-        shots.append(
-            {
-                "action_uri": result.get("action", {}).get("value", ""),
-                "action_type": action_type,
-                "x": float(x),
-                "y": float(y),
-                "isMade": "Made" in action_type,
-                "isFastBreak": fast_break,
-                "isSecondChance": second_chance,
-                "isFromTurnover": from_turnover,
-                "runningHomeTeamLineup": home_lineup,
-                "runningRoadTeamLineup": road_lineup,
-                "playTime": play_time,
-                "quarter": quarter_val,
-                "homeScore": int(home_score) if home_score.isdigit() else 0,
-                "roadScore": int(road_score) if road_score.isdigit() else 0,
-                "videoSeconds": video_seconds,
-                "playerName": player_name,
-                "playerImg": player_img if player_img else None,
-                "teamType": result.get("teamType", {}).get("value", ""),
-            }
-        )
+        shots[action_uri] = {
+            "action_uri": action_uri,
+            "action_type": action_type,
+            "x": float(x),
+            "y": float(y),
+            "isMade": "Made" in action_type,
+            "isFastBreak": fast_break,
+            "isSecondChance": second_chance,
+            "isFromTurnover": from_turnover,
+            "runningHomeTeamLineup": home_lineup,
+            "runningRoadTeamLineup": road_lineup,
+            "playTime": play_time,
+            "quarter": quarter_val,
+            "homeScore": int(home_score) if home_score.isdigit() else 0,
+            "roadScore": int(road_score) if road_score.isdigit() else 0,
+            "videoSeconds": video_seconds,
+            "playerName": player_name,
+            "playerImg": player_img if player_img else None,
+            "teamType": result.get("teamType", {}).get("value", ""),
+        }
 
-    return {"shots": shots}
+    return {"shots": list(shots.values())}
 
 
 @app.get("/api/player")
@@ -559,9 +561,13 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
     if not data:
         return {"error": "Failed to fetch play-by-play", "actions": []}
 
-    actions = []
+    actions = {}
     game_config = get_video_game_config(season_code, game_code)
     for row in data.get("results", {}).get("bindings", []):
+        action_uri = row.get("action", {}).get("value", "")
+        if action_uri in actions:
+            continue
+            
         action_type_uri = row.get("actionType", {}).get("value", "")
         action_type_name = action_type_uri.split("#")[-1]
         play_time = row.get("clock", {}).get("value", "")
@@ -572,35 +578,33 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
             action_type_name, row, play_time, quarter
         )
 
-        actions.append(
-            {
-                "uri": row.get("action", {}).get("value", ""),
-                "action_type": action_type_name,
-                "playTime": play_time,
-                "quarter": quarter,
-                "sequence": int(row.get("sequence", {}).get("value", "0") or 0),
-                "teamType": row.get("teamType", {}).get("value", "neutral"),
-                "homeScore": int(home_score) if home_score.isdigit() else 0,
-                "roadScore": int(road_score) if road_score.isdigit() else 0,
-                "playerName": row.get("playerLabel", {}).get("value", ""),
-                "homeLineup": row.get("homeLineup", {}).get("value"),
-                "roadLineup": row.get("roadLineup", {}).get("value"),
-                "isMade": "Made" in action_type_name,
-                "isFastBreak": get_bool(row, "isFastBreak"),
-                "isSecondChance": get_bool(row, "isSecondChance"),
-                "isFromTurnover": get_bool(row, "isFromTurnover"),
-                "videoSeconds": find_video_seconds(
-                    sync_clock,
-                    sync_quarter,
-                    season_code,
-                    game_code,
-                    action_type=action_type_name,
-                ),
-                "playbackLeadSeconds": playback_lead_for_action(game_config, action_type_name),
-            }
-        )
+        actions[action_uri] = {
+            "uri": action_uri,
+            "action_type": action_type_name,
+            "playTime": play_time,
+            "quarter": quarter,
+            "sequence": int(row.get("sequence", {}).get("value", "0") or 0),
+            "teamType": row.get("teamType", {}).get("value", "neutral"),
+            "homeScore": int(home_score) if home_score.isdigit() else 0,
+            "roadScore": int(road_score) if road_score.isdigit() else 0,
+            "playerName": row.get("playerLabel", {}).get("value", ""),
+            "homeLineup": row.get("homeLineup", {}).get("value"),
+            "roadLineup": row.get("roadLineup", {}).get("value"),
+            "isMade": "Made" in action_type_name,
+            "isFastBreak": get_bool(row, "isFastBreak"),
+            "isSecondChance": get_bool(row, "isSecondChance"),
+            "isFromTurnover": get_bool(row, "isFromTurnover"),
+            "videoSeconds": find_video_seconds(
+                sync_clock,
+                sync_quarter,
+                season_code,
+                game_code,
+                action_type=action_type_name,
+            ),
+            "playbackLeadSeconds": playback_lead_for_action(game_config, action_type_name),
+        }
 
-    return {"actions": actions}
+    return {"actions": list(actions.values())}
 
 
 @app.get("/api/play/context")
@@ -612,15 +616,23 @@ async def get_play_context(action_uri: str = Query(...)):
         return {"error": "Failed to fetch play context"}
 
     bindings = data.get("results", {}).get("bindings", [])
-    if not bindings:
+    unique_players = {}
+    for row in bindings:
+        pid = row.get("player", {}).get("value", "")
+        if pid not in unique_players:
+            unique_players[pid] = {
+                "label": row.get("playerLabel", {}).get("value", ""),
+                "height": float(row.get("height", {}).get("value", 0))
+            }
+            
+    if not unique_players:
         return {"avgHeight": None, "playersOnCourt": ""}
-
-    row = bindings[0]
-    avg_height = row.get("avgHeight", {}).get("value", None)
-    players = row.get("playersOnCourt", {}).get("value", "")
+        
+    avg_height = sum(p["height"] for p in unique_players.values()) / len(unique_players)
+    players = ", ".join(p["label"] for p in unique_players.values())
 
     return {
-        "avgHeight": round(float(avg_height), 2) if avg_height else None,
+        "avgHeight": round(avg_height, 2) if avg_height else None,
         "playersOnCourt": players,
     }
 
@@ -689,6 +701,16 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
         lineup_uri = row.get("lineup", {}).get("value", "")
         team_type = row.get("teamType", {}).get("value", "")
         players_str = row.get("players", {}).get("value", "")
+        
+        unique_players = {}
+        for p in players_str.split(","):
+            p = p.strip()
+            if not p: continue
+            pid = p.split("|")[0]
+            if pid not in unique_players:
+                unique_players[pid] = p
+        players_str = ",".join(unique_players.values())
+        
         homeScore = row.get("homeScore", {}).get("value", "")
         roadScore = row.get("roadScore", {}).get("value", "")
         lineups.append({"uri": lineup_uri, "teamType": team_type, "players": players_str})

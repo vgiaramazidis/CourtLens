@@ -17,15 +17,14 @@ from typing import Literal
 
 import requests
 import uvicorn
+from database import query_sparql_requests
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from google import genai
 from google.genai import types
-from pydantic import BaseModel, Field
-
-from database import query_sparql_requests
 from prompts import AI_SEARCH_PROMPTS
+from pydantic import BaseModel, Field
 from queries import (
     AnalysisFilterError,
     get_clutch_time_performers_query,
@@ -705,7 +704,8 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
         unique_players = {}
         for p in players_str.split(","):
             p = p.strip()
-            if not p: continue
+            if not p:
+                continue
             pid = p.split("|")[0]
             if pid not in unique_players:
                 unique_players[pid] = p

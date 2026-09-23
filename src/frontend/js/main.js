@@ -241,7 +241,7 @@
     const types=[['2pt','2-point shots'],['3pt','3-point shots'],['fastbreak','Fast-break points'],['turnover','Points after turnovers'],['secondchance','Second-chance points']];
     $('teamShotFilters').innerHTML=['home','road'].map((side,index)=>`<fieldset class="team-filter-group"><legend>${esc($('shotTeam').options[index+1].textContent)}</legend><div class="check-group">${types.map(([type,label])=>`<label><input type="checkbox" data-shot-side="${side}" data-shot-type="${type}" checked>${label}</label>`).join('')}</div></fieldset>`).join('');
     const names=[...new Set(state.shots.map(shot=>shot.playerName).filter(Boolean))].sort();
-    $('rosterFilters').innerHTML=`<div class="check-group"><button type="button" id="selectAllPlayers" class="text-button">Select all</button><button type="button" id="clearAllPlayers" class="text-button">Clear all</button></div><div class="roster-group">${names.map(name=>{const player=state.roster.find(p=>p.name===name) || {name};return `<label><input type="checkbox" data-shot-player="${esc(name)}" checked>${imageMarkup(player)}${esc(playerName(name))}</label>`;}).join('')}</div>`;
+    $('rosterFilters').innerHTML=`<div class="check-group"><button type="button" id="selectAllPlayers" class="text-button">Select all</button><button type="button" id="clearAllPlayers" class="text-button">Clear all</button></div><div class="roster-group">${names.map(name=>{const player=state.roster.find(p=>p.name===name) || {name, img: state.shots.find(s=>s.playerName===name)?.playerImg};return `<label><input type="checkbox" data-shot-player="${esc(name)}" checked>${imageMarkup(player)}${esc(playerName(name))}</label>`;}).join('')}</div>`;
     $('selectAllPlayers').onclick=()=>{document.querySelectorAll('[data-shot-player]').forEach(el=>el.checked=true);applyShotFilters();};
     $('clearAllPlayers').onclick=()=>{document.querySelectorAll('[data-shot-player]').forEach(el=>el.checked=false);applyShotFilters();};
   }
@@ -255,7 +255,7 @@
     window.drawShots?.(shots);text('courtCount',`${shots.filter(shot=>Number.isFinite(Number(shot.x)) && Number.isFinite(Number(shot.y)) && !(Number(shot.x)===-1 && Number(shot.y)===-1)).length} mapped shots`);
     const active=Number(Boolean($('shotTeam').value))+Number(Boolean($('shotResult').value))+['[data-shot-quarter]','[data-shot-player]','[data-shot-type]'].filter(selector=>[...document.querySelectorAll(selector)].some(input=>!input.checked)).length;
     text('shotFilterCount',active?` · ${active}`:'');
-    if(state.tableIsShots){state.table=shots.map(shot=>({'Player':playerName(shot.playerName),'Shot':/ThreePoint/.test(shot.action_type)?'3-pointer':'2-pointer','Result':shot.isMade?'Made':'Missed','Period':periodName(shot.quarter),'Time left':shot.playTime || '—',_shot:shot,_people:{Player:state.roster.find(player=>player.name===shot.playerName) || {name:shot.playerName}}}));state.columns=['Player','Shot','Result','Period','Time left'];renderTable();}
+    if(state.tableIsShots){state.table=shots.map(shot=>({'Player':playerName(shot.playerName),'Shot':/ThreePoint/.test(shot.action_type)?'3-pointer':'2-pointer','Result':shot.isMade?'Made':'Missed','Period':periodName(shot.quarter),'Time left':shot.playTime || '—',_shot:shot,_people:{Player:state.roster.find(player=>player.name===shot.playerName) || {name:shot.playerName, img: shot.playerImg}}}));state.columns=['Player','Shot','Result','Period','Time left'];renderTable();}
     requestAnimationFrame(()=>window.resizeCourt?.());
   }
   $('shotFilters').addEventListener('change',applyShotFilters);

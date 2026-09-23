@@ -489,6 +489,7 @@ async def get_shots(
         play_time = result.get("clockTime", {}).get("value", "")
         quarter_val = normalize_quarter(result.get("quarter", {}).get("value", ""))
         player_name = result.get("playerName", {}).get("value", "Unknown player")
+        player_img = result.get("playerImg", {}).get("value", "")
         fast_break = get_bool(result, "isFastBreak")
         second_chance = get_bool(result, "isSecondChance")
         from_turnover = get_bool(result, "isFromTurnover")
@@ -514,6 +515,7 @@ async def get_shots(
                 "roadScore": int(road_score) if road_score.isdigit() else 0,
                 "videoSeconds": video_seconds,
                 "playerName": player_name,
+                "playerImg": player_img if player_img else None,
                 "teamType": result.get("teamType", {}).get("value", ""),
             }
         )

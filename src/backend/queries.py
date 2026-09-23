@@ -122,12 +122,13 @@ def get_filtered_shots_query(
         extra += f"FILTER(?home_lineup = <{lineup_uri}> || ?road_lineup = <{lineup_uri}>)"
     return (
         PREFIXES
-        + f"""SELECT DISTINCT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?teamType ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore WHERE {{
+        + f"""SELECT DISTINCT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?playerImg ?teamType ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore WHERE {{
         ?game a bball:Game ; bball:hasPlayByPlayAction ?action ; bball:homeTeam ?homeTeam ; bball:roadTeam ?roadTeam .
         {scope}
         VALUES ?action_type {{ bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed }}
         ?action rdf:type ?action_type ; bball:actionTeam ?actionTeam ; bball:quarter ?quarter ; bball:actionPlayer ?playerNode .
-        ?playerNode rdfs:label ?playerName .
+        {{ SELECT ?playerNode (SAMPLE(?name) AS ?playerName) WHERE {{ ?playerNode rdfs:label ?name . }} GROUP BY ?playerNode }}
+        OPTIONAL {{ ?playerNode foaf:depiction ?playerImg . }}
         BIND(IF(?actionTeam = ?homeTeam, "home", "road") AS ?teamType)
         OPTIONAL {{ ?action bball:shotCoords ?coords . }}
         OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
@@ -327,7 +328,7 @@ def get_match_playbyplay_query(game_code, season_code):
         OPTIONAL {{ ?action bball:actionTeam ?actionTeam . }}
         OPTIONAL {{ 
             ?action bball:actionPlayer ?player .
-            ?player rdfs:label ?playerLabel .
+            {{ SELECT ?player (SAMPLE(?lbl) AS ?playerLabel) WHERE {{ ?player rdfs:label ?lbl . }} GROUP BY ?player }}
         }}
         OPTIONAL {{
             ?relatedShot bball:hasAssist ?action ;
@@ -395,8 +396,8 @@ def get_play_context_query(action_uri):
     WHERE {{
         <{action_uri}> bball:runningHomeTeamLineup ?lineup .
         ?lineup bball:hasPlayer ?player .
-        ?player rdfs:label ?playerLabel ;
-                bball:hasHeight ?height .
+        {{ SELECT ?player (SAMPLE(?lbl) AS ?playerLabel) WHERE {{ ?player rdfs:label ?lbl . }} GROUP BY ?player }}
+        ?player bball:hasHeight ?height .
     }}
     """
 
@@ -472,7 +473,7 @@ def get_game_lineups_query(game_code, season_code):
                   bball:hasPlayerParticipation ?participation .
                   
         ?participation bball:overPlayer ?playerNode .
-        ?playerNode rdfs:label ?playerName .
+        {{ SELECT ?playerNode (SAMPLE(?name) AS ?playerName) WHERE {{ ?playerNode rdfs:label ?name . }} GROUP BY ?playerNode }}
         
         # Images and positions may be absent from older records.
         OPTIONAL {{ ?playerNode foaf:depiction ?img . }}

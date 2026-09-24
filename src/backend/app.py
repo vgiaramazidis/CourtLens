@@ -1683,12 +1683,12 @@ async def ai_chat_handler(request: ChatRequest):
                 + "\nReturn exactly one read-only SELECT or ASK query. Do not use update commands or SERVICE.",
             )
             clean_sparql_query = clean_and_validate_sparql(generated_query)
-        
-        print("\n" + "="*50)
+
+        print("\n" + "=" * 50)
         print(f"[{provider} - {model}] GENERATED SPARQL QUERY:")
         print(clean_sparql_query)
-        print("="*50 + "\n")
-        
+        print("=" * 50 + "\n")
+
         data = await query_sparql(clean_sparql_query, use_cache=False)
 
         if data is None:

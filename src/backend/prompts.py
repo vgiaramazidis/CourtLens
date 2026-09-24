@@ -223,9 +223,10 @@ PLAY-BY-PLAY CONNECTION:
 
 NAME LOOKUP — ALWAYS USE ISOLATED SUBQUERIES:
 To prevent timeouts on global queries, you MUST ALWAYS isolate the player or team regex lookup inside its own independent subquery that executes first. This ensures the database resolves the exact ID before evaluating the rest of the query.
+ALWAYS project the name variable (e.g. ?playerName) from the subquery so the outer query can return it in the final results! The answer generator needs the name in the rows.
 Example:
 {
-  SELECT DISTINCT ?player WHERE {
+  SELECT DISTINCT ?player ?playerName WHERE {
     ?player a bball:Player ; rdfs:label ?playerName .
     FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
   }
@@ -384,8 +385,8 @@ FINAL CHECK BEFORE RETURNING THE QUERY:
 - VALUES binds the exact variable used by the triple pattern: VALUES ?actionType { ... } followed by ?action rdf:type ?actionType.
   Never use FILTER(?actionType IN (?differentVariable)).
 - The query contains exactly the season/game filters supplied by the Required request context.
-- When concrete or countable plays are requested, the outer SELECT includes DISTINCT ?action for the Play-by-Play overlay.
-- Only percentages, averages, and pure summary rankings may omit ?action.
+- When the user asks "How many" (asking for a single total count), do NOT select ?action. Use ONLY a pure aggregate, for example: SELECT (COUNT(DISTINCT ?action) AS ?totalCount)
+- Only select DISTINCT ?action if the user asks to "show me", "list", or see the actual plays, so the UI can overlay the video.
 
 EXAMPLE:
 Question: "Who assisted the first made three-pointer?"

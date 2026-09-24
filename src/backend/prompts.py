@@ -221,9 +221,15 @@ PLAY-BY-PLAY CONNECTION:
   Do not return an action list when the user requests a percentage; return the aggregate only.
 - For a yes/no question, use ASK and keep exactly the same game, season, and player filters.
 
-NAME LOOKUP — ALWAYS USE REGEX:
-?player rdfs:label ?playerName .
-FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
+NAME LOOKUP — ALWAYS USE ISOLATED SUBQUERIES:
+To prevent timeouts on global queries, you MUST ALWAYS isolate the player or team regex lookup inside its own independent subquery that executes first. This ensures the database resolves the exact ID before evaluating the rest of the query.
+Example:
+{
+  SELECT DISTINCT ?player WHERE {
+    ?player a bball:Player ; rdfs:label ?playerName .
+    FILTER(regex(str(?playerName), '(^|[^A-Za-z0-9])PLAYER_NAME([^A-Za-z0-9]|$)', 'i'))
+  }
+}
 Do not use word-boundary escapes. The SPARQL string parser may convert them into control characters before evaluating regex.
 The application accepts English questions, player names, and team names. Do not transliterate Greek or Greeklish input.
 

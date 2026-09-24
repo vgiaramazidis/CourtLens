@@ -20,6 +20,9 @@ const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
 controls.minDistance=100; controls.maxDistance=450; controls.maxPolarAngle=Math.PI/2-.05;
 controls.enableDamping=false;
+controls.enableRotate=false;
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
 controls.update();
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
@@ -254,9 +257,15 @@ function hitAt(event) {
 }
 let pointerStart=null;
 container.addEventListener('pointerdown',event=>{pointerStart={x:event.clientX,y:event.clientY};});
-container.addEventListener('click',event=>{
-    if(pointerStart && Math.hypot(event.clientX-pointerStart.x,event.clientY-pointerStart.y)>6)return;
-    const shot=hitAt(event);if(shot)window.App?.selectShot(shot);else window.App?.clearShotSelection();
+container.addEventListener('pointerup',event=>{
+    if(!pointerStart || Math.hypot(event.clientX-pointerStart.x,event.clientY-pointerStart.y)>8) {
+        pointerStart=null;
+        return;
+    }
+    pointerStart=null;
+    const shot=hitAt(event);
+    if(shot) window.App?.selectShot(shot);
+    else window.App?.clearShotSelection();
 });
 const tooltip=document.getElementById('shotTooltip');
 container.addEventListener('pointermove',event=>{

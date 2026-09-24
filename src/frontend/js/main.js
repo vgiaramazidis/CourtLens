@@ -616,7 +616,7 @@ LIMIT 200`;
     $('quizGame').innerHTML=`<article class="quiz-question"><div class="quiz-meta"><button class="text-button" data-quiz-menu> Quiz menu</button><span>${esc(q.difficulty)} · Streak: ${q.streak}</span></div><h2 tabindex="-1">${quizNames[q.category]}</h2>${content}<p class="muted">${esc([data.game_code && `Game ${data.game_code}`,data.matchup,data.season].filter(Boolean).join(' · '))}</p>${typed?'<form id="quizAnswerForm" class="quiz-answer-form"><label>Your answer<input id="quizAnswerInput" type="text" required minlength="2" maxlength="150" list="quizNameOptions" autocomplete="off" placeholder="Enter a name…"><datalist id="quizNameOptions"></datalist></label><button class="primary-button">Check answer</button></form>':''}<div id="quizFeedback" class="quiz-feedback" role="status" hidden></div></article>`;
     if(typed){
       $('quizAnswerForm').addEventListener('submit',submitQuizGuess);
-      $('quizAnswerInput').addEventListener('input',()=>{const term=S.normalizeName($('quizAnswerInput').value);$('quizNameOptions').innerHTML=term.length<2?'':(window.QUIZ_PLAYER_NAMES || []).filter(name=>S.normalizeName(name).includes(term)).slice(0,8).map(name=>`<option value="${esc(name)}"></option>`).join('');});
+      $('quizAnswerInput').addEventListener('input',()=>{const raw=$('quizAnswerInput').value;const m=raw.match(/^(.*?\s*(?:&|\band\b|\+)\s*)(.*)$/i);const prefix=m?m[1]:'';const term=S.normalizeName(m?m[2]:raw);$('quizNameOptions').innerHTML=term.length<2?'':(window.QUIZ_PLAYER_NAMES || []).filter(name=>S.normalizeName(name).includes(term)).slice(0,8).map(name=>`<option value="${esc(prefix+name)}"></option>`).join('');});
       $('quizAnswerInput').focus();
     }else $('quizGame').querySelector('h2').focus();
   }

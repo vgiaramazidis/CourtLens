@@ -645,12 +645,59 @@ LIMIT 200`;
   function submitQuizGuess(event) {
     event.preventDefault();const q=state.quiz;if(!q?.active)return;const input=$('quizAnswerInput'),guess=input.value.trim();if(!guess)return;
     if(q.category==='top-5'){
-      const matches=q.data.answers.map((answer,index)=>({answer,index})).filter(({answer})=>S.matchesName(guess,answer.name,window.QUIZ_PLAYER_NAMES || []));
-      const fresh=matches.filter(({index})=>!q.revealed.has(index));
-      if(fresh.length>1){quizFeedback('That name matches more than one answer. Enter the full name or both players in the pair.');return;}
-      if(fresh.length===1){const {answer,index}=fresh[0];q.revealed.add(index);const item=$('topFive').querySelector(`[data-answer-index="${index}"]`);item.innerHTML=`<strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small>`;if(q.revealed.size===5){q.streak++;quizFeedback('All five found. Nicely played.',false,true);}else quizFeedback(`Correct. ${q.revealed.size} of 5 found.`);}
-      else if(matches.length){quizFeedback('You already found that answer. Try another name.');}
-      else {q.misses++;if(q.misses>=3){$('topFive').innerHTML=q.data.answers.map(answer=>`<li><strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small></li>`).join('');quizFeedback('Three misses. The answers are revealed above.',true,true);}else quizFeedback(`Not on this list. ${3-q.misses} ${3-q.misses===1?'miss':'misses'} remaining.`,true);}
+      if(!q.partial) q.partial = new Map();
+      let newlyRevealed = 0;
+      let newlyPartial = 0;
+      let alreadyFound = false;
+
+      q.data.answers.forEach((answer, index) => {
+        const parts = String(answer.name || '').split(/\s*(?:&|\band\b|\+)\s*/i);
+        if (parts.length > 1) {
+          if (S.matchesName(guess, answer.name, window.QUIZ_PLAYER_NAMES || [])) {
+            if (!q.revealed.has(index)) { q.revealed.add(index); newlyRevealed++; } else { alreadyFound = true; }
+          } else {
+            const matchedPartIndex = parts.findIndex(p => S.matchesName(guess, p, window.QUIZ_PLAYER_NAMES || []));
+            if (matchedPartIndex >= 0 && !q.revealed.has(index)) {
+              if (!q.partial.has(index)) q.partial.set(index, new Set());
+              const partialSet = q.partial.get(index);
+              if (!partialSet.has(matchedPartIndex)) {
+                partialSet.add(matchedPartIndex);
+                if (partialSet.size === parts.length) { q.revealed.add(index); newlyRevealed++; } else { newlyPartial++; }
+              } else { alreadyFound = true; }
+            }
+          }
+        } else {
+          if (S.matchesName(guess, answer.name, window.QUIZ_PLAYER_NAMES || [])) {
+            if (!q.revealed.has(index)) { q.revealed.add(index); newlyRevealed++; } else { alreadyFound = true; }
+          }
+        }
+      });
+
+      if (newlyRevealed > 0 || newlyPartial > 0) {
+        q.data.answers.forEach((answer, index) => {
+          const item = $('topFive').querySelector(`[data-answer-index="${index}"]`);
+          if (!item) return;
+          if (q.revealed.has(index)) {
+            item.innerHTML = `<strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small>`;
+          } else if (q.partial.has(index)) {
+            const parts = String(answer.name || '').split(/\s*(?:&|\band\b|\+)\s*/i);
+            const pSet = q.partial.get(index);
+            item.innerHTML = `<strong>${esc(parts.map((p, i) => pSet.has(i) ? p : '????').join(' & '))}</strong><small>&nbsp;</small>`;
+          }
+        });
+        if (q.revealed.size === 5) { q.streak++; quizFeedback('All five found. Nicely played.', false, true); }
+        else { quizFeedback(newlyPartial > 0 ? 'Partial match! Find the other player.' : `Correct. ${q.revealed.size} of 5 found.`); }
+      } else if (alreadyFound) {
+        quizFeedback('You already found that answer. Try another name.');
+      } else {
+        q.misses++;
+        if (q.misses >= 3) {
+          $('topFive').innerHTML = q.data.answers.map(answer => `<li><strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small></li>`).join('');
+          quizFeedback('Three misses. The answers are revealed above.', true, true);
+        } else {
+          quizFeedback(`Not on this list. ${3 - q.misses} ${3 - q.misses === 1 ? 'miss' : 'misses'} remaining.`, true);
+        }
+      }
     }else if(S.matchesName(guess,q.data.secret_player_name,window.QUIZ_PLAYER_NAMES || [])){q.streak++;quizFeedback(`Correct! It was ${playerName(q.data.secret_player_name)}.`,false,true);}
     else {
       q.misses++;const attempts=q.category==='who-am-i'?q.data.hints.length:2;

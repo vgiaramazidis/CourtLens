@@ -2,7 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 :root { color-scheme: light; --paper:#f5f6f8; --surface:#fff; --ink:#172332; --muted:#5e6875; --line:#dce1e7; --accent:#c64013; --soft:#fff1e9; --green:#236346; --radius:4px; }
 * { box-sizing:border-box; }
-html, body { overflow-x: hidden; max-width: 100vw; width: 100%; margin:0; padding:0; }
+/* Clip horizontal overflow without creating a scroll container that traps sticky video. */
+html, body { overflow-x: clip; max-width: 100vw; width: 100%; margin:0; padding:0; }
 body { background:var(--paper); color:var(--ink); font:16px/1.55 'DM Sans',Arial,sans-serif; }
 h1,h2,h3,.wordmark { font-family:Manrope,'Segoe UI',sans-serif; }
 h1,h2,h3,p { margin:0; } h1 { font-size:clamp(28px,3vw,36px); font-weight:800; letter-spacing:-1px; line-height:1.15; }

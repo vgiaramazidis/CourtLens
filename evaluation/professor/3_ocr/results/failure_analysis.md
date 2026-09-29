@@ -4,8 +4,7 @@
 
 This analysis uses 1,833 manually annotated Play-by-Play actions from three
 complete games: E2023/333, E2024/220, and E2023/170. Eight additional rows were
-excluded during annotation because the broadcast did not provide enough
-evidence for a defensible ground-truth timestamp.
+excluded during annotation. Notes flag PBP clock discrepancies in the excluded sequences. Some included rows also retain approximate timestamps. See the [Annotation Protocol](../README.md#annotation-protocol) for event-specific rules, row examples and limitations.
 
 The OCR system detects game-clock observations and then links official
 Play-by-Play actions to the nearest valid observation. It does not independently

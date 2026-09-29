@@ -249,9 +249,9 @@ def action_answer(actions, action_uris, request):
         }
         ordered = sorted(
             periods,
-            key=lambda q: ["1st", "2nd", "3rd", "4th"].index(q)
-            if q in ["1st", "2nd", "3rd", "4th"]
-            else 4,
+            key=lambda q: (
+                ["1st", "2nd", "3rd", "4th"].index(q) if q in ["1st", "2nd", "3rd", "4th"] else 4
+            ),
         )
         paragraphs.append(
             "The matches include "

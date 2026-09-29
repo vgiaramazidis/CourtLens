@@ -110,7 +110,7 @@ Missing action artifacts are generated automatically. Output goes to `data/proce
 
 ## Repository publication
 
-Final academic reports and selected supporting evidence remain in `evaluation/professor/`. The full original evaluation tree is preserved in the ignored local `archive/research/pre-cleanup-2026-09-20/`, with SHA-256 hashes for 135 files. Intermediate runs, original annotation workbooks and generated RDF exports are archive-only. Earlier standalone documentation is preserved in `archive/documentation/pre-removal-2026-09-22/`.
+Final academic reports and selected supporting evidence remain in `evaluation/professor/`. Reproducible benchmark questions, human annotations and baseline timelines are retained in `evaluation/fixtures/`. Local report drafts, working spreadsheets and intermediate exports under the ignored `outputs/` directory are not included in a new clone.
 
 Local archives are not included in a new clone or backed up remotely. Completed participant response sheets belong in ignored `outputs/evaluation/user_evaluation/`, not in version control.
 

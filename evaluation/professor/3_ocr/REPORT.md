@@ -9,8 +9,7 @@ against human annotations, processing efficiency, and known failure modes.
 
 ## Evaluation data
 
-Three complete games were annotated manually using the start of the real action
-in the broadcast rather than the later scoreboard update or replay.
+Three complete games were annotated manually using event-specific video and audio cues, such as ball release, ball control and the referee’s whistle. See the [Annotation Protocol](README.md#annotation-protocol) for the grouped PBP codes, timing rules and documented exceptions. Later scoreboard updates and replays are not the intended reference.
 
 | Game | Included actions | Excluded rows |
 | --- | ---: | ---: |
@@ -20,9 +19,7 @@ in the broadcast rather than the later scoreboard update or replay.
 | **Total** | **1,833** | **8** |
 
 The eight excluded rows remain in the annotation files. They are omitted from
-temporal metrics because the video does not provide enough evidence for a
-defensible timestamp. Exclusion does not modify the official PBP or production
-RDF.
+temporal metrics. Notes identify PBP clock discrepancies in the excluded sequences, but do not give a separate reason for every row. Some included annotations are approximate because visibility or audio is insufficient. These qualifications are retained in the protocol. Exclusion does not modify the official PBP or production RDF.
 
 Two timeline versions are evaluated against exactly the same ground truth:
 
@@ -191,6 +188,5 @@ debugging. The original delivery contained 28 RDF files, preserved in the local 
 Machine-readable results are stored in [results/](results/), the human annotation CSVs are in
 [evaluation/fixtures/ocr/ground_truth/](../../fixtures/ocr/ground_truth/), and the controlled runtime record is in [efficiency/](efficiency/).
 The 28 baseline timelines are versioned in [evaluation/fixtures/ocr/baseline/](../../fixtures/ocr/baseline/).
-Original annotation workbooks, generated per-game reports and RDF exports remain in the ignored local archive at
-`archive/research/pre-cleanup-2026-09-20/evaluation/`. They are not included in a new clone.
+The versioned ground-truth CSVs preserve final annotations and row notes. Local working spreadsheets and intermediate exports under `outputs/` are supplementary and are not included in a new clone. See the [Annotation Protocol](README.md#annotation-protocol) for event timing conventions and documented exceptions.
 See [README.md](README.md) for current reproduction commands.

@@ -120,14 +120,63 @@ def get_filtered_shots_query(
         ):
             raise AnalysisFilterError("Choose a lineup from the results to inspect its shots.")
         extra += f"FILTER(?home_lineup = <{lineup_uri}> || ?road_lineup = <{lineup_uri}>)"
+    # Group by the event URI so aliases and historical photos cannot consume the limit.
+    limit = "" if game_code else "LIMIT 500"
+    # Bound unique action IDs before loading photos/labels for cross-game browsing.
+    # Full games remain complete, including long overtime games.
+    candidates = ""
+    if not game_code:
+        candidates = f"""{{ SELECT DISTINCT ?action WHERE {{
+            ?game a bball:Game ; bball:hasPlayByPlayAction ?action .
+            {scope}
+            VALUES ?action_type {{ bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed }}
+            ?action rdf:type ?action_type ; bball:actionPlayer ?playerNode .
+            OPTIONAL {{ ?action bball:runningHomeTeamLineup ?home_lineup . }}
+            OPTIONAL {{ ?action bball:runningRoadTeamLineup ?road_lineup . }}
+            {extra}
+        }} ORDER BY ?action LIMIT 500 }}"""
     return (
         PREFIXES
-        + f"""SELECT DISTINCT ?action ?coords ?action_type ?home_lineup ?road_lineup ?clockTime ?quarter ?playerName ?playerImg ?teamType ?isFastBreak ?isSecondChance ?isFromTurnover ?homeScore ?roadScore WHERE {{
+        + f"""SELECT ?action (?coordsValue AS ?coords)
+           (?action_typeValue AS ?action_type)
+           (?home_lineupValue AS ?home_lineup)
+           (?road_lineupValue AS ?road_lineup)
+           (?clockTimeValue AS ?clockTime)
+           (?quarterValue AS ?quarter)
+           (?playerNameValue AS ?playerName)
+           (?playerImgValue AS ?playerImg)
+           (?teamTypeValue AS ?teamType)
+           (?isFastBreakValue AS ?isFastBreak)
+           (?isSecondChanceValue AS ?isSecondChance)
+           (?isFromTurnoverValue AS ?isFromTurnover)
+           (?homeScoreValue AS ?homeScore)
+           (?roadScoreValue AS ?roadScore)
+           (?playerNodeValue AS ?playerNode)
+           (?sequenceValue AS ?sequence)
+    WHERE {{ {{
+    SELECT ?action (MIN(?coords) AS ?coordsValue)
+           (MIN(?action_type) AS ?action_typeValue)
+           (MIN(?home_lineup) AS ?home_lineupValue)
+           (MIN(?road_lineup) AS ?road_lineupValue)
+           (MIN(?clockTime) AS ?clockTimeValue)
+           (MIN(?quarter) AS ?quarterValue)
+           (MIN(STR(?playerName)) AS ?playerNameValue)
+           (MIN(STR(?playerImg)) AS ?playerImgValue)
+           (MIN(?teamType) AS ?teamTypeValue)
+           (MIN(?isFastBreak) AS ?isFastBreakValue)
+           (MIN(?isSecondChance) AS ?isSecondChanceValue)
+           (MIN(?isFromTurnover) AS ?isFromTurnoverValue)
+           (MIN(?homeScore) AS ?homeScoreValue)
+           (MIN(?roadScore) AS ?roadScoreValue)
+           (MIN(?playerNode) AS ?playerNodeValue)
+           (MIN(?sequence) AS ?sequenceValue) WHERE {{
+        {candidates}
         ?game a bball:Game ; bball:hasPlayByPlayAction ?action ; bball:homeTeam ?homeTeam ; bball:roadTeam ?roadTeam .
         {scope}
         VALUES ?action_type {{ bball:TwoPointShotMade bball:TwoPointShotMissed bball:ThreePointShotMade bball:ThreePointShotMissed }}
         ?action rdf:type ?action_type ; bball:actionTeam ?actionTeam ; bball:quarter ?quarter ; bball:actionPlayer ?playerNode .
-        ?playerNode rdfs:label ?playerName .
+        OPTIONAL {{ ?playerNode rdfs:label ?playerName . }}
+        OPTIONAL {{ ?action bball:hasPlayByPlaySequence ?sequence . }}
         OPTIONAL {{ ?playerNode foaf:depiction ?playerImg . }}
         BIND(IF(?actionTeam = ?homeTeam, "home", "road") AS ?teamType)
         OPTIONAL {{ ?action bball:shotCoords ?coords . }}
@@ -140,7 +189,7 @@ def get_filtered_shots_query(
         OPTIONAL {{ ?action bball:runningHomeTeamScore ?homeScore . }}
         OPTIONAL {{ ?action bball:runningRoadTeamScore ?roadScore . }}
         {extra}
-    }} ORDER BY ?action LIMIT 500"""
+    }} GROUP BY ?action }} }} ORDER BY xsd:integer(?sequence) ?action {limit}"""
     )
 
 
@@ -300,9 +349,39 @@ def get_match_playbyplay_query(game_code, season_code):
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     
-    SELECT ?action ?actionType ?clock ?quarter ?sequence ?teamType
-           ?homeScore ?roadScore ?playerLabel ?isFastBreak ?isSecondChance ?isFromTurnover
-           ?relatedShotClock ?relatedShotQuarter ?homeLineup ?roadLineup
+    SELECT ?action (?actionTypeValue AS ?actionType)
+           (?clockValue AS ?clock)
+           (?quarterValue AS ?quarter)
+           (?sequenceValue AS ?sequence)
+           (?teamTypeValue AS ?teamType)
+           (?homeScoreValue AS ?homeScore)
+           (?roadScoreValue AS ?roadScore)
+           (?playerLabelValue AS ?playerLabel)
+           (?isFastBreakValue AS ?isFastBreak)
+           (?isSecondChanceValue AS ?isSecondChance)
+           (?isFromTurnoverValue AS ?isFromTurnover)
+           (?relatedShotClockValue AS ?relatedShotClock)
+           (?relatedShotQuarterValue AS ?relatedShotQuarter)
+           (?homeLineupValue AS ?homeLineup)
+           (?roadLineupValue AS ?roadLineup)
+           (?playerValue AS ?player)
+    WHERE {{ {{
+    SELECT ?action (MIN(?actionType) AS ?actionTypeValue)
+           (MIN(?clock) AS ?clockValue)
+           (MIN(?quarter) AS ?quarterValue)
+           (MIN(?sequence) AS ?sequenceValue)
+           (MIN(?teamType) AS ?teamTypeValue)
+           (MIN(?homeScore) AS ?homeScoreValue)
+           (MIN(?roadScore) AS ?roadScoreValue)
+           (MIN(STR(?playerLabel)) AS ?playerLabelValue)
+           (MIN(?isFastBreak) AS ?isFastBreakValue)
+           (MIN(?isSecondChance) AS ?isSecondChanceValue)
+           (MIN(?isFromTurnover) AS ?isFromTurnoverValue)
+           (MIN(?relatedShotClock) AS ?relatedShotClockValue)
+           (MIN(?relatedShotQuarter) AS ?relatedShotQuarterValue)
+           (MIN(?homeLineup) AS ?homeLineupValue)
+           (MIN(?roadLineup) AS ?roadLineupValue)
+           (MIN(?player) AS ?playerValue)
     WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
@@ -354,8 +433,8 @@ def get_match_playbyplay_query(game_code, season_code):
             "neutral"
         ) AS ?teamType)
     }}
-    ORDER BY xsd:integer(COALESCE(?sequence, "9999"))
-    LIMIT 1000
+    GROUP BY ?action }} }}
+    ORDER BY xsd:integer(COALESCE(?sequence, "9999")) ?action
     """
 
 
@@ -368,11 +447,13 @@ def get_filtered_player_query(player_id=None):
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
     
-    SELECT ?name ?height ?weight (GROUP_CONCAT(DISTINCT ?positionValue; separator=" / ") AS ?position) ?birthDate ?country (SAMPLE(?biography) AS ?bio) (SAMPLE(?achievements) AS ?achievements_text) (SAMPLE(?image) AS ?img)
+    SELECT (MIN(STR(?nameValue)) AS ?name) ?height ?weight (GROUP_CONCAT(DISTINCT ?positionValue; separator=" / ") AS ?position) ?birthDate ?country (SAMPLE(?biography) AS ?bio)
+           (SAMPLE(?achievements) AS ?achievements_text)
+           (MIN(STR(?image)) AS ?img)
     WHERE {{
         BIND(<https://www.euroleaguebasketball.net/euroleague/players/-/{player_id}> AS ?player)
 
-        OPTIONAL {{ ?player rdfs:label ?name . }}
+        OPTIONAL {{ ?player rdfs:label ?nameValue . }}
         OPTIONAL {{ ?player bball:hasHeight ?height . }}
         OPTIONAL {{ ?player bball:hasWeight ?weight . }}
         OPTIONAL {{ ?player bball:hasPosition ?positionValue . }}
@@ -382,7 +463,7 @@ def get_filtered_player_query(player_id=None):
         OPTIONAL {{ ?player bball:hasAchievements ?achievements . }}
         OPTIONAL {{ ?player foaf:depiction ?image . }}
     }} 
-    GROUP BY ?name ?height ?weight ?birthDate ?country
+    GROUP BY ?height ?weight ?birthDate ?country
     LIMIT 1
     """
     return query
@@ -446,6 +527,11 @@ def get_game_lineups_query(game_code, season_code):
     
     SELECT ?teamType ?homeScore ?roadScore (GROUP_CONCAT(DISTINCT ?playerInfo; separator="@@") AS ?players)
     WHERE {{
+      {{ SELECT ?teamType ?homeScore ?roadScore ?playerNode
+          (MIN(STR(?nameValue)) AS ?playerName)
+          (MIN(STR(?imageValue)) AS ?img)
+          (GROUP_CONCAT(DISTINCT ?positionValue; separator=" / ") AS ?position)
+        WHERE {{
         ?game a bball:Game ;
               bball:hasCode '{game_code}' ;
               bball:hasSeason ?season ;
@@ -474,12 +560,13 @@ def get_game_lineups_query(game_code, season_code):
                   bball:hasPlayerParticipation ?participation .
                   
         ?participation bball:overPlayer ?playerNode .
-        ?playerNode rdfs:label ?playerName .
+        ?playerNode rdfs:label ?nameValue .
         
         # Images and positions may be absent from older records.
-        OPTIONAL {{ ?playerNode foaf:depiction ?img . }}
-        OPTIONAL {{ ?playerNode bball:hasPosition ?position . }}
+        OPTIONAL {{ ?playerNode foaf:depiction ?imageValue . }}
+        OPTIONAL {{ ?playerNode bball:hasPosition ?positionValue . }}
         
+        }} GROUP BY ?teamType ?homeScore ?roadScore ?playerNode }}
         # Keep the compact roster format consumed by the frontend.
         BIND(CONCAT(REPLACE(STR(?playerNode), ".*-/", ""), "|", ?playerName, "|", COALESCE(STR(?img), "NO_IMG"), "|", COALESCE(STR(?position), "")) AS ?playerInfo)
     }}
@@ -492,7 +579,8 @@ def get_clutch_time_performers_query():
     PREFIX bball: <http://www.ics.forth.gr/isl/Basketball#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     
-    SELECT ?player (SUM(xsd:integer(?points)) AS ?clutchPoints) (COUNT(?action) AS ?clutchActions)
+    SELECT ?player (SUM(xsd:integer(?points)) AS ?clutchPoints)
+           (COUNT(?action) AS ?clutchActions)
     WHERE {
         ?action bball:quarter "4th" ;
                 bball:actionPlayer ?player ;

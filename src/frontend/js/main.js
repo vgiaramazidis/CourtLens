@@ -236,7 +236,7 @@
 
   // Shot filters and synchronized Play-by-Play.
   function buildShotFilters() {
-    const periods=[...new Set(state.shots.map(shot=>S.period(shot.quarter)).filter(Boolean))].sort((a,b)=>S.periodOrder(a)-S.periodOrder(b));
+    const periods=S.availablePeriods(state.shots,state.section==='video'?state.actions:[]);
     $('quarterFilters').innerHTML=periods.map(q=>`<label class="filter-chip"><input type="checkbox" aria-label="${esc(periodName(q))}" data-shot-quarter="${esc(q)}" checked><span>${esc(S.periodOrder(q)<=4?'Q'+S.periodOrder(q):q)}</span></label>`).join('');
     const types=[['2pt','2-point shots'],['3pt','3-point shots'],['fastbreak','Fast-break points'],['turnover','Points after turnovers'],['secondchance','Second-chance points']];
     $('teamShotFilters').innerHTML=['home','road'].map((side,index)=>`<fieldset class="team-filter-group"><legend>${esc($('shotTeam').options[index+1].textContent)}</legend><div class="check-group">${types.map(([type,label])=>`<label><input type="checkbox" data-shot-side="${side}" data-shot-type="${type}" checked>${label}</label>`).join('')}</div></fieldset>`).join('');
@@ -252,10 +252,12 @@
   function applyShotFilters() {
     const shots=visibleShots();
     if(state.selectedAction && !shots.some(shot=>shot.action_uri===state.selectedAction))clearShotSelection();
-    window.drawShots?.(shots);text('courtCount',`${shots.filter(shot=>Number.isFinite(Number(shot.x)) && Number.isFinite(Number(shot.y)) && !(Number(shot.x)===-1 && Number(shot.y)===-1)).length} mapped shots`);
+    window.drawShots?.(shots);
+    const mapped=shots.filter(S.hasShotLocation).length;
+    text('courtCount',`${shots.length} shots · ${shots.filter(shot=>shot.isMade).length} made · ${mapped} mapped${mapped<shots.length?` · ${shots.length-mapped} without location`:''}`);
     const active=Number(Boolean($('shotTeam').value))+Number(Boolean($('shotResult').value))+['[data-shot-quarter]','[data-shot-player]','[data-shot-type]'].filter(selector=>[...document.querySelectorAll(selector)].some(input=>!input.checked)).length;
     text('shotFilterCount',active?` · ${active}`:'');
-    if(state.tableIsShots){state.table=shots.map(shot=>({'Player':playerName(shot.playerName),'Shot':/ThreePoint/.test(shot.action_type)?'3-pointer':'2-pointer','Result':shot.isMade?'Made':'Missed','Period':periodName(shot.quarter),'Time left':shot.playTime || '—',_shot:shot,_people:{Player:state.roster.find(player=>player.name===shot.playerName) || {name:shot.playerName, img: shot.playerImg}}}));state.columns=['Player','Shot','Result','Period','Time left'];renderTable();}
+    if(state.tableIsShots){state.table=shots.map(shot=>({'Player':playerName(shot.playerName),'Shot':/ThreePoint/.test(shot.action_type)?'3-pointer':'2-pointer','Result':shot.isMade?'Made':'Missed','Period':periodName(shot.quarter),'Time left':shot.playTime || '—',_shot:shot,_people:{Player:state.roster.find(player=>player.id===shot.playerId || player.name===shot.playerName) || {name:shot.playerName, img: shot.playerImg}}}));state.columns=['Player','Shot','Result','Period','Time left'];renderTable();}
     requestAnimationFrame(()=>window.resizeCourt?.());
   }
   $('shotFilters').addEventListener('change',applyShotFilters);
@@ -477,7 +479,7 @@ LIMIT 200`;
     const type=$('analysisType').value;
     const relevant={playerFilter:['shots','second-chance','fouls-drawn','defensive-anchors'],assistFilter:['shots'],foulingPlayer:['fouls-drawn'],blockingPlayer:['defensive-anchors'],lineupFilter:[]};
     Object.entries(relevant).forEach(([id,types])=>{const visible=types.includes(type);$(id).closest('label').hidden=!visible;if(!visible && id!=='lineupFilter')$(id).value='';});
-    text('analysisDescription',{shots:'Every returned shot, with court locations and a filterable table. Up to 500 shots; choose a game for a complete view.',lineups:'The ten five-player groups with the most points scored together. Scoring totals do not measure defensive performance.','assist-duos':'The ten passer–scorer combinations with the most assisted baskets.','second-chance':'The ten players with the most points after an offensive rebound.','fouls-drawn':'The ten players who drew the most fouls.','defensive-anchors':'The ten players with the most blocked shots.'}[type]);
+    text('analysisDescription',{shots:'Every returned shot, with court locations and a filterable table. Season searches show up to 500 shots. A selected game includes every recorded field-goal attempt.',lineups:'The ten five-player groups with the most points scored together. Scoring totals do not measure defensive performance.','assist-duos':'The ten passer–scorer combinations with the most assisted baskets.','second-chance':'The ten players with the most points after an offensive rebound.','fouls-drawn':'The ten players who drew the most fouls.','defensive-anchors':'The ten players with the most blocked shots.'}[type]);
     $('advancedFilters').querySelectorAll('.filter-section').forEach(section=>section.hidden=![...section.querySelectorAll('label')].some(label=>!label.hidden));
     updateAnalysisFilterSummary();
   }

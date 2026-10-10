@@ -32,3 +32,10 @@ test('a canceled search remains an abort rather than a visible network error',as
   const context=api(async()=>{throw error;});
   await assert.rejects(()=>context.apiRequest('/api/chat'),{name:'AbortError'});
 });
+
+test('localhost uses the local backend instead of the public deployment',async()=>{
+  let requested;
+  const context=api(async url=>{requested=url;return {ok:true,json:async()=>({})};});
+  await context.apiRequest('/api/shots');
+  assert.equal(requested,'http://localhost:8000/api/shots');
+});

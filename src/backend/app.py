@@ -346,17 +346,19 @@ def get_bool(result, field, default=False):
 def find_video_seconds(play_time, quarter, season_code, game_code, action_type=None):
     target_sec = time_to_seconds(play_time)
     if target_sec is None or not quarter:
-        return 0
+        return None
 
     game_config = get_video_game_config(season_code, game_code)
     if not game_config:
-        return 0
+        return None
     timeline_index = load_video_timeline_index(str(game_config.get("timeline_file", "")))
     quarter_index = timeline_index.get(normalize_quarter(quarter))
     if not quarter_index:
-        return 0
+        return None
 
     clock_values, video_values = quarter_index
+    if not clock_values:
+        return None
     insertion_index = bisect_left(clock_values, target_sec)
     candidate_indexes = []
     if insertion_index < len(clock_values):
@@ -381,7 +383,7 @@ def find_video_seconds(play_time, quarter, season_code, game_code, action_type=N
     return (
         video_values[closest_index]
         if abs(clock_values[closest_index] - target_sec) <= tolerance
-        else 0
+        else None
     )
 
 
@@ -521,6 +523,7 @@ async def get_shots(
             "roadScore": int(road_score) if road_score.isdigit() else 0,
             "videoSeconds": video_seconds,
             "playerName": player_name,
+            "playerId": result.get("playerNode", {}).get("value", "").rsplit("/", 1)[-1],
             "playerImg": player_img if player_img else None,
             "teamType": result.get("teamType", {}).get("value", ""),
         }
@@ -591,6 +594,7 @@ async def get_match_pbp(game_code: str = Query(...), season_code: str = Query(..
             "homeScore": int(home_score) if home_score.isdigit() else 0,
             "roadScore": int(road_score) if road_score.isdigit() else 0,
             "playerName": row.get("playerLabel", {}).get("value", ""),
+            "playerId": row.get("player", {}).get("value", "").rsplit("/", 1)[-1],
             "homeLineup": row.get("homeLineup", {}).get("value"),
             "roadLineup": row.get("roadLineup", {}).get("value"),
             "isMade": "Made" in action_type_name,
@@ -706,14 +710,14 @@ async def get_game_lineups(game_code: str = Query(...), season_code: str = Query
         players_str = row.get("players", {}).get("value", "")
 
         unique_players = {}
-        for p in players_str.split(","):
+        for p in players_str.split("@@"):
             p = p.strip()
             if not p:
                 continue
             pid = p.split("|")[0]
             if pid not in unique_players:
                 unique_players[pid] = p
-        players_str = ",".join(unique_players.values())
+        players_str = "@@".join(unique_players.values())
 
         homeScore = row.get("homeScore", {}).get("value", "")
         roadScore = row.get("roadScore", {}).get("value", "")
@@ -1458,7 +1462,7 @@ def classify_playbyplay_action_kind(message: str) -> str:
         ("blocks", r"\bblock(?:s|ed)?\b|\btap(?:a|es)\b|\u03c4[\u03ac\u03b1]\u03c0\u03b1"),
         (
             "shots",
-            r"\bshot(?:s)?\b|free[ -]?throw|three-pointer|two-pointer|tripont|dipont|\u03c4\u03c1[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03b4[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03c3\u03bf\u03c5\u03c4",
+            r"\bshot(?:s)?\b|free[ -]?throw|three[ -]?point|two[ -]?point|\b[23]\s*(?:pt|point)|\bthrees?\b|tripont|dipont|\u03c4\u03c1[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03b4[\u03af\u03b9]\u03c0\u03bf\u03bd\u03c4|\u03c3\u03bf\u03c5\u03c4",
         ),
         ("points", r"\bpoint(?:s)?\b|\bpont(?:os|oi|ous|a)\b|\u03c0[\u03cc\u03bf]\u03bd\u03c4"),
     ]

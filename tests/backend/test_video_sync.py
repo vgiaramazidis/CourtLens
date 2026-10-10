@@ -315,7 +315,7 @@ class VideoSynchronizationTests(unittest.TestCase):
                 "10:00", "2nd", "E2023", "39", action_type="PeriodStart"
             )
 
-        self.assertEqual(strict, 0)
+        self.assertIsNone(strict)
         self.assertEqual(period_start, 1200.0)
 
     def test_opening_jump_ball_uses_period_start_tolerance(self):
@@ -336,7 +336,7 @@ class VideoSynchronizationTests(unittest.TestCase):
                 "09:59", "1st", "E2024", "301", action_type="JumpBall"
             )
 
-        self.assertEqual(strict, 0)
+        self.assertIsNone(strict)
         self.assertEqual(jump_ball, 900.0)
 
     def test_assist_uses_the_linked_made_shot_clock(self):

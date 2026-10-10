@@ -190,7 +190,21 @@ PLAY-BY-PLAY CONNECTION:
 - For each action list, include when available: ?playerName, ?points, ?quarter, ?clock, ?homeScore, ?roadScore, and ?order.
   Use OPTIONAL for fields that may be absent. Scores must be read only with:
   OPTIONAL { ?action bball:runningHomeTeamScore ?homeScore ; bball:runningRoadTeamScore ?roadScore . }
-- For total points, total made shots, or total missed shots, return both the aggregate and DISTINCT ?action through an
+- SHOT COUNTS IN ONE SELECTED GAME: for "how many threes", "how many three-pointers did PLAYER make",
+  or a made/missed shot total, return SELECT DISTINCT ?action ?quarter ?clock, with OPTIONAL sequence.
+  Do not add an aggregate subquery for this case. The application counts the unique matching actions and
+  links exactly those actions to the court and video. Filter the acting player and requested period.
+  "make/makes/made", "score/scored", "hit" and "successful" are MADE qualifiers.
+  In particular, "How many three-pointers did PLAYER make?" means ONLY ThreePointShotMade, never missed attempts.
+  "How many threes did PLAYER miss?" means ONLY ThreePointShotMissed.
+  "Made/scored/hit threes" means ThreePointShotMade only. "Three-point shots/attempts" without a result
+  qualifier means both ThreePointShotMade and ThreePointShotMissed. "3 points" in a shooting request means
+  three-pointers, not all scoring plays and not a filter on the running scoreboard.
+  Do not require coordinates, OCR links, video timestamps, images, lineups, or home/road side for shot counts.
+  The same player may have multiple labels and photos. Use FILTER EXISTS for name matching when the name
+  is not displayed, and count DISTINCT action URIs, never joined label rows. Across games/seasons or for
+  rankings, use COUNT(DISTINCT ?action) at the requested level instead of a limited list of plays.
+- For total points, return both the aggregate and DISTINCT ?action through an
   aggregate subquery so the matching plays can filter the Play-by-Play overlay.
 - For "how many points" or "total points", the outer SELECT must contain DISTINCT ?action and ?totalPoints.
   Calculate ?totalPoints in an inner aggregate subquery grouped by ?game and ?player, then join it to the individual scoring
@@ -217,6 +231,8 @@ PLAY-BY-PLAY CONNECTION:
   BIND(IF(?actionType = bball:TwoPointShotMade, 1, 0) AS ?madeValue)
   SELECT must contain (SUM(?madeValue) AS ?made), (COUNT(?action) AS ?attempts), and
   (100.0 * SUM(?madeValue) / COUNT(?action) AS ?percentage).
+  Deduplicate ?action and ?madeValue in an inner SELECT DISTINCT before the aggregate. Join names only
+  after aggregation, or match them using FILTER EXISTS. Multiple labels/photos must never multiply attempts.
   For three-pointers, use ThreePointShotMade/Missed; for free throws, use FreeThrowMade/Missed.
   Do not return an action list when the user requests a percentage; return the aggregate only.
 - For a yes/no question, use ASK and keep exactly the same game, season, and player filters.
@@ -378,8 +394,9 @@ FINAL CHECK BEFORE RETURNING THE QUERY:
 - VALUES binds the exact variable used by the triple pattern: VALUES ?actionType { ... } followed by ?action rdf:type ?actionType.
   Never use FILTER(?actionType IN (?differentVariable)).
 - The query contains exactly the season/game filters supplied by the Required request context.
-- When the user asks "How many" (asking for a single total count), do NOT select ?action. Use ONLY a pure aggregate, for example: SELECT (COUNT(DISTINCT ?action) AS ?totalCount)
-- Only select DISTINCT ?action if the user asks to "show me", "list", or see the actual plays, so the UI can overlay the video.
+- Follow SHOT COUNTS IN ONE SELECTED GAME for shot counts. Use action lists for game-scoped shot counts and
+  play requests, and pure aggregates for percentages, averages, rankings and cross-game totals.
+- A request for one period must filter that exact period. Never omit the period or restrict one team side unless requested.
 
 EXAMPLE:
 Question: "Who assisted the first made three-pointer?"

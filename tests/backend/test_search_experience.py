@@ -71,7 +71,10 @@ class QueryFilterTests(unittest.TestCase):
     def test_missing_locations_are_preserved_and_results_are_ordered(self):
         query = queries.get_filtered_shots_query()
         self.assertIn("OPTIONAL { ?action bball:shotCoords ?coords . }", query)
-        self.assertIn("ORDER BY ?action LIMIT 500", query)
+        self.assertIn("GROUP BY ?action", query)
+        self.assertIn("ORDER BY xsd:integer(?sequence) ?action LIMIT 500", query)
+        full_game = queries.get_filtered_shots_query(game_code="170", season_code="E2023")
+        self.assertNotIn("LIMIT", full_game)
 
     def test_points_aggregate_unique_actions_not_distinct_point_values(self):
         query = queries.get_second_chance_points_query()

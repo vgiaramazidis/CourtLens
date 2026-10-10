@@ -87,3 +87,25 @@ test('Play-by-Play intersects player, period, action type and AI matches; clear 
   assert.deepEqual(filterActions(actions,{player:'LESSORT, MATHIAS',quarter:'1st',types:new Set(['two-pointers']),actionUris:new Set(['a','b','c'])},category).map(a=>a.uri),['a']);
   assert.deepEqual(filterActions(actions,{player:'LESSORT, MATHIAS',types:new Set(['three-pointers'])},category).map(a=>a.uri),['b']);
 });
+
+test('official action order wins over corrected or rounded game clocks',()=>{
+  const {filterActions}=require('../../src/frontend/js/state.js');
+  const actions=[
+    {uri:'later',quarter:'4OT',sequence:733,playTime:'00:01'},
+    {uri:'first',quarter:'1st',sequence:1,playTime:'09:58'},
+    {uri:'second',quarter:'1st',sequence:2,playTime:'10:00'},
+    {uri:'third',quarter:'2nd',sequence:3,playTime:'10:00'}
+  ];
+  assert.deepEqual(filterActions(actions,{},()=> 'other').map(a=>a.uri),['first','second','third','later']);
+});
+test('court periods include all recorded overtimes and periods without a mapped shot',()=>{
+  const {availablePeriods,hasShotLocation}=require('../../src/frontend/js/state.js');
+  assert.deepEqual(availablePeriods([{quarter:'1st'}],['4OT','2OT','1OT','3OT','4th','3rd','2nd'].map(quarter=>({quarter}))),['1st','2nd','3rd','4th','OT','2OT','3OT','4OT']);
+  assert.equal(hasShotLocation({x:-100,y:250}),true);
+  assert.equal(hasShotLocation({x:null,y:null}),false);
+  assert.equal(hasShotLocation({x:-1,y:-1}),false);
+});
+test('special scoring flags cannot re-enable an excluded shot type',()=>{
+  const shot={action_type:'TwoPointShotMade',teamType:'home',isFastBreak:true};
+  assert.deepEqual(filterShots([shot],{types:{home:{'2pt':false,'3pt':true,fastbreak:true}}}),[]);
+});

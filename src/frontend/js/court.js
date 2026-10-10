@@ -160,12 +160,11 @@ function applyShotFocus() {
 }
 
 function mapShotCoordinatesToCourt(shot, isHome) {
+    // Use the same location rule as the visible shot count. Missing coordinates
+    // must not become a fabricated dot at (0, 0) through numeric coercion.
+    if (!window.EuroleagueState.hasShotLocation(shot)) return null;
     const rawX = Number(shot.x);
     const rawY = Number(shot.y);
-    if (!Number.isFinite(rawX) || !Number.isFinite(rawY)) return null;
-
-    // The parser uses (-1, -1) when no coordinate exists.
-    if (rawX === -1 && rawY === -1) return null;
 
     const lateralFromRim = THREE.MathUtils.clamp(
         rawX / SHOT_COORDS_PER_SCENE_UNIT,

@@ -63,12 +63,7 @@
         (shot.isFastBreak && rules.fastbreak === false) ||
         (shot.isFromTurnover && rules.turnover === false) ||
         (shot.isSecondChance && rules.secondchance === false);
-      const specialPass = 
-        (shot.isFastBreak && rules.fastbreak !== false) ||
-        (shot.isFromTurnover && rules.turnover !== false) ||
-        (shot.isSecondChance && rules.secondchance !== false);
-      
-      const typePass = !specialFails && (basePass || specialPass);
+      const typePass = basePass && !specialFails;
 
       return (!filters.team || filters.team===side)
         && (!filters.result || (filters.result==='made')===Boolean(shot.isMade))
@@ -83,11 +78,17 @@
       && (!filters.types || filters.types.has(category(action)))
       && (!filters.player || action.playerName===filters.player)
       && (!filters.quarter || period(action.quarter)===period(filters.quarter)))
-      .sort((a,b)=>periodOrder(a.quarter)-periodOrder(b.quarter) || clockSeconds(b.playTime)-clockSeconds(a.playTime) || Number(a.sequence)-Number(b.sequence));
+      .sort((a,b)=>periodOrder(a.quarter)-periodOrder(b.quarter) || (Number(a.sequence)>0 && Number(b.sequence)>0 ? Number(a.sequence)-Number(b.sequence) : 0) || clockSeconds(b.playTime)-clockSeconds(a.playTime) || String(a.uri || '').localeCompare(String(b.uri || '')));
+  }
+  function availablePeriods(shots, actions=[]) {
+    return [...new Set([...shots,...actions].map(item=>period(item.quarter)).filter(Boolean))].sort((a,b)=>periodOrder(a)-periodOrder(b));
+  }
+  function hasShotLocation(shot) {
+    return shot.x!==null && shot.y!==null && shot.x!=='' && shot.y!=='' && Number.isFinite(Number(shot.x)) && Number.isFinite(Number(shot.y)) && !(Number(shot.x)===-1 && Number(shot.y)===-1);
   }
   function csvValue(value) { let text=String(value ?? ''); if (/^[=+@\-\t\r]/.test(text)) text="'"+text; return '"'+text.replace(/"/g,'""')+'"'; }
   function videoGamesForSeason(games,catalog,season) { const allowed=new Set(catalog.filter(game=>game.season_code===season).map(game=>String(game.game_code)));return games.filter(game=>allowed.has(String(game.gameCode))); }
-  const api={createRequestScope,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,filterActions,csvValue,videoGamesForSeason};
+  const api={createRequestScope,availablePeriods,hasShotLocation,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,filterActions,csvValue,videoGamesForSeason};
   if (typeof module!=='undefined' && module.exports) module.exports=api;
   else root.EuroleagueState=api;
 })(typeof window!=='undefined' ? window : globalThis);

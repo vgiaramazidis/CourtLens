@@ -151,5 +151,79 @@ class QuizEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["games"][1]["stage"], "")
 
 
+class DifficultyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_easy_comparison_uses_full_game_points_and_large_gap(self):
+        games = {"results": {"bindings": [binding(gameCode="333", homeLabel="A", awayLabel="B")]}}
+        stats = {
+            "results": {
+                "bindings": [
+                    binding(player="x/1", totalPoints=20),
+                    binding(player="x/2", totalPoints=10),
+                ]
+            }
+        }
+        with (
+            patch.object(backend, "OPENAI_API_KEY", "test"),
+            patch.object(backend, "query_sparql_requests", side_effect=[games, stats]) as query,
+            patch.object(backend, "quiz_player_name", side_effect=lambda pid: f"Player {pid}"),
+            patch.object(
+                backend, "generate_quiz_text", AsyncMock(return_value={"question_text": "Compare."})
+            ),
+        ):
+            result = await backend.generate_higher_or_lower("easy")
+        self.assertEqual(abs(result["player_a"]["stat"] - result["player_b"]["stat"]), 10)
+        self.assertIn("points scored", result["category_name"])
+        self.assertIn("hint", result)
+        self.assertNotIn("bball:quarter", query.call_args_list[1].args[0])
+
+    async def test_easy_does_not_fall_back_to_a_hard_comparison(self):
+        games = {"results": {"bindings": [binding(gameCode="333")]}}
+        stats = {
+            "results": {
+                "bindings": [
+                    binding(player="x/1", totalPoints=20),
+                    binding(player="x/2", totalPoints=19),
+                ]
+            }
+        }
+        with (
+            patch.object(backend, "OPENAI_API_KEY", "test"),
+            patch.object(backend, "query_sparql_requests", side_effect=[games, stats] * 30),
+            patch.object(backend, "generate_quiz_text", AsyncMock()) as generate,
+        ):
+            with self.assertRaises(backend.HTTPException) as error:
+                await backend.generate_higher_or_lower("easy")
+        self.assertEqual(error.exception.status_code, 404)
+        generate.assert_not_called()
+
+    def test_points_query_counts_events_not_profile_labels(self):
+        query = backend.get_quiz_points_query(game_code="333", season_code="E2023")
+        self.assertIn("SELECT DISTINCT ?player ?action ?points", query)
+        self.assertIn('FILTER(?gameCode IN ("333"))', query)
+        self.assertNotIn("rdfs:label ?", query)
+
+    async def test_top_five_retries_ties_at_the_answer_cutoff(self):
+        def stats(values):
+            return {
+                "results": {
+                    "bindings": [
+                        binding(player=f"x/{i}", totalPoints=v) for i, v in enumerate(values)
+                    ]
+                }
+            }
+
+        with (
+            patch.object(
+                backend,
+                "query_sparql_requests",
+                side_effect=[stats([20, 19, 18, 17, 16, 16]), stats([20, 19, 18, 17, 16, 15])],
+            ) as query,
+            patch.object(backend, "quiz_player_name", side_effect=lambda pid: f"Player {pid}"),
+        ):
+            result = await backend.generate_top_5("easy")
+        self.assertEqual(query.call_count, 2)
+        self.assertEqual(len(result["answers"]), 5)
+
+
 if __name__ == "__main__":
     unittest.main()

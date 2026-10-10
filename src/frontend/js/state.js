@@ -87,8 +87,33 @@
     return shot.x!==null && shot.y!==null && shot.x!=='' && shot.y!=='' && Number.isFinite(Number(shot.x)) && Number.isFinite(Number(shot.y)) && !(Number(shot.x)===-1 && Number(shot.y)===-1);
   }
   function csvValue(value) { let text=String(value ?? ''); if (/^[=+@\-\t\r]/.test(text)) text="'"+text; return '"'+text.replace(/"/g,'""')+'"'; }
+  function quizRules(difficulty) {
+    return difficulty==='easy' ? {clues:3,choices:3,bank:8,misses:5} : difficulty==='medium' ? {clues:2,choices:4,bank:10,misses:4} : {clues:1,choices:0,bank:0,misses:3};
+  }
+  function quizChoices(answers, pool, count, excluded=[], random=Math.random) {
+    const choices=[...answers];
+    const candidates=[...new Set(pool)].filter(name=>![...answers,...excluded].some(other=>matchesName(name,other,pool)));
+    function shuffle(items) { for(let i=items.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}return items; }
+    choices.push(...shuffle(candidates).slice(0,Math.max(0,count-choices.length)));
+    return shuffle(choices);
+  }
+  function simulateFinish(scenario, lineup, history, random=Math.random) {
+    // A transparent game mechanic, not an estimate of a real team's win probability.
+    const seconds=Math.max(0,clockSeconds(scenario.clock));
+    const possessions=seconds>0?Math.max(1,Math.ceil(seconds/36)):0;
+    const known=lineup.filter(player=>/guard|forward|center/i.test(player.position || ''));
+    const missingRoles=known.length===5?['guard','forward','center'].filter(role=>!known.some(player=>player.position.toLowerCase().includes(role))):[];
+    const pointsFor=Math.max(0,Number(history.points_for)||0),pointsAgainst=Math.max(0,Number(history.points_against)||0);
+    // Shrink small samples toward neutral and cap their influence on each possession.
+    const historyEdge=Math.max(-.10,Math.min(.10,(pointsFor-pointsAgainst)/(pointsFor+pointsAgainst+20)*.20));
+    const scoringChance=.53+historyEdge-missingRoles.length*.04;
+    const possessionPoints=chance=>random()>=chance?0:random()<.12?1:random()<.30?3:2;
+    let scored=0,conceded=0;
+    for(let i=0;i<possessions;i++){scored+=possessionPoints(scoringChance);conceded+=possessionPoints(.53-historyEdge);}
+    return {scored,conceded,possessions,historyEdge,missingRoles,positionsKnown:known.length===5,user:Number(scenario.user_score)+scored,opponent:Number(scenario.opp_score)+conceded};
+  }
   function videoGamesForSeason(games,catalog,season) { const allowed=new Set(catalog.filter(game=>game.season_code===season).map(game=>String(game.game_code)));return games.filter(game=>allowed.has(String(game.gameCode))); }
-  const api={createRequestScope,availablePeriods,hasShotLocation,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,filterActions,csvValue,videoGamesForSeason};
+  const api={createRequestScope,availablePeriods,hasShotLocation,period,periodOrder,clockSeconds,normalizeName,matchesName,gameLabel,filterShots,filterActions,csvValue,videoGamesForSeason,quizRules,quizChoices,simulateFinish};
   if (typeof module!=='undefined' && module.exports) module.exports=api;
   else root.EuroleagueState=api;
 })(typeof window!=='undefined' ? window : globalThis);

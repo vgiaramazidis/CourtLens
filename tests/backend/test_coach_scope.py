@@ -40,9 +40,22 @@ class CoachScopeTests(unittest.IsolatedAsyncioTestCase):
         query = AsyncMock(return_value={"results": {"bindings": rows}})
         with patch.object(backend, "query_sparql", query):
             result = await backend.run_simulator("1", "2", "3", "4", "5", "7", "4th", "E2024")
-        self.assertEqual(result, {"points_for": 9, "points_against": 4, "plus_minus": 5})
+        self.assertEqual(
+            result, {"points_for": 9, "points_against": 4, "plus_minus": 5, "observed_actions": 0}
+        )
         # These names must match the endpoint's expected SPARQL result bindings.
         self.assertIn("SELECT ?actionTeam ?lineupTeam", query.call_args.args[0])
+
+    async def test_repeated_players_cannot_manufacture_a_lineup(self):
+        with self.assertRaises(backend.HTTPException):
+            await backend.run_simulator("1", "1", "3", "4", "5", "7", "4th", "E2024")
+
+    def test_scenarios_exclude_blowouts_and_allow_time_to_recover(self):
+        query = backend.get_timeouts_query("E2023")
+        self.assertIn(">= 60", query)
+        self.assertIn("<= 300", query)
+        self.assertIn("* 30 <= xsd:integer(?seconds)", query)
+        self.assertNotIn("||", query)
 
     async def test_scenario_keeps_full_team_names_and_season_in_roster_request(self):
         row = {

@@ -109,3 +109,43 @@ test('special scoring flags cannot re-enable an excluded shot type',()=>{
   const shot={action_type:'TwoPointShotMade',teamType:'home',isFastBreak:true};
   assert.deepEqual(filterShots([shot],{types:{home:{'2pt':false,'3pt':true,fastbreak:true}}}),[]);
 });
+
+test('quiz levels progressively reduce clues and choices',()=>{
+  const {quizRules,quizChoices}=require('../../src/frontend/js/state.js');
+  const easy=quizRules('easy'),medium=quizRules('medium'),hard=quizRules('hard');
+  assert.ok(easy.clues>medium.clues && medium.clues>hard.clues);
+  assert.equal(easy.choices,3);assert.equal(medium.choices,4);assert.equal(hard.choices,0);
+  assert.ok(easy.misses>medium.misses && medium.misses>hard.misses);
+  const choices=quizChoices(['Shane Larkin'],['Shane Larkin','LARKIN, SHANE','Mike James','Kendrick Nunn','Perry Dozier Jr'],3,['Mike James'],()=>.5);
+  assert.equal(choices.length,3);assert.equal(choices.filter(name=>matchesName(name,'Shane Larkin')).length,1);
+  assert.ok(!choices.includes('Mike James'));
+});
+
+test('coach outcomes allow wins and losses and reward history and role coverage statistically',()=>{
+  const {simulateFinish}=require('../../src/frontend/js/state.js');
+  const balanced=['Guard','Guard','Forward','Forward','Center'].map(position=>({position}));
+  const unbalanced=balanced.map(()=>({position:'Guard'}));
+  const scenario={clock:'03:00',user_score:70,opp_score:73};
+  function run(lineup,history){
+    let seed=123456,wins=0,losses=0,margin=0;
+    const rng=()=>((seed=(1664525*seed+1013904223)>>>0)/4294967296);
+    for(let i=0;i<10000;i++){
+      const result=simulateFinish(scenario,lineup,history,rng);
+      wins+=result.user>result.opponent;losses+=result.user<result.opponent;margin+=result.user-result.opponent;
+      assert.ok(result.scored>=0 && result.scored<=result.possessions*3);
+      assert.ok(result.conceded>=0 && result.conceded<=result.possessions*3);
+    }
+    return {wins,losses,margin};
+  }
+  const strong=run(balanced,{points_for:30,points_against:10});
+  const neutral=run(balanced,{}),weak=run(balanced,{points_for:10,points_against:30});
+  const poorRoles=run(unbalanced,{});
+  assert.ok(strong.wins>neutral.wins && neutral.wins>weak.wins);
+  assert.ok(neutral.wins>poorRoles.wins);
+  for(const stats of [strong,neutral,weak,poorRoles])assert.ok(stats.wins>0 && stats.losses>0);
+  const unknown=simulateFinish(scenario,Array(5).fill({position:''}),{});
+  assert.equal(unknown.missingRoles.length,0);
+  assert.equal(unknown.historyEdge,0);
+  const ended=simulateFinish({...scenario,clock:'00:00'},balanced,{});
+  assert.equal(ended.scored,0);assert.equal(ended.conceded,0);
+});

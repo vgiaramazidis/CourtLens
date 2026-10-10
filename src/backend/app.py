@@ -44,6 +44,7 @@ from queries import (
     get_play_context_query,
     get_player_name_query,
     get_points_off_turnovers_query,
+    get_quiz_points_query,
     get_second_chance_points_query,
     get_simulator_crunch_time_query,
     get_team_roster_query,
@@ -987,7 +988,15 @@ async def run_simulator(
     quarter: str = Query(None),
     season_code: str = Query(None),
 ):
-    query = get_simulator_crunch_time_query(game_code, quarter, [p1, p2, p3, p4, p5], season_code)
+    players = [p1, p2, p3, p4, p5]
+    if len(set(players)) != 5 or any(not re.fullmatch(r"[A-Za-z0-9_-]+", p) for p in players):
+        raise HTTPException(status_code=422, detail="Choose five different players.")
+    if any(
+        value and not re.fullmatch(r"[A-Za-z0-9_-]+", value)
+        for value in (game_code, season_code, quarter)
+    ):
+        raise HTTPException(status_code=422, detail="Choose a valid game and season.")
+    query = get_simulator_crunch_time_query(game_code, quarter, players, season_code)
     data = await query_sparql(query)
 
     if not data:
@@ -1014,7 +1023,14 @@ async def run_simulator(
 
     plus_minus = points_for - points_against
 
-    return {"points_for": points_for, "points_against": points_against, "plus_minus": plus_minus}
+    return {
+        "points_for": points_for,
+        "points_against": points_against,
+        "plus_minus": plus_minus,
+        "observed_actions": sum(
+            int(row.get("observedActions", {}).get("value", 0)) for row in bindings
+        ),
+    }
 
 
 @app.get("/api/game/roster")
@@ -1857,7 +1873,7 @@ async def load_quiz_player(player_id):
 
 
 @app.get("/api/quiz/who-am-i")
-async def generate_who_am_i(difficulty: str = Query("medium")):
+async def generate_who_am_i(difficulty: Literal["easy", "medium", "hard"] = Query("medium")):
     require_quiz_provider()
 
     # Sample a historical game to build the quiz player pool.
@@ -1926,7 +1942,7 @@ async def generate_who_am_i(difficulty: str = Query("medium")):
 
 
 @app.get("/api/quiz/who-is-missing")
-async def generate_who_is_missing(difficulty: str = Query("medium")):
+async def generate_who_is_missing(difficulty: Literal["easy", "medium", "hard"] = Query("medium")):
     require_quiz_provider()
 
     lineup_players = []
@@ -2017,7 +2033,7 @@ async def generate_who_is_missing(difficulty: str = Query("medium")):
 
 
 @app.get("/api/quiz/higher-or-lower")
-async def generate_higher_or_lower(difficulty: str = Query("medium")):
+async def generate_higher_or_lower(difficulty: Literal["easy", "medium", "hard"] = Query("medium")):
     require_quiz_provider()
 
     import itertools
@@ -2042,6 +2058,18 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
             "stat_key": "totalSecondChancePoints",
         },
     ]
+
+    points_category = {
+        "id": "points",
+        "name": "points scored",
+        "func": get_quiz_points_query,
+        "stat_key": "totalPoints",
+        "stat_label": "points",
+    }
+    if difficulty == "easy":
+        categories = [points_category]
+    elif difficulty == "medium":
+        categories = [points_category, next(c for c in categories if c["id"] == "blocks")]
     selected_category = random.choice(categories)
 
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
@@ -2066,9 +2094,9 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
                 return gap == 1
         else:
             if diff_level == "easy":
-                return gap >= 3
+                return gap >= 8 if selected_category["id"] == "points" else gap >= 3
             if diff_level == "medium":
-                return gap in [1, 2]
+                return 3 <= gap <= 7 if selected_category["id"] == "points" else gap in [1, 2]
             if diff_level == "hard":
                 return gap == 1
         return True
@@ -2092,7 +2120,7 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
         quarter_text = "across the full game"
         is_quarter = False
 
-        if random.random() < 0.40:
+        if difficulty == "hard" and random.random() < 0.40:
             target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
             quarter_text = f"during the {target_quarter} quarter only"
             is_quarter = True
@@ -2106,22 +2134,18 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
 
         if len(bindings) >= 2:
             valid_pairs = []
-            backup_pairs = []  # Fall back to any pair with different totals.
 
             for b1, b2 in itertools.combinations(bindings, 2):
                 s1 = int(b1.get(selected_category["stat_key"], {}).get("value", 0))
                 s2 = int(b2.get(selected_category["stat_key"], {}).get("value", 0))
 
                 if s1 != s2:
-                    backup_pairs.append((b1, b2))
                     if is_valid_gap(s1, s2, difficulty.lower(), is_quarter):
                         valid_pairs.append((b1, b2))
 
-            # Prefer the requested difficulty, then fall back to an unequal pair.
+            # Never silently replace the requested difficulty with a harder pair.
             if valid_pairs:
                 sampled = random.choice(valid_pairs)
-            elif backup_pairs:
-                sampled = random.choice(backup_pairs)
             else:
                 continue
 
@@ -2174,13 +2198,16 @@ async def generate_higher_or_lower(difficulty: str = Query("medium")):
             season=f"EuroLeague Season {season_text}",
             game_code=game_code,
         )
+        if difficulty == "easy":
+            lower = (player_b["stat"] // 5) * 5
+            result["hint"] = f"{player_b['name']} scored between {lower} and {lower + 4} points."
         return result
     except Exception as e:
         raise quiz_generation_error(e) from e
 
 
 @app.get("/api/quiz/top-5")
-async def generate_top_5(difficulty: str = Query("medium")):
+async def generate_top_5(difficulty: Literal["easy", "medium", "hard"] = Query("medium")):
     categories = [
         {
             "id": "assist_duos",
@@ -2219,6 +2246,18 @@ async def generate_top_5(difficulty: str = Query("medium")):
         },
     ]
 
+    points_category = {
+        "id": "points",
+        "name": "points scored",
+        "func": get_quiz_points_query,
+        "stat_key": "totalPoints",
+        "stat_label": "points",
+    }
+    if difficulty == "easy":
+        categories = [points_category]
+    elif difficulty == "medium":
+        categories = [points_category]
+
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
 
     top_5_results = []
@@ -2232,7 +2271,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
         game_code = None
         target_quarter = None
 
-        # Easy covers a season; medium a game; hard one quarter.
+        # Easy covers season leaders. Game leaders use a name bank on Medium and recall on Hard.
         if difficulty == "easy":
             question_context = f"in the {season_text} season"
         elif difficulty == "medium" or difficulty == "hard":
@@ -2247,13 +2286,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
             home_team = random_game_row.get("homeLabel", {}).get("value", "Home")
             away_team = random_game_row.get("awayLabel", {}).get("value", "Road")
 
-            if difficulty == "medium":
-                question_context = f"in {home_team} vs {away_team} ({season_text})"
-            else:
-                target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
-                question_context = (
-                    f"in the {target_quarter} quarter of {home_team} vs {away_team} ({season_text})"
-                )
+            question_context = f"in {home_team} vs {away_team} ({season_text})"
 
         stat_query = selected_category["func"](
             game_code=game_code, season_code=random_season_code, quarter=target_quarter
@@ -2263,6 +2296,12 @@ async def generate_top_5(difficulty: str = Query("medium")):
         bindings = stat_data.get("results", {}).get("bindings", []) if stat_data else []
 
         if len(bindings) >= 5:
+            # A tie across the cutoff would make another equally valid name score as wrong.
+            metric = selected_category["stat_key"]
+            if len(bindings) > 5 and int(bindings[4][metric]["value"]) == int(
+                bindings[5][metric]["value"]
+            ):
+                continue
             top_5_results = []
 
             # Reveal only the first five ranked results.
@@ -2304,7 +2343,7 @@ async def generate_top_5(difficulty: str = Query("medium")):
 
 
 @app.get("/api/quiz/fifty-fifty")
-async def generate_fifty_fifty(difficulty: str = Query("medium")):
+async def generate_fifty_fifty(difficulty: Literal["easy", "medium", "hard"] = Query("medium")):
     require_quiz_provider()
 
     categories = [
@@ -2340,6 +2379,18 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         },
     ]
 
+    points_category = {
+        "id": "points",
+        "name": "points scored",
+        "func": get_quiz_points_query,
+        "stat_key": "totalPoints",
+        "stat_label": "points",
+    }
+    if difficulty == "easy":
+        categories = [points_category]
+    elif difficulty == "medium":
+        categories = [points_category, next(c for c in categories if c["id"] == "blocks")]
+
     seasons = [("E2023", "2023-24"), ("E2024", "2024-25"), ("E2025", "2025-26")]
 
     for _ in range(30):
@@ -2362,7 +2413,7 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
         filter_id = None
         context_text = f"in {home_team} vs {away_team}"
 
-        if difficulty in ["medium", "hard"]:
+        if difficulty == "hard":
             target_quarter = random.choice(["1st", "2nd", "3rd", "4th"])
             context_text += f", in the {target_quarter} quarter"
 
@@ -2431,8 +2482,12 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
             player_name = f"the player {quiz_player_name(pid)}"
 
         correct_val = stat_val
-        # Keep the incorrect option close to the true total and non-negative.
-        offset = 1 if correct_val <= 5 else random.choice([1, 2])
+        # Widen the options on Easy, narrow them gradually on Medium and Hard.
+        offset = (
+            max(10, correct_val // 2)
+            if difficulty == "easy"
+            else (max(3, correct_val // 4) if difficulty == "medium" else 1)
+        )
         wrong_val = correct_val + offset if random.choice([True, False]) else correct_val - offset
         if wrong_val < 0:
             wrong_val = correct_val + offset
@@ -2456,6 +2511,9 @@ async def generate_fifty_fifty(difficulty: str = Query("medium")):
             result_data["correct_index"] = correct_index
             result_data["matchup"] = f"{home_team} - {away_team}"
             result_data["season"] = f"Euroleague Season {season_text}"
+            if difficulty == "easy":
+                lower = (correct_val // 10) * 10
+                result_data["hint"] = f"The total is between {lower} and {lower + 9} points."
             return result_data
         except Exception as error:
             raise quiz_generation_error(error) from error

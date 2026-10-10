@@ -49,7 +49,7 @@ class EnglishInterfaceTests(unittest.IsolatedAsyncioTestCase):
                 "bindings": [
                     {
                         "player": {"value": f"https://example.com/{i}"},
-                        "totalBlocks": {"value": str(10 - i)},
+                        "totalPoints": {"value": str(10 - i)},
                     }
                     for i in range(5)
                 ]
@@ -62,7 +62,7 @@ class EnglishInterfaceTests(unittest.IsolatedAsyncioTestCase):
             return stats
 
         def choice(values):
-            return values[1] if isinstance(values[0], dict) else values[0]
+            return values[0]
 
         with (
             patch.object(backend, "client", object()),
@@ -74,9 +74,9 @@ class EnglishInterfaceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(actual["answers"]), 5)
         self.assertEqual(
             actual["question_text"],
-            "Who were the top five players for blocked shots in the 2023-24 season?",
+            "Who were the top five players for points scored in the 2023-24 season?",
         )
-        self.assertEqual(actual["answers"][0]["stat"], "10 blocks")
+        self.assertEqual(actual["answers"][0]["stat"], "10 points")
 
 
 if __name__ == "__main__":

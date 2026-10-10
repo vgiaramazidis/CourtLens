@@ -639,6 +639,24 @@ def get_game_roster_query(game_code, season_code=None):
     """
 
 
+def get_quiz_points_query(game_code=None, season_code=None, quarter=None, **context):
+    """Rank scorers by distinct scoring events, independent of profile aliases."""
+    scope = filters(game_code=game_code, season_code=season_code, quarter=quarter, **context)
+    return (
+        PREFIXES
+        + f"""
+    SELECT ?player (SUM(xsd:integer(?points)) AS ?totalPoints) WHERE {{
+      {{ SELECT DISTINCT ?player ?action ?points WHERE {{
+        ?game bball:hasPlayByPlayAction ?action .
+        ?action bball:actionPlayer ?player ; bball:pointsAwarded ?points .
+        FILTER(xsd:integer(?points) > 0)
+        {scope}
+      }} }}
+    }} GROUP BY ?player ORDER BY DESC(?totalPoints) STR(?player) LIMIT 20
+    """
+    )
+
+
 def get_simulator_crunch_time_query(game_code, quarter, players_list, season_code=None):
     filters = ""
     for pid in players_list:
@@ -649,12 +667,15 @@ def get_simulator_crunch_time_query(game_code, quarter, players_list, season_cod
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     SELECT ?actionTeam ?lineupTeam ?lineup (SUM(xsd:integer(?points)) AS ?totalPoints)
+           (COUNT(DISTINCT ?action) AS ?observedActions)
     WHERE {
+      { SELECT DISTINCT ?action ?actionTeam ?lineupTeam ?lineup ?points WHERE {
         ?game a bball:Game .
         
         ?game bball:hasPlayByPlayAction ?action .
-        ?action bball:pointsAwarded ?points ;
-                bball:actionTeam ?actionTeam .
+        OPTIONAL { ?action bball:pointsAwarded ?awarded . }
+        BIND(COALESCE(?awarded, 0) AS ?points)
+        OPTIONAL { ?action bball:actionTeam ?actionTeam . }
     """
     if game_code:
         query += f"\n        ?game bball:hasCode '{game_code}' .\n"
@@ -671,6 +692,7 @@ def get_simulator_crunch_time_query(game_code, quarter, players_list, season_cod
         {{ ?action bball:runningRoadTeamLineup ?lineup . ?game bball:roadTeam ?lineupTeam . }}
 
         {filters}
+      }} }}
     }}
     GROUP BY ?actionTeam ?lineupTeam ?lineup
     """
@@ -686,7 +708,7 @@ def get_timeouts_query(season_code):
     SELECT DISTINCT ?game ?clock ?homeScore ?roadScore ?homeLineup ?roadLineup ?homeLabel ?awayLabel
     WHERE {{
         ?game bball:hasPlayByPlayAction ?action .
-        FILTER(CONTAINS(STR(?game), "{season_code}"))
+        ?game bball:hasSeason/bball:hasCode {literal(season_code)} .
         OPTIONAL {{ ?game bball:homeTeam ?homeTeam . ?homeTeam rdfs:label ?homeLabel . }}
         OPTIONAL {{ ?game bball:roadTeam ?awayTeam . ?awayTeam rdfs:label ?awayLabel . }}
 
@@ -701,8 +723,10 @@ def get_timeouts_query(season_code):
                 bball:runningHomeTeamLineup ?homeLineup ;
                 bball:runningRoadTeamLineup ?roadLineup .
                 
-        # Select timeouts in the final minute or with a margin below six points.
-        FILTER(xsd:integer(?seconds) <= 60 || ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) <= 6)
+        # Close fourth-quarter games with enough time for a plausible comeback.
+        FILTER(xsd:integer(?seconds) >= 60 && xsd:integer(?seconds) <= 300
+               && ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) <= 6
+               && ABS(xsd:integer(?homeScore) - xsd:integer(?roadScore)) * 30 <= xsd:integer(?seconds))
     }} LIMIT 200
     """
 

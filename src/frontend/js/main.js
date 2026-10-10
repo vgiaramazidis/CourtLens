@@ -579,13 +579,10 @@ LIMIT 200`;
     try{
       const data=await apiRequest('/api/simulator/crunch-time',params,{signal:ticket.signal,allowError:true});if(!ticket.current())return;
       if(data.error && data.error!=='Lineup never played')throw new Error(data.error);
-      const seconds=S.clockSeconds(scenario.clock),possessions=Math.max(1,Math.ceil(seconds/24));
-      const chemistry=Number(data.points_for)>0;
-      let scored=Math.max(0,Math.round(possessions+Math.floor(Math.random()*7)-3+(chemistry?3:0)));
-      const conceded=Math.max(0,Math.round(possessions+Math.floor(Math.random()*5)-2));
-      if(seconds<=15 && scored===0)scored=Math.random()>.5?2:0;
-      const user=Number(scenario.user_score)+scored,opponent=Number(scenario.opp_score)+conceded;
-      $('simulatorResult').innerHTML=`<p class="eyebrow">SIMULATED RESULT</p><h3>${user>opponent?'Your team takes the win.':user<opponent?'A close finish. Try another five.':'All level. This one goes to overtime.'}</h3><p class="score">${user} – ${opponent}</p><p>Your team scored ${scored} and conceded ${conceded} over approximately ${possessions} remaining ${possessions===1?'possession':'possessions'}.</p><p class="muted">${chemistry?'These five players scored together in the historical game, adding a chemistry bonus.':'No scoring history was found for this exact five-player group in this game.'} The simulation includes random variation; it is not a forecast of a real result.</p>`;show('simulatorResult');
+      const result=S.simulateFinish(scenario,state.lineup,data),{scored,conceded,possessions,user,opponent}=result;
+      const historyText=data.error==='Lineup never played'?'No recorded actions were found for this five. Their historical contribution is neutral.':`These five recorded ${Number(data.points_for)} points for and ${Number(data.points_against)} against across this historical game. Small samples have limited influence.`;
+      const balanceText=!result.positionsKnown?'Some positions are unavailable, so no role penalty applies.':result.missingRoles.length?`This lineup lacks a listed ${result.missingRoles.join(' / ')}, reducing its scoring chance slightly.`:'This lineup covers guard, forward and center roles.';
+      $('simulatorResult').innerHTML=`<p class="eyebrow">SIMULATED RESULT</p><h3>${user>opponent?'Your team takes the win.':user<opponent?'Your team finishes behind. Try another five.':'All level. This one goes to overtime.'}</h3><p class="score">${user} – ${opponent}</p><p>Your team scored ${scored} and conceded ${conceded} over approximately ${possessions} remaining possessions per team.</p><p>${esc(historyText)} ${esc(balanceText)}</p><p class="muted">An illustrative game: historical scoring balance and lineup roles adjust each possession, with random variation. Court slots are illustrative. This is not a validated prediction of a real result.</p>`;show('simulatorResult');
     }catch(error){if(ticket.current())message('simulatorResult',error.message,true);}
     finally{if(ticket.current())setBusy('runSimulation',false,'Run again');}
   };
@@ -603,18 +600,24 @@ LIMIT 200`;
       if(category==='higher-or-lower' && (!data.player_a || !data.player_b))throw new Error('The player comparison is unavailable. Please try again.');
       if(category==='top-5' && (!Array.isArray(data.answers) || data.answers.length!==5))throw new Error('Five answers could not be found. Please try again.');
       if(category==='fifty-fifty' && (!Array.isArray(data.options) || data.options.length!==2 || ![0,1].includes(data.correct_index)))throw new Error('The answer choices are unavailable. Please try again.');
-      state.quiz={category,difficulty,streak,data,misses:0,hint:0,revealed:new Set(),active:true};renderQuiz();
+      const rules=S.quizRules(difficulty),names=window.QUIZ_PLAYER_NAMES || [];
+      const answers=category==='top-5'?data.answers.map(answer=>answer.name):[data.secret_player_name];
+      const choiceCount=category==='top-5'?rules.bank:rules.choices;
+      const choices=['who-am-i','who-is-missing','top-5'].includes(category) && choiceCount?S.quizChoices(answers,names,choiceCount,data.known_players || []):[];
+      state.quiz={category,difficulty,streak,data,rules,choices,misses:0,hint:rules.clues,revealed:new Set(),active:true};renderQuiz();
     }catch(error){if(ticket.current())$('quizGame').innerHTML=`<div class="quiz-question"><button class="text-button" data-quiz-menu> Quiz menu</button><p role="alert">${esc(error.message)}</p><button class="secondary-button" data-retry-category="${esc(category)}" data-retry-difficulty="${esc(difficulty)}">Try again</button></div>`;}
   }
   function renderQuiz() {
-    const q=state.quiz;if(!q)return;const data=q.data;
+    const q=state.quiz;if(!q)return;const data=q.data,rules=q.rules;
     let content='';
-    if(q.category==='who-am-i')content=`<p>Identify the player from the clues. You have ${data.hints.length} attempts.</p><div id="quizHints" class="quiz-hints"><p><strong>Clue 1.</strong> ${esc(data.hints[0])}</p></div>`;
-    if(q.category==='who-is-missing')content=`<p>These four players shared the court. Who was the fifth?</p>${missingCourt(data)}<p class="muted">Two attempts. A clue follows your first miss.</p><div id="quizHints" class="quiz-hints"></div>`;
+    if(q.category==='who-am-i')content=`<p>Identify the player from the clues. Three attempts.</p><div id="quizHints" class="quiz-hints">${data.hints.slice(0,rules.clues).map((hint,index)=>`<p><strong>Clue ${index+1}.</strong> ${esc(hint)}</p>`).join('')}</div>`;
+    if(q.category==='who-is-missing')content=`<p>These four players shared the court. Who was the fifth?</p>${missingCourt(data)}<p class="muted">Two attempts.${q.difficulty==='hard'?' A clue follows your first miss.':''}</p><div id="quizHints" class="quiz-hints">${q.difficulty!=='hard'?`<p><strong>Hint.</strong> ${esc(data.hint)}</p>`:''}</div>`;
     if(q.category==='higher-or-lower')content=`<p>${esc(data.question_text)}</p><p><strong>${esc(playerName(data.player_a.name))}: ${esc(data.player_a.stat)}</strong> ${esc(data.category_name || '')}</p><p>Did ${esc(playerName(data.player_b.name))} record more or fewer?</p><div class="quiz-options"><button data-choice="higher">Higher</button><button data-choice="lower">Lower</button></div>`;
     if(q.category==='fifty-fifty')content=`<p>${esc(data.question_text)}</p><div class="quiz-options">${data.options.map((value,index)=>`<button data-choice="${index}">${esc(value)}</button>`).join('')}</div>`;
-    if(q.category==='top-5')content=`<p>${esc(data.question_text)}</p><p class="muted">Three misses available. Enter a player’s name, or the names in a passing pair.</p><ol id="topFive" class="top-five">${data.answers.map((_,index)=>`<li data-answer-index="${index}">Not found yet</li>`).join('')}</ol>`;
-    const typed=['who-am-i','who-is-missing','top-5'].includes(q.category);
+    if(q.category==='top-5')content=`<p>${esc(data.question_text)}</p><p class="muted">${rules.misses} misses available. ${q.choices.length?'Choose five names from the list.':'Enter a player’s name, or the names in a passing pair.'}</p><ol id="topFive" class="top-five">${data.answers.map((_,index)=>`<li data-answer-index="${index}">Not found yet</li>`).join('')}</ol>`;
+    if(data.hint && ['higher-or-lower','fifty-fifty'].includes(q.category))content+=`<p class="notice"><strong>Hint.</strong> ${esc(data.hint)}</p>`;
+    if(q.choices.length)content+=`<div class="quiz-options quiz-name-options" aria-label="Answer choices">${q.choices.map((name,index)=>`<button data-name-choice="${index}">${esc(playerName(name))}</button>`).join('')}</div>`;
+    const typed=['who-am-i','who-is-missing','top-5'].includes(q.category) && !q.choices.length;
     $('quizGame').innerHTML=`<article class="quiz-question"><div class="quiz-meta"><button class="text-button" data-quiz-menu> Quiz menu</button><span>${esc(q.difficulty)} · Streak: ${q.streak}</span></div><h2 tabindex="-1">${quizNames[q.category]}</h2>${content}<p class="muted">${esc([data.game_code && `Game ${data.game_code}`,data.matchup,data.season].filter(Boolean).join(' · '))}</p>${typed?'<form id="quizAnswerForm" class="quiz-answer-form"><label>Your answer<input id="quizAnswerInput" type="text" required minlength="2" maxlength="150" list="quizNameOptions" autocomplete="off" placeholder="Enter a name…"><datalist id="quizNameOptions"></datalist></label><button class="primary-button">Check answer</button></form>':''}<div id="quizFeedback" class="quiz-feedback" role="status" hidden></div></article>`;
     if(typed){
       $('quizAnswerForm').addEventListener('submit',submitQuizGuess);
@@ -645,7 +648,10 @@ LIMIT 200`;
     if(finished){q.active=false;revealQuizPlayer();document.querySelectorAll('#quizAnswerForm input,#quizAnswerForm button,.quiz-options button').forEach(el=>el.disabled=true);feedback.insertAdjacentHTML('beforeend',`<button class="primary-button" data-next-quiz data-keep-streak="${wrong?'false':'true'}">${wrong?'Play again':'Next question'}</button>`);}
   }
   function submitQuizGuess(event) {
-    event.preventDefault();const q=state.quiz;if(!q?.active)return;const input=$('quizAnswerInput'),guess=input.value.trim();if(!guess)return;
+    event.preventDefault();checkQuizGuess($('quizAnswerInput').value.trim());
+  }
+  function checkQuizGuess(guess) {
+    const q=state.quiz;if(!q?.active || !guess)return;const input=$('quizAnswerInput');
     if(q.category==='top-5'){
       if(!q.partial) q.partial = new Map();
       let newlyRevealed = 0;
@@ -693,26 +699,28 @@ LIMIT 200`;
         quizFeedback('You already found that answer. Try another name.');
       } else {
         q.misses++;
-        if (q.misses >= 3) {
+        if (q.misses >= q.rules.misses) {
           $('topFive').innerHTML = q.data.answers.map(answer => `<li><strong>${esc(answer.name)}</strong><small>${esc(answer.stat)}</small></li>`).join('');
-          quizFeedback('Three misses. The answers are revealed above.', true, true);
+          quizFeedback('No attempts left. The answers are revealed above.', true, true);
         } else {
-          quizFeedback(`Not on this list. ${3 - q.misses} ${3 - q.misses === 1 ? 'miss' : 'misses'} remaining.`, true);
+          quizFeedback(`Not on this list. ${q.rules.misses - q.misses} ${q.rules.misses - q.misses === 1 ? 'miss' : 'misses'} remaining.`, true);
         }
       }
     }else if(S.matchesName(guess,q.data.secret_player_name,window.QUIZ_PLAYER_NAMES || [])){q.streak++;quizFeedback(`Correct! It was ${playerName(q.data.secret_player_name)}.`,false,true);}
     else {
       q.misses++;const attempts=q.category==='who-am-i'?q.data.hints.length:2;
       if(q.misses>=attempts)quizFeedback(`The player was ${playerName(q.data.secret_player_name)}. Try another question.`,true,true);
-      else {const hint=q.category==='who-am-i'?q.data.hints[q.misses]:q.data.hint;$('quizHints').insertAdjacentHTML('beforeend',`<p><strong>${q.category==='who-am-i'?`Clue ${q.misses+1}`:'Hint'}.</strong> ${esc(hint || 'Think about the other players in this lineup.')}</p>`);quizFeedback(`Not quite. ${attempts-q.misses} ${attempts-q.misses===1?'attempt':'attempts'} remaining.`,true);}
+      else {const hint=q.category==='who-am-i'?q.data.hints[q.hint++]:q.difficulty==='hard' && q.misses===1?q.data.hint:null;if(hint)$('quizHints').insertAdjacentHTML('beforeend',`<p><strong>${q.category==='who-am-i'?`Clue ${q.hint}`:'Hint'}.</strong> ${esc(hint)}</p>`);quizFeedback(`Not quite. ${attempts-q.misses} ${attempts-q.misses===1?'attempt':'attempts'} remaining.`,true);}
     }
-    input.value='';if(q.active)input.focus();
+    if(input){input.value='';if(q.active)input.focus();}
   }
   $('quizGame').addEventListener('click',event=>{
     if(event.target.closest('[data-quiz-menu]')){quizMenu();return;}
     const retry=event.target.closest('[data-retry-category]');if(retry){startQuiz(retry.dataset.retryCategory,retry.dataset.retryDifficulty);return;}
     const q=state.quiz;if(!q)return;
     const next=event.target.closest('[data-next-quiz]');if(next){startQuiz(q.category,q.difficulty,next.dataset.keepStreak==='true'?q.streak:0);return;}
+    const nameChoice=event.target.closest('[data-name-choice]');
+    if(nameChoice && q.active){nameChoice.disabled=true;checkQuizGuess(q.choices[Number(nameChoice.dataset.nameChoice)]);if(q.active)$('quizGame').querySelector('[data-name-choice]:not(:disabled)')?.focus();return;}
     const choice=event.target.closest('[data-choice]');if(!choice || !q.active)return;
     let correct,answer;
     if(q.category==='fifty-fifty'){correct=Number(choice.dataset.choice)===q.data.correct_index;answer=`The answer is ${q.data.options[q.data.correct_index]}.`;}

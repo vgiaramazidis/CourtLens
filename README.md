@@ -117,5 +117,5 @@ Local archives are not included in a new clone or backed up remotely. Completed 
 Before making the repository public, review all branches and Git history for credentials and private material: deleting or ignoring a file does not erase earlier commits. Review the older `main` branch separately and verify third-party asset/data permissions. Dependencies are pinned directly, not through a complete transitive lockfile.
 
 ## License
-
-A license has not been selected yet. Third-party basketball data, photos, team logos and videos are separate from the CourtLens source code; this repository does not grant rights to those materials.
+Please refer to LICENSE.md for the current licensing status of the CourtLens source code and related materials.
+Third-party basketball data, photos, team logos and videos are separate from the CourtLens source code; this repository does not grant rights to those materials.

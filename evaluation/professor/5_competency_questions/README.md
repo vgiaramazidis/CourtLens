@@ -494,5 +494,5 @@ WHERE {
 .
 ├── README.md
 ├── benchmark_sparql.py
-└── results/          # generated output; usually exclude from version control
+└── results/       
 ```
